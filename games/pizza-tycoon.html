@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza Tycoon - Jules Spiele</title>
+    <style>
+        body { font-family: 'Comic Sans MS', cursive, sans-serif; background-color: #fce4ec; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .back-btn { align-self: flex-start; text-decoration: none; color: white; background: #e91e63; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px; font-weight: bold; }
+        .back-btn:hover { background: #c2185b; }
+        h1 { margin-top: 0; color: #d32f2f; text-shadow: 2px 2px 0px white; }
+
+        .dashboard { display: flex; justify-content: space-around; width: 100%; max-width: 800px; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 3px solid #f8bbd0; }
+        .stat-box { text-align: center; }
+        .stat-val { font-size: 24px; font-weight: bold; color: #e91e63; }
+        .stat-label { font-size: 14px; color: #888; text-transform: uppercase; }
+
+        .kitchen { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+        .oven { width: 150px; height: 150px; background: #424242; border-radius: 20px; border: 10px solid #616161; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s; box-shadow: inset 0 -20px 0 rgba(0,0,0,0.3); }
+        .oven:active { transform: scale(0.95); }
+        .oven::after { content: ''; position: absolute; bottom: 10px; width: 120px; height: 40px; background: #ff9800; border-radius: 20px 20px 5px 5px; filter: blur(5px); opacity: 0.5; }
+        .pizza-dough { width: 100px; height: 100px; background: #ffe0b2; border-radius: 50%; border: 5px solid #ffcc80; position: relative; z-index: 2; transition: all 0.3s; }
+
+        .progress-bar-container { width: 100%; height: 10px; background: #eee; border-radius: 5px; margin-top: 10px; overflow: hidden; position: absolute; bottom: -20px; }
+        .progress-bar { width: 0%; height: 100%; background: #4caf50; transition: width 0.1s linear; }
+
+        .market { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; width: 100%; max-width: 800px; }
+        .market-item { background: white; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #ffcdd2; transition: transform 0.2s; }
+        .market-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(233,30,99,0.2); }
+        .market-icon { font-size: 40px; margin-bottom: 10px; }
+        .market-btn { background: #ff5722; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .market-btn:hover { background: #f4511e; }
+        .market-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .pizza-floating { position: absolute; font-size: 30px; animation: floatAndFade 1s forwards; pointer-events: none; z-index: 10; }
+        @keyframes floatAndFade { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(1.5); } }
+
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">← Zurück</a>
+
+    <h1>🍕 Pizza Tycoon</h1>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <div class="stat-val" id="money">0 €</div>
+            <div class="stat-label">Geld</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val" id="pizzas">0</div>
+            <div class="stat-label">Verkaufte Pizzen</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-val" id="price">5 €</div>
+            <div class="stat-label">Preis pro Pizza</div>
+        </div>
+    </div>
+
+    <div class="kitchen">
+        <div class="oven" id="oven1" onclick="bakePizza()">
+            <div class="pizza-dough" id="dough1"></div>
+            <div class="progress-bar-container"><div class="progress-bar" id="progress1"></div></div>
+        </div>
+    </div>
+
+    <h2 style="color: #e91e63;">Supermarkt & Upgrades</h2>
+    <div class="market" id="market">
+        <!-- Upgrades injected via JS -->
+    </div>
+
+    <script>
+        let money = 0;
+        let pizzasSold = 0;
+        let pizzaPrice = 5;
+        let bakeTime = 2000; // ms
+        let isBaking = false;
+        let autoChefs = 0;
+
+        const upgrades = [
+            { id: 'topping', name: 'Bessere Zutaten', desc: 'Erhöht Pizzapreis um 2€', cost: 50, effect: () => pizzaPrice += 2, type: 'price', icon: '🍅' },
+            { id: 'oven', name: 'Schnellerer Ofen', desc: 'Backzeit -20%', cost: 100, effect: () => bakeTime *= 0.8, type: 'speed', icon: '🔥' },
+            { id: 'chef', name: 'Hilfskoch (Auto)', desc: 'Backt automatisch 1 Pizza / 5s', cost: 250, effect: () => autoChefs++, type: 'auto', icon: '👨‍🍳' },
+            { id: 'marketing', name: 'Marketing', desc: 'Verdoppelt Pizzapreis!', cost: 1000, effect: () => pizzaPrice *= 2, type: 'price', icon: '📺' }
+        ];
+
+        function updateUI() {
+            document.getElementById('money').innerText = money + ' €';
+            document.getElementById('pizzas').innerText = pizzasSold;
+            document.getElementById('price').innerText = pizzaPrice + ' €';
+
+            upgrades.forEach((upg, i) => {
+                const btn = document.getElementById(`btn-${i}`);
+                if (btn) btn.disabled = money < upg.cost;
+            });
+        }
+
+        function bakePizza() {
+            if (isBaking) return;
+            isBaking = true;
+
+            const dough = document.getElementById('dough1');
+            const progress = document.getElementById('progress1');
+
+            dough.style.backgroundColor = '#ffcc80'; // Sauce
+            progress.style.transition = `width ${bakeTime}ms linear`;
+            progress.style.width = '100%';
+
+            setTimeout(() => {
+                dough.style.backgroundColor = '#d84315'; // Baked
+
+                // Finish baking
+                setTimeout(() => {
+                    sellPizza(event);
+                    progress.style.transition = 'none';
+                    progress.style.width = '0%';
+                    dough.style.backgroundColor = '#ffe0b2'; // Reset
+                    isBaking = false;
+                }, 300);
+            }, bakeTime);
+        }
+
+        function sellPizza(e) {
+            money += pizzaPrice;
+            pizzasSold++;
+            updateUI();
+
+            // Visual effect
+            const ovenRect = document.getElementById('oven1').getBoundingClientRect();
+            const floater = document.createElement('div');
+            floater.className = 'pizza-floating';
+            floater.innerText = '🍕';
+            floater.style.left = (ovenRect.left + 50) + 'px';
+            floater.style.top = ovenRect.top + 'px';
+            document.body.appendChild(floater);
+            setTimeout(() => floater.remove(), 1000);
+
+            notifySystem();
+        }
+
+        function buyUpgrade(index) {
+            const upg = upgrades[index];
+            if (money >= upg.cost) {
+                money -= upg.cost;
+                upg.effect();
+                upg.cost = Math.floor(upg.cost * 1.5); // Increase cost
+                renderMarket();
+                updateUI();
+            }
+        }
+
+        function renderMarket() {
+            const container = document.getElementById('market');
+            container.innerHTML = '';
+            upgrades.forEach((upg, i) => {
+                const item = document.createElement('div');
+                item.className = 'market-item';
+                item.innerHTML = `
+                    <div class="market-icon">${upg.icon}</div>
+                    <h3>${upg.name}</h3>
+                    <p style="font-size: 12px; color: #666; height: 30px;">${upg.desc}</p>
+                    <button id="btn-${i}" class="market-btn" onclick="buyUpgrade(${i})">Kaufen für ${upg.cost}€</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Auto Chefs Loop
+        setInterval(() => {
+            if (autoChefs > 0) {
+                money += (pizzaPrice * autoChefs);
+                pizzasSold += autoChefs;
+                updateUI();
+                notifySystem();
+            }
+        }, 5000);
+
+        function notifySystem() {
+            if(window.parent && window.parent.userSystem) {
+                if (Math.random() < 0.05) window.parent.userSystem.addCoins(1);
+            }
+        }
+
+        // Init
+        renderMarket();
+        updateUI();
+        if(window.parent && window.parent.userSystem) {
+            window.parent.userSystem.addXP(15);
+        }
+    </script>
+</body>
+</html>

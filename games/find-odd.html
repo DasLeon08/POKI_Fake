@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finde den Fehler - Jules Spiele</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1abc9c, #2ecc71); font-family: 'Nunito', sans-serif; color: white; }
+        .grid { display: grid; gap: 10px; margin-top: 20px; }
+        .item { font-size: 40px; background-color: #34495e; padding: 20px; border-radius: 10px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 5px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        .item:hover { transform: scale(1.1); }
+        .info { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        .btn-back { margin-top: 30px; display: inline-block; padding: 10px 20px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="info">Level: <span id="level">1</span> | Finde das abweichende Symbol!</div>
+    <div class="grid" id="grid"></div>
+    <a href="../index.html" class="btn-back">Zurück zum Portal</a>
+
+    <script>
+        const gridEl = document.getElementById('grid');
+        const levelEl = document.getElementById('level');
+        let level = 1;
+        const pairs = [
+            ["🍎", "🍅"], ["🐶", "🐺"], ["🚗", "🚙"], ["🌞", "☀️"], ["⚽", "🏀"], ["🍔", "🥪"], ["🎸", "🎻"], ["🍓", "🍒"]
+        ];
+
+        function createLevel() {
+            gridEl.innerHTML = '';
+            let size = Math.min(2 + Math.floor(level / 2), 6);
+            gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+            let pair = pairs[Math.floor(Math.random() * pairs.length)];
+            let base = pair[0];
+            let odd = pair[1];
+
+            let total = size * size;
+            let oddIndex = Math.floor(Math.random() * total);
+
+            for (let i = 0; i < total; i++) {
+                let div = document.createElement('div');
+                div.classList.add('item');
+                div.innerText = i === oddIndex ? odd : base;
+                div.onclick = () => {
+                    if (i === oddIndex) {
+                        level++;
+                        levelEl.innerText = level;
+                        document.body.style.backgroundColor = '#27ae60';
+                        setTimeout(() => document.body.style.background = 'linear-gradient(135deg, #1abc9c, #2ecc71)', 300);
+                        createLevel();
+                    } else {
+                        alert(`Falsch! Du hast bis Level ${level} gespielt.`);
+                        level = 1;
+                        levelEl.innerText = level;
+                        createLevel();
+                    }
+                };
+                gridEl.appendChild(div);
+            }
+        }
+
+        createLevel();
+    </script>
+</body>
+</html>

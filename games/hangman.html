@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galgenmännchen - Jules Spiele</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #7f8c8d, #bdc3c7); font-family: 'Nunito', sans-serif; color: #2c3e50; }
+        .game-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); text-align: center; max-width: 600px; width: 100%; }
+        .word { font-size: 40px; font-weight: bold; letter-spacing: 10px; margin: 20px 0; }
+        .keyboard { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 20px; }
+        .keyboard button { padding: 15px; font-size: 18px; border: none; background-color: #ecf0f1; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .keyboard button:hover:not(:disabled) { background-color: #bdc3c7; }
+        .keyboard button:disabled { background-color: #95a5a6; color: white; cursor: not-allowed; }
+        .hangman-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 20px; }
+        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #34495e; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Galgenmännchen</h1>
+        <div>Falsche Versuche: <span id="mistakes">0</span> / 6</div>
+        <div class="word" id="wordDisplay">_ _ _ _</div>
+        <div class="keyboard" id="keyboard"></div>
+        <a href="../index.html" class="btn-back">Zurück zum Portal</a>
+    </div>
+
+    <script>
+        const words = ["SPIEL", "HTML", "JAVASCRIPT", "CODE", "PROGRAMMIEREN", "COMPUTER", "MAUS", "TASTATUR", "INTERNET"];
+        let selectedWord = words[Math.floor(Math.random() * words.length)];
+        let guessed = [];
+        let mistakes = 0;
+        const maxMistakes = 6;
+
+        const wordDisplay = document.getElementById("wordDisplay");
+        const keyboard = document.getElementById("keyboard");
+        const mistakesEl = document.getElementById("mistakes");
+
+        function updateWord() {
+            wordDisplay.innerHTML = selectedWord.split('').map(letter => guessed.includes(letter) ? letter : "_").join(" ");
+
+            if (!wordDisplay.innerHTML.includes("_")) {
+                setTimeout(() => alert("GEWONNEN! Du hast das Wort erraten!"), 100);
+            }
+        }
+
+        function guessLetter(letter) {
+            guessed.push(letter);
+            let btn = document.getElementById(`btn-${letter}`);
+            btn.disabled = true;
+
+            if (!selectedWord.includes(letter)) {
+                mistakes++;
+                mistakesEl.innerText = mistakes;
+                if (mistakes >= maxMistakes) {
+                    setTimeout(() => alert(`Game Over! Das Wort war: ${selectedWord}`), 100);
+                    setTimeout(() => location.reload(), 2000);
+                }
+            }
+
+            updateWord();
+        }
+
+        function createKeyboard() {
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+            alphabet.forEach(letter => {
+                let btn = document.createElement("button");
+                btn.id = `btn-${letter}`;
+                btn.innerText = letter;
+                btn.onclick = () => guessLetter(letter);
+                keyboard.appendChild(btn);
+            });
+        }
+
+        createKeyboard();
+        updateWord();
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter - Jules Spiele</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #000; font-family: 'Nunito', sans-serif; color: white; }
+        #gameCanvas { background-color: #111; border: 2px solid #333; margin-top: 20px; box-shadow: 0 0 20px #0ff; cursor: none; }
+        .btn-back { margin-top: 20px; padding: 10px 20px; background-color: #2c3e50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; border: 1px solid #34495e; }
+        .btn-back:hover { background-color: #34495e; }
+        .score { font-size: 24px; margin-top: 20px; text-shadow: 0 0 5px #0ff; }
+    </style>
+</head>
+<body>
+    <div class="score">Score: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <a href="../index.html" class="btn-back">Zurück zum Portal</a>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+
+        let player = { x: 200, y: 450, width: 30, height: 30, color: '#0f0' };
+        let bullets = [];
+        let enemies = [];
+        let score = 0;
+        let isGameOver = false;
+
+        document.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.clientX - rect.left - player.width / 2;
+            if(player.x < 0) player.x = 0;
+            if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+        });
+
+        document.addEventListener('mousedown', () => {
+            bullets.push({ x: player.x + player.width / 2 - 2, y: player.y, width: 4, height: 10, color: '#ff0', speed: 5 });
+        });
+
+        function spawnEnemy() {
+            let x = Math.random() * (canvas.width - 30);
+            let speed = 1 + Math.random() * 2 + (score * 0.05);
+            enemies.push({ x: x, y: -30, width: 30, height: 30, color: '#f00', speed: speed });
+        }
+
+        setInterval(spawnEnemy, 1000 - (score * 5 > 800 ? 800 : score * 5));
+
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width/2, player.y - 15);
+            ctx.lineTo(player.x, player.y);
+            ctx.lineTo(player.x + player.width, player.y);
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            if(isGameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawPlayer();
+
+            // Bullets
+            for(let i = 0; i < bullets.length; i++) {
+                let b = bullets[i];
+                b.y -= b.speed;
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x, b.y, b.width, b.height);
+                if(b.y < 0) { bullets.splice(i, 1); i--; }
+            }
+
+            // Enemies
+            for(let i = 0; i < enemies.length; i++) {
+                let e = enemies[i];
+                e.y += e.speed;
+                ctx.fillStyle = e.color;
+                ctx.fillRect(e.x, e.y, e.width, e.height);
+
+                if(e.y > canvas.height) {
+                    isGameOver = true;
+                    alert("Game Over! Score: " + score);
+                    location.reload();
+                }
+
+                // Collision
+                if(player.x < e.x + e.width && player.x + player.width > e.x &&
+                   player.y < e.y + e.height && player.y + player.height > e.y) {
+                    isGameOver = true;
+                    alert("Kollision! Game Over! Score: " + score);
+                    location.reload();
+                }
+
+                for(let j = 0; j < bullets.length; j++) {
+                    let b = bullets[j];
+                    if(b.x < e.x + e.width && b.x + b.width > e.x &&
+                       b.y < e.y + e.height && b.y + b.height > e.y) {
+                        enemies.splice(i, 1);
+                        bullets.splice(j, 1);
+                        score += 10;
+                        scoreEl.innerText = score;
+                        i--;
+                        break;
+                    }
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

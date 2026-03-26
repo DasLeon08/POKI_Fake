@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ausweichen - Jules Spiele</title>
+    <style>
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background-color: #c0392b; font-family: 'Nunito', sans-serif; color: white; }
+        #gameCanvas { background-color: #ecf0f1; border-radius: 8px; margin-top: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); cursor: none; }
+        .btn-back { margin-top: 20px; padding: 10px 20px; background-color: #8e44ad; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn-back:hover { background-color: #9b59b6; }
+        .info { font-size: 20px; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="info">Zeit überlebt: <span id="time">0</span>s<br><small>Bewege die Maus, um auszuweichen!</small></div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <a href="../index.html" class="btn-back">Zurück zum Portal</a>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timeEl = document.getElementById('time');
+
+        let player = { x: 200, y: 200, radius: 15, color: '#3498db' };
+        let enemies = [];
+        let score = 0;
+        let gameOver = false;
+        let lastTime = 0;
+
+        function addEnemy() {
+            let side = Math.floor(Math.random() * 4);
+            let ex, ey, evx, evy;
+            let speed = 2 + Math.random() * 3 + (score / 10);
+            if (side === 0) { ex = Math.random() * 400; ey = -20; evx = (Math.random() - 0.5) * 2; evy = speed; }
+            else if (side === 1) { ex = 420; ey = Math.random() * 400; evx = -speed; evy = (Math.random() - 0.5) * 2; }
+            else if (side === 2) { ex = Math.random() * 400; ey = 420; evx = (Math.random() - 0.5) * 2; evy = -speed; }
+            else { ex = -20; ey = Math.random() * 400; evx = speed; evy = (Math.random() - 0.5) * 2; }
+
+            enemies.push({ x: ex, y: ey, vx: evx, vy: evy, radius: 10 + Math.random() * 10, color: '#e74c3c' });
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.clientX - rect.left;
+            player.y = e.clientY - rect.top;
+        });
+
+        function update(time) {
+            if (gameOver) return;
+
+            if (time - lastTime > 1000) {
+                score++;
+                timeEl.innerText = score;
+                lastTime = time;
+                if (score % 3 === 0) addEnemy();
+            }
+
+            if (Math.random() < 0.05 + (score * 0.001)) {
+                addEnemy();
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+
+            // Update & Draw enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.x += e.vx;
+                e.y += e.vy;
+
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                ctx.fillStyle = e.color;
+                ctx.fill();
+
+                // Check collision
+                let dist = Math.hypot(player.x - e.x, player.y - e.y);
+                if (dist - player.radius - e.radius < 1) {
+                    gameOver = true;
+                    alert("Game Over! Zeit: " + score + " Sekunden");
+                    location.reload();
+                }
+
+                if (e.x < -50 || e.x > 450 || e.y < -50 || e.y > 450) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Birds Klon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue */
+            font-family: 'Nunito', sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 10;
+            font-family: 'Nunito', sans-serif;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .back-btn:hover {
+            background-color: #c0392b;
+        }
+        .ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        #message-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #message {
+            font-size: 48px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-family: 'Fredoka One', cursive;
+        }
+        #restart {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        #restart:hover {
+            background-color: #27ae60;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+    <div class="ui">
+        Level: <span id="level">1</span> | Vögel: <span id="birds">3</span>
+    </div>
+
+    <div id="message-container">
+        <div id="message">Gewonnen!</div>
+        <button id="restart" onclick="nextLevel()">Nächstes Level</button>
+    </div>
+
+    <script>
+        const { Engine, Render, Runner, World, Bodies, Body, Constraint, Mouse, MouseConstraint, Events, Composite, Composites, Vector } = Matter;
+
+        let engine, render, runner, world;
+        let slingshot, bird, elastic;
+        let targets = [];
+        let ground;
+        let level = 1;
+        let maxLevels = 5;
+        let birdCount = 3;
+        let isFired = false;
+        let birdScale = 20;
+
+        function init() {
+            engine = Engine.create();
+            world = engine.world;
+
+            render = Render.create({
+                element: document.body,
+                engine: engine,
+                options: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    wireframes: false,
+                    background: 'transparent',
+                    hasBounds: true
+                }
+            });
+
+            Render.run(render);
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            let mouse = Mouse.create(render.canvas);
+            let mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: { visible: false }
+                }
+            });
+
+            World.add(world, mouseConstraint);
+            render.mouse = mouse;
+
+            Events.on(mouseConstraint, 'startdrag', function(event) {
+                if (event.body === bird && !isFired) {
+                    // Start pulling
+                }
+            });
+
+            Events.on(mouseConstraint, 'enddrag', function(event) {
+                if (event.body === bird && !isFired) {
+                    let dist = Vector.magnitude(Vector.sub(bird.position, elastic.pointA));
+                    if (dist > 10) {
+                        isFired = true;
+                        // Release after a short delay
+                        setTimeout(() => {
+                            elastic.bodyB = null;
+                        }, 20);
+                    }
+                }
+            });
+
+            let gameCheckInterval = setInterval(checkGameState, 1000);
+
+            Events.on(engine, 'collisionStart', function(event) {
+                let pairs = event.pairs;
+                for (let i = 0; i < pairs.length; i++) {
+                    let bodyA = pairs[i].bodyA;
+                    let bodyB = pairs[i].bodyB;
+
+                    let momentumA = bodyA.mass * bodyA.speed;
+                    let momentumB = bodyB.mass * bodyB.speed;
+                    let impact = momentumA + momentumB;
+
+                    if (impact > 10) { // Threshold for breaking
+                        if (bodyA.label === 'target') destroyTarget(bodyA);
+                        if (bodyB.label === 'target') destroyTarget(bodyB);
+                    }
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                render.canvas.width = window.innerWidth;
+                render.canvas.height = window.innerHeight;
+                if (ground) {
+                    Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight - 30 });
+                }
+            });
+
+            setupLevel();
+        }
+
+        function destroyTarget(targetBody) {
+            World.remove(world, targetBody);
+            targets = targets.filter(t => t !== targetBody);
+        }
+
+        function checkGameState() {
+            if (document.getElementById('message-container').style.display === 'block') return;
+
+            // Check targets out of bounds
+            for (let i = targets.length - 1; i >= 0; i--) {
+                let t = targets[i];
+                if (t.position.y > window.innerHeight + 100 || t.position.x > window.innerWidth + 100 || t.position.x < -100) {
+                    destroyTarget(t);
+                }
+            }
+
+            let birdStopped = isFired && bird && bird.speed < 1.5 && bird.angularVelocity < 0.1;
+
+            if (targets.length === 0) {
+                document.getElementById('message').innerText = 'Level Geschafft!';
+                document.getElementById('restart').innerText = level >= maxLevels ? 'Von vorne anfangen' : 'Nächstes Level';
+                document.getElementById('message-container').style.display = 'block';
+            } else if (birdStopped) {
+                if (birdCount > 1) {
+                    nextBird();
+                } else {
+                    document.getElementById('message').innerText = 'Verloren!';
+                    document.getElementById('restart').innerText = 'Neu Starten';
+                    document.getElementById('message-container').style.display = 'block';
+                }
+            }
+
+            // Auto clean out of bounds bird to trigger next bird faster
+            if (isFired && bird && (bird.position.y > window.innerHeight || bird.position.x > window.innerWidth)) {
+                 if (birdCount > 1 && targets.length > 0) {
+                     nextBird();
+                 } else if (birdCount <= 1 && targets.length > 0) {
+                     document.getElementById('message').innerText = 'Verloren!';
+                     document.getElementById('restart').innerText = 'Neu Starten';
+                     document.getElementById('message-container').style.display = 'block';
+                 }
+            }
+        }
+
+        function createBird(x, y) {
+            return Bodies.circle(x, y, birdScale, {
+                restitution: 0.5,
+                density: 0.008,
+                friction: 0.5,
+                render: {
+                    fillStyle: '#e74c3c',
+                    strokeStyle: '#c0392b',
+                    lineWidth: 3
+                },
+                label: 'bird'
+            });
+        }
+
+        function setupLevel() {
+            World.clear(world);
+            Engine.clear(engine);
+            targets = [];
+            isFired = false;
+            birdCount = 3;
+            document.getElementById('birds').innerText = birdCount;
+            document.getElementById('level').innerText = level;
+            document.getElementById('message-container').style.display = 'none';
+
+            // Ground
+            ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 30, window.innerWidth * 2, 60, {
+                isStatic: true,
+                friction: 1,
+                render: { fillStyle: '#2ecc71', strokeStyle: '#27ae60', lineWidth: 5 }
+            });
+            World.add(world, ground);
+
+            let slingX = Math.min(window.innerWidth * 0.2, 300);
+            let slingY = window.innerHeight - 200;
+
+            // Slingshot Stand
+            let stand1 = Bodies.rectangle(slingX - 10, slingY + 50, 10, 100, { isStatic: true, render: { fillStyle: '#8b4513' }, collisionFilter: { group: -1 } });
+            let stand2 = Bodies.rectangle(slingX + 10, slingY + 50, 10, 100, { isStatic: true, render: { fillStyle: '#8b4513' }, collisionFilter: { group: -1 } });
+            World.add(world, [stand1, stand2]);
+
+            bird = createBird(slingX, slingY);
+
+            elastic = Constraint.create({
+                pointA: { x: slingX, y: slingY },
+                bodyB: bird,
+                stiffness: 0.05,
+                render: { strokeStyle: '#5c4033', lineWidth: 5 }
+            });
+
+            World.add(world, [bird, elastic]);
+
+            // Level Design
+            let startX = Math.max(window.innerWidth * 0.6, slingX + 400);
+            let startY = window.innerHeight - 60;
+
+            const boxOpt = { render: { fillStyle: '#e67e22', strokeStyle: '#d35400', lineWidth: 2 }, friction: 0.8 };
+            const glassOpt = { render: { fillStyle: 'rgba(52, 152, 219, 0.5)', strokeStyle: '#2980b9', lineWidth: 2 }, density: 0.0005, friction: 0.3 };
+            const stoneOpt = { render: { fillStyle: '#95a5a6', strokeStyle: '#7f8c8d', lineWidth: 2 }, density: 0.01, friction: 0.9 };
+            const targetOpt = { label: 'target', restitution: 0.4, render: { fillStyle: '#2ecc71', strokeStyle: '#27ae60', lineWidth: 3 } };
+
+            if (level === 1) {
+                // Simple tower
+                let stack = Composites.stack(startX, startY - 200, 3, 4, 0, 0, function(x, y) {
+                    return Bodies.rectangle(x, y, 40, 40, boxOpt);
+                });
+                World.add(world, stack);
+
+                let t1 = Bodies.circle(startX + 60, startY - 220, 20, targetOpt);
+                targets.push(t1);
+                World.add(world, t1);
+            } else if (level === 2) {
+                // Glass and wood
+                let stack = Composites.stack(startX, startY - 250, 4, 5, 0, 0, function(x, y, column, row) {
+                    if (row % 2 === 0) return Bodies.rectangle(x, y, 30, 50, glassOpt);
+                    return Bodies.rectangle(x, y, 30, 50, boxOpt);
+                });
+                World.add(world, stack);
+
+                let t1 = Bodies.circle(startX + 30, startY - 300, 20, targetOpt);
+                let t2 = Bodies.circle(startX + 90, startY - 300, 20, targetOpt);
+                targets.push(t1, t2);
+                World.add(world, [t1, t2]);
+            } else if (level === 3) {
+                // Castle
+                let leftPillar = Bodies.rectangle(startX, startY - 100, 40, 200, stoneOpt);
+                let rightPillar = Bodies.rectangle(startX + 150, startY - 100, 40, 200, stoneOpt);
+                let roof = Bodies.rectangle(startX + 75, startY - 220, 250, 40, stoneOpt);
+                World.add(world, [leftPillar, rightPillar, roof]);
+
+                let t1 = Bodies.circle(startX + 75, startY - 40, 25, targetOpt);
+                let t2 = Bodies.circle(startX + 75, startY - 250, 20, targetOpt);
+                targets.push(t1, t2);
+                World.add(world, [t1, t2]);
+            } else if (level === 4) {
+                // Pyramids
+                let pyr1 = Composites.pyramid(startX - 100, startY - 200, 5, 5, 0, 0, function(x, y) {
+                    return Bodies.rectangle(x, y, 30, 30, boxOpt);
+                });
+                let pyr2 = Composites.pyramid(startX + 150, startY - 200, 5, 5, 0, 0, function(x, y) {
+                    return Bodies.rectangle(x, y, 30, 30, glassOpt);
+                });
+                World.add(world, [pyr1, pyr2]);
+
+                let t1 = Bodies.circle(startX - 40, startY - 20, 20, targetOpt);
+                let t2 = Bodies.circle(startX + 210, startY - 20, 20, targetOpt);
+                let t3 = Bodies.circle(startX + 85, startY - 300, 30, targetOpt);
+                targets.push(t1, t2, t3);
+                World.add(world, [t1, t2, t3]);
+            } else {
+                // Chaos
+                let stack = Composites.stack(startX - 50, startY - 300, 8, 6, 2, 2, function(x, y) {
+                    let r = Math.random();
+                    if (r < 0.3) return Bodies.rectangle(x, y, 40, 20, stoneOpt);
+                    if (r < 0.6) return Bodies.rectangle(x, y, 20, 40, glassOpt);
+                    return Bodies.rectangle(x, y, 30, 30, boxOpt);
+                });
+                World.add(world, stack);
+
+                for(let i=0; i<4; i++) {
+                    let t = Bodies.circle(startX + i * 50, startY - 350, 20, targetOpt);
+                    targets.push(t);
+                    World.add(world, t);
+                }
+            }
+        }
+
+        function nextBird() {
+            World.remove(world, bird); // Remove old bird to be clean
+            birdCount--;
+            document.getElementById('birds').innerText = birdCount;
+
+            let slingX = Math.min(window.innerWidth * 0.2, 300);
+            let slingY = window.innerHeight - 200;
+
+            bird = createBird(slingX, slingY);
+            elastic.bodyB = bird;
+            World.add(world, bird);
+            isFired = false;
+        }
+
+        function nextLevel() {
+            if (targets.length === 0) {
+                level++;
+                if (level > maxLevels) {
+                    level = 1; // Restart from beginning
+                }
+            } else {
+                // Restarting current level because they lost
+            }
+            setupLevel();
+        }
+
+        // Run
+        window.onload = init;
+    </script>
+</body>
+</html>

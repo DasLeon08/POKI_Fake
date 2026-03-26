@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Cookie Clicker Lite</title>
+    <style>
+        body { margin: 0; background: #fdf5e6; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; color: #5d4037; font-family: 'Trebuchet MS', sans-serif; overflow: hidden; padding: 20px;}
+        h1 { margin-bottom: 10px; font-size: 2.5rem; text-shadow: 1px 1px #fff; }
+        .score-board { display: flex; flex-direction: column; align-items: center; font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; background: rgba(255,255,255,0.8); padding: 15px 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; text-align: center;}
+        .big-score { font-size: 3rem; color: #d35400; margin-top: 5px; }
+
+        .cookie-btn { background: none; border: none; font-size: 150px; cursor: pointer; transition: transform 0.1s; user-select: none; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3)); outline: none;}
+        .cookie-btn:active { transform: scale(0.95); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); }
+
+        .upgrades { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; }
+        .upgrade-btn { background: #8e44ad; border: none; padding: 15px 20px; color: white; font-size: 1.2rem; cursor: pointer; border-radius: 8px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s, transform 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .upgrade-btn:hover { background: #9b59b6; }
+        .upgrade-btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .upgrade-btn:disabled { background: #bdc3c7; cursor: not-allowed; transform: none; box-shadow: none; color: #7f8c8d; }
+
+        .floating-text { position: absolute; font-size: 24px; font-weight: bold; color: #d35400; pointer-events: none; animation: floatUp 1s ease-out forwards; text-shadow: 1px 1px white;}
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+        }
+
+        @media (max-width: 500px) {
+            .cookie-btn { font-size: 100px; }
+            h1 { font-size: 2rem; }
+            .upgrades { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Keks-Klicker 🍪</h1>
+
+    <div class="score-board">
+        <div>Kekse:</div>
+        <div class="big-score" id="scoreDisplay">0</div>
+        <div style="font-size: 1rem; color: #888; margin-top: 5px;" id="cpsDisplay">0 Kekse / Sekunde</div>
+        <div style="font-size: 1rem; color: #888; margin-top: 5px;" id="cpcDisplay">1 Kekse / Klick</div>
+    </div>
+
+    <button class="cookie-btn" id="cookieBtn">🍪</button>
+
+    <div class="upgrades">
+        <button class="upgrade-btn" id="upgClickBtn" onclick="buyClickUpgrade()">
+            <span>Klick-Kraft (+1/Klick)</span>
+            <span id="clickCostDisplay">50 🍪</span>
+        </button>
+        <button class="upgrade-btn" id="upgAutoBtn" onclick="buyAutoUpgrade()">
+            <span>Auto-Klicker (+1/Sek)</span>
+            <span id="autoCostDisplay">100 🍪</span>
+        </button>
+    </div>
+
+    <script>
+        let cookies = 0;
+        let cookiesPerClick = 1;
+        let cookiesPerSecond = 0;
+
+        let clickUpgradeCost = 50;
+        let autoUpgradeCost = 100;
+
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const cpsDisplay = document.getElementById('cpsDisplay');
+        const cpcDisplay = document.getElementById('cpcDisplay');
+
+        const cookieBtn = document.getElementById('cookieBtn');
+        const upgClickBtn = document.getElementById('upgClickBtn');
+        const upgAutoBtn = document.getElementById('upgAutoBtn');
+        const clickCostDisplay = document.getElementById('clickCostDisplay');
+        const autoCostDisplay = document.getElementById('autoCostDisplay');
+
+        // Load saved data if exists
+        if(localStorage.getItem('pokiCloneClickerData')) {
+            const data = JSON.parse(localStorage.getItem('pokiCloneClickerData'));
+            cookies = data.cookies;
+            cookiesPerClick = data.cpc;
+            cookiesPerSecond = data.cps;
+            clickUpgradeCost = data.clickCost;
+            autoUpgradeCost = data.autoCost;
+            updateUI();
+        }
+
+        function saveData() {
+            const data = {
+                cookies: cookies,
+                cpc: cookiesPerClick,
+                cps: cookiesPerSecond,
+                clickCost: clickUpgradeCost,
+                autoCost: autoUpgradeCost
+            };
+            localStorage.setItem('pokiCloneClickerData', JSON.stringify(data));
+        }
+
+        function createFloatingText(e, amount) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = `+${amount}`;
+
+            // Adjust coordinates based on touch vs mouse
+            let x = e.clientX || (e.touches && e.touches[0].clientX);
+            let y = e.clientY || (e.touches && e.touches[0].clientY);
+
+            // Fallback if coordinates not available
+            if(!x || !y) {
+                const rect = cookieBtn.getBoundingClientRect();
+                x = rect.left + rect.width / 2;
+                y = rect.top + rect.height / 2;
+            }
+
+            // Randomize slightly
+            x += (Math.random() - 0.5) * 40;
+            y += (Math.random() - 0.5) * 40;
+
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            document.body.appendChild(el);
+
+            setTimeout(() => {
+                el.remove();
+            }, 1000);
+        }
+
+        function clickCookie(e) {
+            cookies += cookiesPerClick;
+            createFloatingText(e, cookiesPerClick);
+            updateUI();
+        }
+
+        cookieBtn.addEventListener('mousedown', clickCookie);
+        cookieBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent double trigger
+            clickCookie(e);
+        });
+
+        function buyClickUpgrade() {
+            if (cookies >= clickUpgradeCost) {
+                cookies -= clickUpgradeCost;
+                cookiesPerClick += 1;
+                clickUpgradeCost = Math.floor(clickUpgradeCost * 1.5);
+                updateUI();
+            }
+        }
+
+        function buyAutoUpgrade() {
+            if (cookies >= autoUpgradeCost) {
+                cookies -= autoUpgradeCost;
+                cookiesPerSecond += 1;
+                autoUpgradeCost = Math.floor(autoUpgradeCost * 1.5);
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            scoreDisplay.innerText = Math.floor(cookies);
+            cpsDisplay.innerText = `${cookiesPerSecond} Kekse / Sekunde`;
+            cpcDisplay.innerText = `${cookiesPerClick} Kekse / Klick`;
+
+            clickCostDisplay.innerText = `${clickUpgradeCost} 🍪`;
+            autoCostDisplay.innerText = `${autoUpgradeCost} 🍪`;
+
+            // Disable buttons if not enough cookies
+            upgClickBtn.disabled = cookies < clickUpgradeCost;
+            upgAutoBtn.disabled = cookies < autoUpgradeCost;
+
+            saveData();
+        }
+
+        // Auto Clicks
+        setInterval(() => {
+            if (cookiesPerSecond > 0) {
+                cookies += cookiesPerSecond / 10; // add 1/10th every 100ms for smooth update
+                updateUI();
+            }
+        }, 100);
+
+        // Initial UI setup
+        updateUI();
+    </script>
+</body>
+</html>

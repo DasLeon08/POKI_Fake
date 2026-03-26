@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe</title>
+    <style>
+        body { margin: 0; background: #2c3e50; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #ecf0f1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        h1 { margin-bottom: 20px; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; margin-bottom: 20px; }
+        .cell { width: 100px; height: 100px; background: #34495e; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: bold; cursor: pointer; transition: background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .cell:hover { background: #3b536b; }
+        .cell.x { color: #e74c3c; }
+        .cell.o { color: #3498db; }
+        #status { font-size: 1.5rem; margin-bottom: 20px; min-height: 30px; }
+        button { background: #27ae60; border: none; padding: 12px 25px; color: white; font-size: 1.2rem; cursor: pointer; border-radius: 8px; font-weight: bold; transition: background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        button:hover { background: #2ecc71; }
+        @media (max-width: 400px) {
+            .board { grid-template-columns: repeat(3, 80px); grid-gap: 8px; }
+            .cell { width: 80px; height: 80px; font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div id="status">Spieler X ist dran</div>
+
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <button onclick="restartGame()">Neues Spiel</button>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('status');
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "X";
+        let gameActive = true;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        function handleCellClick(e) {
+            const cell = e.target;
+            const index = parseInt(cell.getAttribute('data-index'));
+
+            if (board[index] !== "" || !gameActive) return;
+
+            board[index] = currentPlayer;
+            cell.innerText = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+
+            checkWin();
+        }
+
+        function checkWin() {
+            let roundWon = false;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusText.innerText = `Spieler ${currentPlayer} gewinnt! 🎉`;
+                statusText.style.color = currentPlayer === 'X' ? '#e74c3c' : '#3498db';
+                gameActive = false;
+                return;
+            }
+
+            if (!board.includes("")) {
+                statusText.innerText = "Unentschieden! 🤝";
+                statusText.style.color = '#f1c40f';
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            statusText.innerText = `Spieler ${currentPlayer} ist dran`;
+            statusText.style.color = '#ecf0f1';
+        }
+
+        function restartGame() {
+            currentPlayer = "X";
+            board = ["", "", "", "", "", "", "", "", ""];
+            gameActive = true;
+            statusText.innerText = `Spieler X ist dran`;
+            statusText.style.color = '#ecf0f1';
+
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.classList.remove("x", "o");
+            });
+        }
+    </script>
+</body>
+</html>

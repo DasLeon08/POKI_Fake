@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Äpfel Fangen</title>
+    <style>
+        body { margin: 0; background: #87ceeb; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #333; font-family: 'Comic Sans MS', cursive, sans-serif; overflow: hidden; padding: 20px;}
+        h1 { margin: 10px; font-size: 2.5rem; color: #fff; text-shadow: 2px 2px #2980b9; }
+        canvas { background: #e0f7fa; border: 4px solid #fff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: none;}
+        .hud { display: flex; justify-content: space-between; width: 400px; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; color: #fff; text-shadow: 1px 1px #333;}
+        .start-btn { position: absolute; padding: 15px 30px; font-size: 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: uppercase; font-weight: bold; z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s;}
+        .start-btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+        @media (max-width: 500px) {
+            canvas { width: 300px; height: 400px; border-width: 2px;}
+            .hud { width: 300px; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Äpfel Fangen 🍎</h1>
+    <div class="hud">
+        <span>Score: <span id="score">0</span></span>
+        <span>Leben: <span id="lives">3</span></span>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startGame()">Start</button>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const livesDisplay = document.getElementById("lives");
+        const startBtn = document.getElementById("startBtn");
+
+        let score = 0;
+        let lives = 3;
+        let isPlaying = false;
+        let animationId;
+
+        // Basket object
+        const basket = {
+            width: 80,
+            height: 40,
+            x: canvas.width / 2 - 40,
+            y: canvas.height - 50,
+            speed: 7,
+            dx: 0
+        };
+
+        // Apples array
+        let apples = [];
+
+        // Controls
+        let rightPressed = false;
+        let leftPressed = false;
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight") rightPressed = true;
+            else if (e.key === "ArrowLeft") leftPressed = true;
+        });
+
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowRight") rightPressed = false;
+            else if (e.key === "ArrowLeft") leftPressed = false;
+        });
+
+        // Mouse & Touch tracking
+        canvas.addEventListener("mousemove", (e) => {
+            let relativeX = e.clientX - canvas.getBoundingClientRect().left;
+            let scaleX = canvas.width / canvas.offsetWidth;
+            relativeX *= scaleX;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                basket.x = relativeX - basket.width / 2;
+            }
+        });
+
+        canvas.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            let touch = e.touches[0];
+            let relativeX = touch.clientX - canvas.getBoundingClientRect().left;
+            let scaleX = canvas.width / canvas.offsetWidth;
+            relativeX *= scaleX;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                basket.x = relativeX - basket.width / 2;
+            }
+        }, {passive: false});
+
+        function spawnApple() {
+            if(!isPlaying) return;
+            const size = 20;
+            const x = Math.random() * (canvas.width - size);
+            apples.push({
+                x: x,
+                y: -size,
+                size: size,
+                speed: 2 + Math.random() * 3 + (score * 0.1) // Speed increases with score
+            });
+
+            // Random spawn rate based on score
+            let spawnRate = Math.max(500, 1500 - (score * 50));
+            setTimeout(spawnApple, spawnRate);
+        }
+
+        function drawBasket() {
+            ctx.fillStyle = "#d35400"; // Brownish basket
+            ctx.beginPath();
+            ctx.moveTo(basket.x, basket.y);
+            ctx.lineTo(basket.x + basket.width, basket.y);
+            ctx.lineTo(basket.x + basket.width - 10, basket.y + basket.height);
+            ctx.lineTo(basket.x + 10, basket.y + basket.height);
+            ctx.fill();
+            ctx.closePath();
+
+            // Basket handle
+            ctx.strokeStyle = "#e67e22";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(basket.x + basket.width/2, basket.y, basket.width/2 - 5, Math.PI, 0);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawApple(apple) {
+            ctx.fillStyle = "#e74c3c"; // Red apple
+            ctx.beginPath();
+            ctx.arc(apple.x + apple.size/2, apple.y + apple.size/2, apple.size/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+
+            // Leaf
+            ctx.fillStyle = "#2ecc71";
+            ctx.beginPath();
+            ctx.ellipse(apple.x + apple.size/2 + 5, apple.y, 4, 8, Math.PI/4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function update() {
+            if(!isPlaying) return;
+
+            // Move basket (Keyboard)
+            if(rightPressed && basket.x < canvas.width - basket.width) {
+                basket.x += basket.speed;
+            } else if(leftPressed && basket.x > 0) {
+                basket.x -= basket.speed;
+            }
+
+            // Move apples & check collisions
+            for(let i = 0; i < apples.length; i++) {
+                apples[i].y += apples[i].speed;
+
+                // Collision with basket
+                if(apples[i].y + apples[i].size > basket.y &&
+                   apples[i].y < basket.y + basket.height &&
+                   apples[i].x + apples[i].size > basket.x &&
+                   apples[i].x < basket.x + basket.width) {
+
+                    score++;
+                    scoreDisplay.innerText = score;
+                    apples.splice(i, 1);
+                    i--;
+                    continue;
+                }
+
+                // Missed apple
+                if(apples[i].y > canvas.height) {
+                    lives--;
+                    livesDisplay.innerText = lives;
+                    apples.splice(i, 1);
+                    i--;
+
+                    if(lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBasket();
+            apples.forEach(drawApple);
+        }
+
+        function gameLoop() {
+            if(isPlaying) {
+                update();
+                render();
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function startGame() {
+            startBtn.style.display = "none";
+            isPlaying = true;
+            score = 0;
+            lives = 3;
+            apples = [];
+            scoreDisplay.innerText = score;
+            livesDisplay.innerText = lives;
+            basket.x = canvas.width / 2 - basket.width / 2;
+
+            spawnApple();
+            gameLoop();
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            cancelAnimationFrame(animationId);
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#fff";
+            ctx.font = "30px Comic Sans MS";
+            ctx.textAlign = "center";
+            ctx.fillText(`GAME OVER`, canvas.width/2, canvas.height/2 - 20);
+            ctx.font = "20px Comic Sans MS";
+            ctx.fillText(`Dein Score: ${score}`, canvas.width/2, canvas.height/2 + 20);
+
+            setTimeout(() => {
+                startBtn.innerText = "Neu Starten";
+                startBtn.style.display = "block";
+            }, 1000);
+        }
+
+        // Initial empty render
+        ctx.fillStyle = "#333";
+        ctx.font = "20px Comic Sans MS";
+        ctx.textAlign = "center";
+        ctx.fillText("Klicke Start", canvas.width/2, canvas.height/2);
+
+    </script>
+</body>
+</html>

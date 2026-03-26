@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poki-Klon - Kostenlose Online-Spiele</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">🎮 SpielePortal</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Spiele suchen...">
+        </div>
+    </header>
+
+    <main>
+        <div class="categories">
+            <button class="category-btn active" data-category="all">Alle</button>
+            <button class="category-btn" data-category="arcade">Arcade</button>
+            <button class="category-btn" data-category="puzzle">Puzzle</button>
+            <button class="category-btn" data-category="action">Action</button>
+            <button class="category-btn" data-category="casual">Gelegenheitsspiele</button>
+        </div>
+
+        <div class="games-grid" id="gamesGrid">
+            <!-- Games will be generated here by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Game Modal / Iframe Container -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <div class="iframe-container">
+                <iframe id="gameFrame" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

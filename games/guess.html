@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zahlen Raten</title>
+    <style>
+        body { margin: 0; background: #e056fd; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: #fff; font-family: 'Montserrat', sans-serif; overflow: hidden; padding: 20px; text-align: center;}
+        h1 { margin-bottom: 20px; font-size: 3rem; text-shadow: 2px 2px #be2edd; }
+        .container { background: #fff; color: #333; padding: 40px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); max-width: 400px; width: 100%; }
+        p { font-size: 1.2rem; margin-bottom: 20px; }
+        input[type="number"] { padding: 15px; font-size: 1.5rem; width: 100%; max-width: 200px; border: 2px solid #ccc; border-radius: 10px; text-align: center; margin-bottom: 20px; box-sizing: border-box; outline: none; transition: border 0.3s; }
+        input[type="number"]:focus { border-color: #be2edd; }
+        button { background: #686de0; border: none; padding: 15px 30px; color: white; font-size: 1.2rem; cursor: pointer; border-radius: 10px; font-weight: bold; width: 100%; max-width: 200px; transition: background 0.3s; }
+        button:hover { background: #4834d4; }
+        .message { margin-top: 20px; font-size: 1.5rem; font-weight: bold; min-height: 30px; }
+        .attempts { margin-top: 10px; font-size: 1.2rem; color: #666; }
+        .low { color: #f0932b; }
+        .high { color: #eb4d4b; }
+        .correct { color: #6ab04c; }
+
+        @media (max-width: 400px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Zahlen Raten ❓</h1>
+
+    <div class="container">
+        <p>Ich denke an eine Zahl zwischen <strong>1</strong> und <strong>100</strong>.</p>
+
+        <input type="number" id="guessInput" min="1" max="100" placeholder="Deine Zahl">
+        <br>
+        <button id="guessBtn">Raten</button>
+        <button id="restartBtn" style="display:none; margin-top: 10px; background:#f0932b;">Neu Starten</button>
+
+        <div class="message" id="message"></div>
+        <div class="attempts">Versuche: <span id="attemptsCount">0</span></div>
+    </div>
+
+    <script>
+        let randomNumber = Math.floor(Math.random() * 100) + 1;
+        let attempts = 0;
+
+        const guessInput = document.getElementById('guessInput');
+        const guessBtn = document.getElementById('guessBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const message = document.getElementById('message');
+        const attemptsCount = document.getElementById('attemptsCount');
+
+        function checkGuess() {
+            let userGuess = parseInt(guessInput.value);
+
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > 100) {
+                message.innerHTML = "Bitte eine Zahl zwischen 1 und 100 eingeben!";
+                message.className = 'message';
+                return;
+            }
+
+            attempts++;
+            attemptsCount.innerHTML = attempts;
+
+            if (userGuess === randomNumber) {
+                message.innerHTML = `Richtig! 🎉 Es war die ${randomNumber}.`;
+                message.className = 'message correct';
+                guessBtn.style.display = 'none';
+                guessInput.disabled = true;
+                restartBtn.style.display = 'inline-block';
+            } else if (userGuess < randomNumber) {
+                message.innerHTML = "Zu niedrig! ⬇️";
+                message.className = 'message low';
+            } else {
+                message.innerHTML = "Zu hoch! ⬆️";
+                message.className = 'message high';
+            }
+
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        function restartGame() {
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+            attemptsCount.innerHTML = attempts;
+            message.innerHTML = '';
+            guessInput.disabled = false;
+            guessInput.value = '';
+            guessBtn.style.display = 'inline-block';
+            restartBtn.style.display = 'none';
+            guessInput.focus();
+        }
+
+        guessBtn.addEventListener('click', checkGuess);
+        restartBtn.addEventListener('click', restartGame);
+
+        // Allow pressing Enter to guess
+        guessInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !guessInput.disabled) {
+                checkGuess();
+            }
+        });
+    </script>
+</body>
+</html>

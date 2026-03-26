@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Reaktionstest</title>
+    <style>
+        body { margin: 0; background: #ce2029; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; color: #fff; font-family: 'Open Sans', sans-serif; cursor: pointer; transition: background 0.1s; text-align: center; padding: 20px;}
+        h1 { margin-bottom: 20px; font-size: 3.5rem; text-shadow: 2px 2px rgba(0,0,0,0.3); pointer-events: none;}
+        p { font-size: 1.5rem; margin-top: 10px; max-width: 600px; pointer-events: none;}
+        .result { font-size: 4rem; font-weight: bold; margin-top: 40px; pointer-events: none;}
+        .instructions { font-size: 1.2rem; opacity: 0.8; margin-top: 20px; pointer-events: none;}
+
+        /* State Colors */
+        .waiting { background-color: #ce2029; } /* Red */
+        .ready { background-color: #4caf50; } /* Green */
+        .early { background-color: #2196f3; } /* Blue - early click */
+
+        @media (max-width: 500px) {
+            h1 { font-size: 2.5rem; }
+            .result { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body id="gameArea" class="waiting">
+    <h1 id="mainText">Klicke zum Starten</h1>
+    <p id="subText">Warte auf Grün...</p>
+    <div class="result" id="resultTime"></div>
+    <div class="instructions" id="instructionText">Klicke irgendwo auf den Bildschirm</div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const mainText = document.getElementById('mainText');
+        const subText = document.getElementById('subText');
+        const resultTime = document.getElementById('resultTime');
+        const instructionText = document.getElementById('instructionText');
+
+        let gameState = 'start'; // start, waiting, ready, result
+        let startTime;
+        let timeoutId;
+
+        function handleClick() {
+            if (gameState === 'start' || gameState === 'result') {
+                startGame();
+            } else if (gameState === 'waiting') {
+                tooEarly();
+            } else if (gameState === 'ready') {
+                endGame();
+            }
+        }
+
+        function startGame() {
+            gameState = 'waiting';
+            gameArea.className = 'waiting';
+            mainText.innerText = 'Warte...';
+            subText.innerText = 'Klicke, sobald es GRÜN wird!';
+            resultTime.innerText = '';
+            instructionText.innerText = '';
+
+            const randomDelay = Math.floor(Math.random() * 3000) + 2000; // 2 to 5 seconds
+
+            timeoutId = setTimeout(() => {
+                if (gameState === 'waiting') {
+                    gameState = 'ready';
+                    gameArea.className = 'ready';
+                    mainText.innerText = 'JETZT KLICKEN!';
+                    subText.innerText = '';
+                    startTime = new Date().getTime();
+                }
+            }, randomDelay);
+        }
+
+        function tooEarly() {
+            clearTimeout(timeoutId);
+            gameState = 'result';
+            gameArea.className = 'early';
+            mainText.innerText = 'Zu früh!';
+            subText.innerText = 'Du hast vor Grün geklickt.';
+            instructionText.innerText = 'Klicke erneut zum Neustarten';
+        }
+
+        function endGame() {
+            const endTime = new Date().getTime();
+            const reactionTime = endTime - startTime;
+
+            gameState = 'result';
+            gameArea.className = 'waiting'; // Reset color
+
+            mainText.innerText = 'Deine Zeit:';
+            subText.innerText = '';
+            resultTime.innerText = `${reactionTime} ms`;
+            instructionText.innerText = 'Klicke erneut zum Neustarten';
+
+            // Give context
+            if(reactionTime < 200) subText.innerText = "Wow, blitzschnell! ⚡";
+            else if(reactionTime < 300) subText.innerText = "Gute Reaktion! 👍";
+            else if(reactionTime < 400) subText.innerText = "Durchschnittlich. 🙂";
+            else subText.innerText = "Ein bisschen langsam... 🐢";
+        }
+
+        // Handle both mouse clicks and touch
+        gameArea.addEventListener('mousedown', (e) => {
+            if(e.button === 0) handleClick();
+        });
+        gameArea.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent double firing from touch+click
+            handleClick();
+        }, {passive: false});
+
+    </script>
+</body>
+</html>

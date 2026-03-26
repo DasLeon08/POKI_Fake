@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Straßenüberquerung - Jules Spiele</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { background-color: #34495e; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        canvas { background: #2ecc71; border: 4px solid #ecf0f1; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #score-board { display: flex; justify-content: space-between; width: 600px; margin-bottom: 10px; font-size: 24px; font-weight: bold; }
+        .controls { margin-top: 15px; color: #bdc3c7; }
+        #game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 30px; border-radius: 10px; text-align: center; display: none; }
+        #game-over h2 { color: #e74c3c; margin-top: 0; }
+        #game-over button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+
+    <div id="score-board">
+        <div>Level: <span id="level">1</span></div>
+        <div>Punkte: <span id="score">0</span></div>
+        <div>Leben: <span id="lives">3</span></div>
+    </div>
+
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <div id="game-over">
+        <h2>Game Over</h2>
+        <p>Deine Punkte: <span id="final-score">0</span></p>
+        <button onclick="resetGame()">Neustart</button>
+    </div>
+
+    <div class="controls">Steuerung: Pfeiltasten zum Bewegen</div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const levelEl = document.getElementById("level");
+        const livesEl = document.getElementById("lives");
+        const gameOverEl = document.getElementById("game-over");
+        const finalScoreEl = document.getElementById("final-score");
+
+        const gridSize = 40;
+        let score = 0;
+        let level = 1;
+        let lives = 3;
+        let isGameOver = false;
+
+        const frog = {
+            x: canvas.width / 2 - gridSize / 2,
+            y: canvas.height - gridSize,
+            width: gridSize - 10,
+            height: gridSize - 10,
+            color: '#27ae60'
+        };
+
+        const lanes = [
+            { y: canvas.height - gridSize * 2, speed: 2, type: 'road', direction: 1, color: '#7f8c8d' },
+            { y: canvas.height - gridSize * 3, speed: 3, type: 'road', direction: -1, color: '#95a5a6' },
+            { y: canvas.height - gridSize * 4, speed: 1.5, type: 'road', direction: 1, color: '#7f8c8d' },
+            { y: canvas.height - gridSize * 5, speed: 0, type: 'safe', color: '#f1c40f' }, // Safe zone
+            { y: canvas.height - gridSize * 6, speed: 2, type: 'water', direction: -1, color: '#3498db' },
+            { y: canvas.height - gridSize * 7, speed: 3, type: 'water', direction: 1, color: '#2980b9' },
+            { y: canvas.height - gridSize * 8, speed: 1.5, type: 'water', direction: -1, color: '#3498db' },
+            { y: canvas.height - gridSize * 9, speed: 0, type: 'safe', color: '#2ecc71' } // Safe zone
+        ];
+
+        let obstacles = [];
+
+        function initObstacles() {
+            obstacles = [];
+            lanes.forEach(lane => {
+                if (lane.type === 'safe') return;
+
+                const numObstacles = Math.floor(Math.random() * 2) + 2; // 2 or 3 obstacles
+                const spacing = canvas.width / numObstacles;
+
+                for (let i = 0; i < numObstacles; i++) {
+                    const isLog = lane.type === 'water';
+                    const width = isLog ? gridSize * 2.5 : gridSize * 1.5;
+                    obstacles.push({
+                        x: i * spacing + Math.random() * 50,
+                        y: lane.y,
+                        width: width,
+                        height: gridSize - 10,
+                        speed: lane.speed * lane.direction * (1 + level * 0.1),
+                        type: isLog ? 'log' : 'car',
+                        color: isLog ? '#8e44ad' : '#e74c3c' // Purple log, red car
+                    });
+                }
+            });
+        }
+
+        function drawBackground() {
+            lanes.forEach(lane => {
+                ctx.fillStyle = lane.color;
+                ctx.fillRect(0, lane.y, canvas.width, gridSize);
+            });
+            // Home/Goal area
+            ctx.fillStyle = '#16a085';
+            ctx.fillRect(0, 0, canvas.width, gridSize * 6); // Top part
+        }
+
+        function drawFrog() {
+            ctx.fillStyle = frog.color;
+            ctx.fillRect(frog.x + 5, frog.y + 5, frog.width, frog.height);
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y + 5, obs.width, obs.height);
+            });
+        }
+
+        function updateObstacles() {
+            obstacles.forEach(obs => {
+                obs.x += obs.speed;
+                if (obs.speed > 0 && obs.x > canvas.width) {
+                    obs.x = -obs.width;
+                } else if (obs.speed < 0 && obs.x + obs.width < 0) {
+                    obs.x = canvas.width;
+                }
+            });
+        }
+
+        function checkCollisions() {
+            let onLog = false;
+            let inWater = false;
+
+            // Check if frog is in a water lane
+            lanes.forEach(lane => {
+                if (lane.type === 'water' && frog.y === lane.y) {
+                    inWater = true;
+                }
+            });
+
+            for (let obs of obstacles) {
+                if (frog.x < obs.x + obs.width &&
+                    frog.x + frog.width > obs.x &&
+                    frog.y < obs.y + obs.height &&
+                    frog.y + frog.height > obs.y) {
+
+                    if (obs.type === 'car') {
+                        die();
+                        return;
+                    } else if (obs.type === 'log') {
+                        onLog = true;
+                        frog.x += obs.speed; // Move frog with log
+                    }
+                }
+            }
+
+            if (inWater && !onLog) {
+                die();
+            }
+
+            // Keep frog in bounds (especially when riding a log)
+            if (frog.x < 0) frog.x = 0;
+            if (frog.x + gridSize > canvas.width) frog.x = canvas.width - gridSize;
+
+            // Win condition (reached the top safe zone)
+            if (frog.y <= canvas.height - gridSize * 9) {
+                levelUp();
+            }
+        }
+
+        function die() {
+            lives--;
+            livesEl.innerText = lives;
+            if (lives <= 0) {
+                isGameOver = true;
+                gameOverEl.style.display = 'block';
+                finalScoreEl.innerText = score;
+                if(window.userSystem) {
+                    window.userSystem.addXP(score * 2);
+                }
+            } else {
+                resetFrog();
+            }
+        }
+
+        function levelUp() {
+            score += 100 * level;
+            scoreEl.innerText = score;
+            level++;
+            levelEl.innerText = level;
+            resetFrog();
+            initObstacles(); // Re-initialize with higher speed
+        }
+
+        function resetFrog() {
+            frog.x = canvas.width / 2 - gridSize / 2;
+            frog.y = canvas.height - gridSize;
+        }
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            lives = 3;
+            isGameOver = false;
+            gameOverEl.style.display = 'none';
+            scoreEl.innerText = score;
+            levelEl.innerText = level;
+            livesEl.innerText = lives;
+            resetFrog();
+            initObstacles();
+            gameLoop();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+
+            const step = gridSize;
+
+            if (e.key === 'ArrowUp' && frog.y > 0) {
+                frog.y -= step;
+                score += 10;
+                scoreEl.innerText = score;
+            } else if (e.key === 'ArrowDown' && frog.y < canvas.height - step) {
+                frog.y += step;
+            } else if (e.key === 'ArrowLeft' && frog.x > 0) {
+                frog.x -= step;
+            } else if (e.key === 'ArrowRight' && frog.x < canvas.width - step) {
+                frog.x += step;
+            }
+        });
+
+        function gameLoop() {
+            if (isGameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+            updateObstacles();
+            drawObstacles();
+            drawFrog();
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        initObstacles();
+        gameLoop();
+    </script>
+</body>
+</html>

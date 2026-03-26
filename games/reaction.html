@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Reaktionstest - Jules Spiele</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .reaction-area { width: 100%; height: 100%; background: #e74c3c; position: absolute; top: 0; left: 0; z-index: -1; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; cursor: pointer; transition: background-color 0.1s; user-select: none; }
+        .instructions { position: relative; z-index: 10; text-align: center; pointer-events: none; }
+        .result { font-size: 2rem; margin-top: 20px; }
+        .start-btn { padding: 15px 30px; font-size: 1.5rem; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; pointer-events: auto; }
+        .start-btn:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn" style="z-index: 20;">Zurück zum Portal</a>
+
+    <div class="reaction-area" id="reactionArea"></div>
+
+    <div class="instructions">
+        <h1>Reaktionstest</h1>
+        <p>Klicke so schnell du kannst, wenn die Farbe auf Grün wechselt.</p>
+        <button class="start-btn" id="startBtn">Start</button>
+        <div class="result" id="resultText"></div>
+    </div>
+
+    <script>
+        const reactionArea = document.getElementById('reactionArea');
+        const startBtn = document.getElementById('startBtn');
+        const resultText = document.getElementById('resultText');
+
+        let isWaiting = false;
+        let isReady = false;
+        let startTime;
+        let timeoutId;
+
+        startBtn.addEventListener('click', startGame);
+
+        reactionArea.addEventListener('click', () => {
+            if (isWaiting) {
+                clearTimeout(timeoutId);
+                reactionArea.style.backgroundColor = '#e74c3c';
+                resultText.textContent = "Zu früh! Warte auf Grün.";
+                isWaiting = false;
+                startBtn.style.display = 'inline-block';
+            } else if (isReady) {
+                const reactionTime = Date.now() - startTime;
+                reactionArea.style.backgroundColor = '#2c3e50';
+                resultText.textContent = `Reaktionszeit: ${reactionTime} ms`;
+                isReady = false;
+                startBtn.textContent = "Nochmal";
+                startBtn.style.display = 'inline-block';
+            }
+        });
+
+        function startGame() {
+            startBtn.style.display = 'none';
+            resultText.textContent = "Warte auf Grün...";
+            reactionArea.style.backgroundColor = '#e74c3c'; // Rot
+            isWaiting = true;
+            isReady = false;
+
+            const randomDelay = Math.floor(Math.random() * 3000) + 1000; // 1 bis 4 Sekunden
+
+            timeoutId = setTimeout(() => {
+                reactionArea.style.backgroundColor = '#2ecc71'; // Grün
+                resultText.textContent = "Klick jetzt!";
+                startTime = Date.now();
+                isWaiting = false;
+                isReady = true;
+            }, randomDelay);
+        }
+    </script>
+</body>
+</html>

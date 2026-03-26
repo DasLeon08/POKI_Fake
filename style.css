@@ -72,6 +72,36 @@ main {
     width: 100%;
 }
 
+.category-filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: none;
+    background-color: #fff;
+    color: #333;
+    border-radius: 20px;
+    font-family: 'Fredoka One', cursive;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.filter-btn.active {
+    background-color: #ff4757;
+    color: white;
+}
+
 .game-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

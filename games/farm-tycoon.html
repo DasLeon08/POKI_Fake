@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Tycoon</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tycoon-container {
+            display: flex;
+            gap: 20px;
+            width: 90%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-top: 60px;
+        }
+
+        .tycoon-main {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tycoon-sidebar {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stats-box {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        .plot {
+            background: #8e44ad;
+            border: 4px solid #732d91;
+            border-radius: 10px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+        }
+
+        .plot.empty { background: #d35400; border-color: #a04000; }
+        .plot.growing { background: #2ecc71; border-color: #27ae60; }
+        .plot.ready { background: #f1c40f; border-color: #f39c12; animation: pulse 1s infinite; }
+
+        .plot:hover {
+            transform: scale(1.05);
+        }
+
+        .plot-icon {
+            font-size: 3rem;
+        }
+
+        .plot-timer {
+            position: absolute;
+            bottom: 5px;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+
+        .upgrade-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .upgrade-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .upgrade-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+
+        <div class="tycoon-container">
+            <div class="tycoon-main">
+                <div class="stats-box">
+                    Geld: $<span id="money">0</span>
+                </div>
+
+                <div class="farm-grid" id="farmGrid">
+                    <!-- Plots generated via JS -->
+                </div>
+            </div>
+
+            <div class="tycoon-sidebar">
+                <h3>Samen-Shop</h3>
+                <button class="upgrade-btn" id="btn-wheat" onclick="selectSeed('wheat')">
+                    <span>🌾 Weizen-Samen</span>
+                    <span>Kosten: $10 | Wert: $20</span>
+                    <span>Dauer: 5s</span>
+                </button>
+                <button class="upgrade-btn" id="btn-carrot" onclick="selectSeed('carrot')">
+                    <span>🥕 Karotten-Samen</span>
+                    <span>Kosten: $30 | Wert: $70</span>
+                    <span>Dauer: 10s</span>
+                </button>
+                <button class="upgrade-btn" id="btn-tomato" onclick="selectSeed('tomato')">
+                    <span>🍅 Tomaten-Samen</span>
+                    <span>Kosten: $100 | Wert: $250</span>
+                    <span>Dauer: 20s</span>
+                </button>
+
+                <h3 style="margin-top: 20px;">Upgrades</h3>
+                <button class="upgrade-btn" id="btn-unlock" onclick="unlockPlot()">
+                    <span>Erweitere Feld</span>
+                    <span id="unlock-cost">Kosten: $50</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let money = 50;
+        let plots = 3;
+        let maxPlots = 9;
+        let unlockCost = 50;
+        let selectedSeed = 'wheat';
+
+        const cropData = {
+            wheat: { icon: '🌾', cost: 10, value: 20, time: 5 },
+            carrot: { icon: '🥕', cost: 30, value: 70, time: 10 },
+            tomato: { icon: '🍅', cost: 100, value: 250, time: 20 }
+        };
+
+        const farmData = [];
+
+        function initFarm() {
+            for (let i = 0; i < maxPlots; i++) {
+                farmData.push({
+                    unlocked: i < plots,
+                    state: 'empty', // empty, growing, ready
+                    crop: null,
+                    timeLeft: 0,
+                    interval: null
+                });
+            }
+            renderFarm();
+            updateUI();
+        }
+
+        function renderFarm() {
+            const grid = document.getElementById('farmGrid');
+            grid.innerHTML = '';
+
+            farmData.forEach((plot, index) => {
+                if (!plot.unlocked) return;
+
+                const div = document.createElement('div');
+                div.className = `plot ${plot.state}`;
+                div.onclick = () => handlePlotClick(index);
+
+                if (plot.state === 'empty') {
+                    div.innerHTML = `<span class="plot-icon">🟫</span><span class="plot-timer">Leer</span>`;
+                } else if (plot.state === 'growing') {
+                    div.innerHTML = `
+                        <span class="plot-icon">🌱</span>
+                        <span class="plot-timer">${plot.timeLeft}s</span>
+                    `;
+                } else if (plot.state === 'ready') {
+                    div.innerHTML = `
+                        <span class="plot-icon">${cropData[plot.crop].icon}</span>
+                        <span class="plot-timer">Bereit!</span>
+                    `;
+                }
+
+                grid.appendChild(div);
+            });
+        }
+
+        function selectSeed(type) {
+            selectedSeed = type;
+            document.querySelectorAll('.tycoon-sidebar button').forEach(b => b.style.border = 'none');
+            document.getElementById(`btn-${type}`).style.border = '2px solid #f1c40f';
+        }
+
+        function handlePlotClick(index) {
+            const plot = farmData[index];
+
+            if (plot.state === 'empty') {
+                const seed = cropData[selectedSeed];
+                if (money >= seed.cost) {
+                    money -= seed.cost;
+                    plot.state = 'growing';
+                    plot.crop = selectedSeed;
+                    plot.timeLeft = seed.time;
+                    updateUI();
+                    renderFarm();
+
+                    plot.interval = setInterval(() => {
+                        plot.timeLeft--;
+                        if (plot.timeLeft <= 0) {
+                            clearInterval(plot.interval);
+                            plot.state = 'ready';
+                        }
+                        renderFarm();
+                    }, 1000);
+                }
+            } else if (plot.state === 'ready') {
+                const crop = cropData[plot.crop];
+                money += crop.value;
+                plot.state = 'empty';
+                plot.crop = null;
+                updateUI();
+                renderFarm();
+
+                // Add global XP/Coins randomly occasionally for tycoons
+                if (Math.random() > 0.7 && window.parent.userSystem) {
+                     window.parent.userSystem.addCoins(1);
+                     window.parent.userSystem.addXP(2);
+                }
+            }
+        }
+
+        function unlockPlot() {
+            if (money >= unlockCost && plots < maxPlots) {
+                money -= unlockCost;
+                farmData[plots].unlocked = true;
+                plots++;
+                unlockCost = Math.floor(unlockCost * 1.5);
+                updateUI();
+                renderFarm();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('money').innerText = money;
+
+            document.getElementById('btn-wheat').disabled = money < cropData.wheat.cost;
+            document.getElementById('btn-carrot').disabled = money < cropData.carrot.cost;
+            document.getElementById('btn-tomato').disabled = money < cropData.tomato.cost;
+
+            const btnUnlock = document.getElementById('btn-unlock');
+            if (plots >= maxPlots) {
+                btnUnlock.innerHTML = "<span>Max Felder erreicht</span>";
+                btnUnlock.disabled = true;
+            } else {
+                document.getElementById('unlock-cost').innerText = `Kosten: $${unlockCost}`;
+                btnUnlock.disabled = money < unlockCost;
+            }
+        }
+
+        // Initialize game
+        initFarm();
+        selectSeed('wheat');
+
+    </script>
+</body>
+</html>

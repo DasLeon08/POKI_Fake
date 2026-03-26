@@ -151,12 +151,17 @@ class UserSystem {
             });
         });
 
-        // Setup Nav buttons
-        document.getElementById('nav-profile').addEventListener('click', () => this.openModal('modal-profile'));
-        document.getElementById('nav-quests').addEventListener('click', () => this.openModal('modal-quests'));
-        document.getElementById('nav-shop').addEventListener('click', () => this.openModal('modal-shop'));
-        document.getElementById('nav-leaderboard').addEventListener('click', () => this.openModal('modal-leaderboard'));
-        document.getElementById('nav-friends').addEventListener('click', () => this.openModal('modal-friends'));
+        // Setup Nav buttons (if they exist)
+        const navProfile = document.getElementById('nav-profile');
+        if (navProfile) navProfile.addEventListener('click', () => this.openModal('modal-profile'));
+        const navQuests = document.getElementById('nav-quests');
+        if (navQuests) navQuests.addEventListener('click', () => this.openModal('modal-quests'));
+        const navShop = document.getElementById('nav-shop');
+        if (navShop) navShop.addEventListener('click', () => this.openModal('modal-shop'));
+        const navLeaderboard = document.getElementById('nav-leaderboard');
+        if (navLeaderboard) navLeaderboard.addEventListener('click', () => this.openModal('modal-leaderboard'));
+        const navFriends = document.getElementById('nav-friends');
+        if (navFriends) navFriends.addEventListener('click', () => this.openModal('modal-friends'));
 
         // Bind game links to add XP
         document.querySelectorAll('.game-tile').forEach(link => {
@@ -165,16 +170,50 @@ class UserSystem {
                 this.playGame();
             });
         });
+
+        // Setup Filters
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const gameTiles = document.querySelectorAll('.game-tile');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                filterBtns.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+
+                const filter = btn.getAttribute('data-filter');
+
+                gameTiles.forEach(tile => {
+                    if (filter === 'all') {
+                        tile.style.display = 'flex'; // Reset to flex (since it's a flex container in CSS)
+                    } else {
+                        const categories = tile.getAttribute('data-category');
+                        if (categories && categories.includes(filter)) {
+                            tile.style.display = 'flex';
+                        } else {
+                            tile.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        });
     }
 
     updateUI() {
-        document.getElementById('ui-avatar').innerText = this.user.avatar;
-        document.getElementById('ui-level').innerText = `Lvl ${this.user.level}`;
-        document.getElementById('ui-coins').innerText = `${this.user.coins} 💰`;
+        const avatarEl = document.getElementById('ui-avatar');
+        if (avatarEl) avatarEl.innerText = this.user.avatar;
+
+        const levelEl = document.getElementById('ui-level');
+        if (levelEl) levelEl.innerText = `Lvl ${this.user.level}`;
+
+        const coinsEl = document.getElementById('ui-coins');
+        if (coinsEl) coinsEl.innerText = `${this.user.coins} 💰`;
 
         const xpRequired = XP_PER_LEVEL * this.user.level;
         const xpPercent = (this.user.xp / xpRequired) * 100;
-        document.getElementById('ui-xp-fill').style.width = `${xpPercent}%`;
+        const xpFillEl = document.getElementById('ui-xp-fill');
+        if (xpFillEl) xpFillEl.style.width = `${xpPercent}%`;
     }
 
     openModal(modalId) {
@@ -192,6 +231,7 @@ class UserSystem {
 
     renderProfile() {
         const content = document.getElementById('profile-content');
+        if (!content) return;
         content.innerHTML = `
             <div class="profile-header">
                 <div class="profile-avatar-large">${this.user.avatar}</div>
@@ -219,6 +259,7 @@ class UserSystem {
 
     renderShop() {
         const content = document.getElementById('shop-content');
+        if (!content) return;
         content.innerHTML = '';
         shopItems.forEach(item => {
             const isOwned = (item.type === 'avatar' && this.user.ownedAvatars.includes(item.icon)) ||
@@ -247,6 +288,7 @@ class UserSystem {
 
     renderQuests() {
         const content = document.getElementById('quests-content');
+        if (!content) return;
         content.innerHTML = '';
         this.user.quests.forEach(quest => {
             const pct = Math.min((quest.progress / quest.target) * 100, 100);
@@ -268,6 +310,7 @@ class UserSystem {
 
     renderLeaderboard() {
         const content = document.getElementById('leaderboard-content');
+        if (!content) return;
         content.innerHTML = '';
 
         // Update user rank logic
@@ -297,6 +340,7 @@ class UserSystem {
 
     renderFriends() {
         const content = document.getElementById('friends-content');
+        if (!content) return;
         content.innerHTML = '';
         this.user.friends.forEach(friend => {
             const div = document.createElement('div');

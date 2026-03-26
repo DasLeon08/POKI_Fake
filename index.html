@@ -12,11 +12,75 @@
         <div class="logo">
             <h1>Jules Spiele</h1>
         </div>
+
+        <!-- User Navigation & Stats -->
+        <div class="user-nav">
+            <button id="nav-profile" class="nav-btn">👤 Profil</button>
+            <button id="nav-quests" class="nav-btn">📜 Quests</button>
+            <button id="nav-shop" class="nav-btn">🛒 Shop</button>
+            <button id="nav-leaderboard" class="nav-btn">🏆 Bestenliste</button>
+            <button id="nav-friends" class="nav-btn">🫂 Freunde</button>
+
+            <div class="user-stats">
+                <div class="user-avatar" id="ui-avatar">👤</div>
+                <div class="user-info">
+                    <div class="user-level-row">
+                        <span id="ui-level">Lvl 1</span>
+                        <div class="xp-bar">
+                            <div class="xp-fill" id="ui-xp-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <span class="user-coins" id="ui-coins">50 💰</span>
+                </div>
+            </div>
+        </div>
+
         <div class="search-bar">
             <input type="text" placeholder="Suche nach Spielen...">
             <button>Suche</button>
         </div>
     </header>
+
+    <!-- Modals -->
+    <div id="modal-profile" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Mein Profil</h2>
+            <div id="profile-content"></div>
+        </div>
+    </div>
+
+    <div id="modal-quests" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Tägliche Quests</h2>
+            <div id="quests-content" class="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="modal-shop" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Shop</h2>
+            <div id="shop-content" class="modal-body shop-grid"></div>
+        </div>
+    </div>
+
+    <div id="modal-leaderboard" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Bestenliste</h2>
+            <div id="leaderboard-content" class="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="modal-friends" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Freundesliste</h2>
+            <div id="friends-content" class="modal-body"></div>
+        </div>
+    </div>
 
     <main>
         <section class="game-grid" id="gameGrid">
@@ -338,5 +402,7 @@
     <footer>
         <p>&copy; 2024 Jules Spieleportal. Alle Rechte vorbehalten.</p>
     </footer>
+
+    <script src="js/user-system.js"></script>
 </body>
 </html>

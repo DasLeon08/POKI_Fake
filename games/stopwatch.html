@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Stoppuhr Spiel</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #a8edea; padding-top: 50px; }
+        #time { font-size: 60px; margin: 30px; font-family: monospace; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Stoppuhr Spiel</h1>
+    <p>Stoppe die Zeit bei genau 5.00 Sekunden!</p>
+    <div id="time">0.00</div>
+    <button class="btn" onclick="toggle()">Start / Stop</button>
+    <br><br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let startTime, interval, running = false, current = 0;
+        const timeEl = document.getElementById('time');
+        function toggle() {
+            if (running) {
+                clearInterval(interval); running = false;
+                if (Math.abs(current - 5.00) < 0.1) alert('Super! Fast genau 5 Sekunden: ' + current.toFixed(2));
+                else alert('Daneben! Zeit: ' + current.toFixed(2));
+            } else {
+                startTime = Date.now(); running = true;
+                interval = setInterval(() => {
+                    current = (Date.now() - startTime) / 1000;
+                    timeEl.textContent = current.toFixed(2);
+                }, 10);
+            }
+        }
+    </script>
+</body>
+</html>

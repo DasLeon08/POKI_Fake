@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zahlenmerken</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #43e97b; padding-top: 50px; }
+        #display { font-size: 50px; margin: 30px; height: 60px; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Zahlenmerken</h1>
+    <p>Merke dir die Zahl, bevor sie verschwindet!</p>
+    <p>Level: <span id="level">1</span></p>
+    <div id="display">?</div>
+    <br>
+    <button class="btn" onclick="start()">Start</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let level = 1, currentNumber = '';
+        const display = document.getElementById('display'), levelEl = document.getElementById('level');
+        function start() {
+            level = 1; levelEl.textContent = level; playRound();
+        }
+        function playRound() {
+            currentNumber = Math.floor(Math.random() * Math.pow(10, level)).toString();
+            display.textContent = currentNumber;
+            setTimeout(() => {
+                display.textContent = '???';
+                let guess = prompt('Welche Zahl war das?');
+                if (guess === currentNumber) { level++; levelEl.textContent = level; setTimeout(playRound, 1000); }
+                else { alert('Falsch! Die Zahl war ' + currentNumber + '. Spiel vorbei.'); start(); }
+            }, 1000 + level * 500);
+        }
+    </script>
+</body>
+</html>

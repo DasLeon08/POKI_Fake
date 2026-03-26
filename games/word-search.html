@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Wortsuchen</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #4facfe; padding-top: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(10, 30px); gap: 2px; justify-content: center; margin: 20px auto; }
+        .cell { width: 30px; height: 30px; background: white; text-align: center; line-height: 30px; font-weight: bold; cursor: pointer; user-select: none; }
+        .found { background: #2ecc71; color: white; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Wortsuchen (SPIEL)</h1>
+    <p>Klicke auf die Buchstaben in der richtigen Reihenfolge, um S-P-I-E-L zu finden!</p>
+    <div class="grid" id="grid"></div>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const grid = document.getElementById('grid');
+        let expected = "SPIEL", currentIdx = 0;
+        for(let i=0; i<100; i++) {
+            let el = document.createElement('div');
+            el.className = 'cell';
+            el.textContent = Math.random()<0.05 ? expected[Math.floor(Math.random()*5)] : letters[Math.floor(Math.random()*26)];
+            el.onclick = () => {
+                if(el.textContent === expected[currentIdx]) {
+                    el.classList.add('found'); currentIdx++;
+                    if(currentIdx === 5) { alert("Du hast SPIEL gefunden!"); currentIdx=0; Array.from(document.querySelectorAll('.found')).forEach(e=>e.classList.remove('found')); }
+                } else {
+                    currentIdx = 0; Array.from(document.querySelectorAll('.found')).forEach(e=>e.classList.remove('found'));
+                }
+            };
+            grid.appendChild(el);
+        }
+    </script>
+</body>
+</html>

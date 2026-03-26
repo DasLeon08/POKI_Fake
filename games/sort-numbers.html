@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zahlen Sortieren</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #e2d1c3; padding-top: 50px; }
+        .container { display: flex; justify-content: center; gap: 10px; margin: 30px; }
+        .num { padding: 20px; background: white; border: 2px solid black; font-size: 24px; cursor: pointer; user-select: none; }
+        .selected { background: yellow; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Zahlen Sortieren</h1>
+    <p>Klicke zwei Zahlen an, um sie zu tauschen. Sortiere sie aufsteigend!</p>
+    <div class="container" id="nums"></div>
+    <br>
+    <button class="btn" onclick="check()">Überprüfen</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let arr = [1,2,3,4,5].sort(()=>Math.random()-0.5), sel = null;
+        const cont = document.getElementById('nums');
+        function render() {
+            cont.innerHTML = '';
+            arr.forEach((n, i) => {
+                let d = document.createElement('div'); d.className = 'num'; d.textContent = n;
+                d.onclick = () => {
+                    if(sel === null) { sel = i; render(); cont.children[i].classList.add('selected'); }
+                    else { let temp=arr[sel]; arr[sel]=arr[i]; arr[i]=temp; sel=null; render(); }
+                };
+                cont.appendChild(d);
+            });
+        }
+        function check() {
+            if(arr.every((v,i,a)=>!i||a[i-1]<=v)) { alert('Super!'); location.reload(); }
+            else alert('Noch nicht richtig sortiert.');
+        }
+        render();
+    </script>
+</body>
+</html>

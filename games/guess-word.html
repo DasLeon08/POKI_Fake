@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Wort Raten</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #fa709a; padding-top: 50px; }
+        #word { font-size: 40px; margin: 30px; letter-spacing: 10px; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Wort Raten</h1>
+    <p>Errate das Wort (5 Buchstaben)!</p>
+    <div id="word">_ _ _ _ _</div>
+    <br>
+    <button class="btn" onclick="guess()">Raten</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        const words = ['APFEL', 'BAUM', 'HAUS', 'SPIEL', 'MAUS'];
+        let word = words[Math.floor(Math.random() * words.length)], display = Array(word.length).fill('_');
+        const wordEl = document.getElementById('word'); wordEl.textContent = display.join(' ');
+        function guess() {
+            let g = prompt('Rate einen Buchstaben:').toUpperCase();
+            if (!g || g.length !== 1) return;
+            let found = false;
+            for (let i = 0; i < word.length; i++) { if (word[i] === g) { display[i] = g; found = true; } }
+            wordEl.textContent = display.join(' ');
+            if (!display.includes('_')) { alert('Gewonnen!'); window.location.reload(); }
+            else if (!found) alert('Falsch!');
+        }
+    </script>
+</body>
+</html>

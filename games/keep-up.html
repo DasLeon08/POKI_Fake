@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Ball Hochhalten</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #7579ff; padding-top: 50px; overflow: hidden; }
+        #gameArea { width: 400px; height: 500px; background: #87CEEB; margin: 0 auto; position: relative; border: 2px solid black; }
+        #ball { width: 50px; height: 50px; background: radial-gradient(circle, white, gray); border-radius: 50%; position: absolute; cursor: pointer; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Ball Hochhalten</h1>
+    <p>Klicke den Ball, damit er nicht den Boden berührt!</p>
+    <p>Punkte: <span id="score">0</span></p>
+    <div id="gameArea"><div id="ball"></div></div>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score=0, dy=0, g=0.5, y=50, x=175, dx=0, playing=true;
+        const ball=document.getElementById('ball'), scoreEl=document.getElementById('score');
+
+        ball.onmousedown = () => { if(playing) { dy = -10; score++; scoreEl.textContent=score; dx=(Math.random()-0.5)*10; } };
+
+        setInterval(() => {
+            if(!playing) return;
+            dy += g; y += dy; x += dx;
+            if(x < 0 || x > 350) dx = -dx;
+            if(y > 450) { playing=false; alert('Game Over! Punkte: '+score); y=50; dy=0; score=0; scoreEl.textContent=score; playing=true; }
+            ball.style.top = y + 'px'; ball.style.left = x + 'px';
+        }, 20);
+    </script>
+</body>
+</html>

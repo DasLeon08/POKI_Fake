@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zielschießen</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #e4efe9; padding-top: 50px; cursor: crosshair; }
+        #area { width: 600px; height: 400px; background: #333; margin: 0 auto; position: relative; overflow: hidden; border: 2px solid black; }
+        .target { width: 40px; height: 40px; background: red; border-radius: 50%; position: absolute; cursor: crosshair; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Zielschießen</h1>
+    <p>Punkte: <span id="score">0</span> | Zeit: <span id="time">30</span>s</p>
+    <div id="area"></div>
+    <br>
+    <button class="btn" onclick="start()">Start</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score=0, time=30, interval, spawnInterval;
+        const area=document.getElementById('area'), scoreEl=document.getElementById('score'), timeEl=document.getElementById('time');
+        function start() {
+            score=0; time=30; scoreEl.textContent=score; area.innerHTML='';
+            clearInterval(interval); clearInterval(spawnInterval);
+            interval = setInterval(()=>{time--;timeEl.textContent=time;if(time<=0){clearInterval(interval);clearInterval(spawnInterval);alert('Punkte: '+score);}},1000);
+            spawnInterval = setInterval(()=>{
+                let t = document.createElement('div'); t.className='target';
+                t.style.left = Math.random()*560+'px'; t.style.top = Math.random()*360+'px';
+                t.onmousedown = () => { score++; scoreEl.textContent=score; t.remove(); };
+                area.appendChild(t); setTimeout(()=>t.remove(), 1500);
+            }, 800);
+        }
+    </script>
+</body>
+</html>

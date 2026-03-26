@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Balance Akt</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #89f7fe; padding-top: 50px; overflow: hidden; }
+        #board { width: 300px; height: 20px; background: #333; margin: 150px auto 0; position: relative; transform-origin: center; transition: transform 0.1s; }
+        #ball { width: 30px; height: 30px; background: red; border-radius: 50%; position: absolute; top: -30px; left: 135px; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Balance Akt</h1>
+    <p>Benutze Links/Rechts oder A/D, um das Brett zu neigen und den Ball in der Mitte zu halten!</p>
+    <p>Zeit: <span id="time">0</span>s</p>
+    <div id="board"><div id="ball"></div></div>
+    <br><br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let angle = 0, ballPos = 135, time = 0, interval, playing = true;
+        const board = document.getElementById('board'), ball = document.getElementById('ball'), timeEl = document.getElementById('time');
+
+        document.addEventListener('keydown', e => { if(e.key==='ArrowLeft'||e.key==='a') angle-=5; if(e.key==='ArrowRight'||e.key==='d') angle+=5; });
+
+        interval = setInterval(() => {
+            if(!playing) return;
+            time += 0.05; timeEl.textContent = Math.floor(time);
+            angle += (Math.random() - 0.5) * 2; // random tilt
+            ballPos += angle * 0.1;
+            board.style.transform = `rotate(${angle}deg)`;
+            ball.style.left = ballPos + 'px';
+            if(ballPos < -15 || ballPos > 285) { playing=false; clearInterval(interval); alert('Game Over! Zeit: ' + Math.floor(time) + 's'); location.reload(); }
+        }, 50);
+    </script>
+</body>
+</html>

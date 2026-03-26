@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Farben Mix</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #e0c3fc; padding-top: 50px; }
+        .color-box { width: 100px; height: 100px; display: inline-block; margin: 10px; cursor: pointer; border: 2px solid #333; }
+        #target { width: 200px; height: 100px; margin: 20px auto; border: 2px solid #333; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Farben Mix</h1>
+    <p>Finde die Box, die genau die gleiche Farbe wie das Ziel hat!</p>
+    <p>Punkte: <span id="score">0</span></p>
+    <div id="target"></div>
+    <div id="options"></div>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score = 0, targetColor;
+        const target = document.getElementById('target'), options = document.getElementById('options'), scoreEl = document.getElementById('score');
+        function rndCol() { return `rgb(${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)},${Math.floor(Math.random()*256)})`; }
+        function newRound() {
+            targetColor = rndCol(); target.style.backgroundColor = targetColor;
+            options.innerHTML = '';
+            let cols = [targetColor, rndCol(), rndCol(), rndCol()];
+            cols.sort(() => Math.random() - 0.5);
+            cols.forEach(c => {
+                let d = document.createElement('div');
+                d.className = 'color-box'; d.style.backgroundColor = c;
+                d.onclick = () => {
+                    if (c === targetColor) { score++; scoreEl.textContent = score; newRound(); }
+                    else { alert('Falsch! Neustart.'); score = 0; scoreEl.textContent = score; newRound(); }
+                };
+                options.appendChild(d);
+            });
+        }
+        newRound();
+    </script>
+</body>
+</html>

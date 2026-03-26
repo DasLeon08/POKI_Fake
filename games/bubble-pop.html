@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Blasen Platzen</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #8fd3f4; padding-top: 20px; overflow: hidden; }
+        .bubble { position: absolute; background: rgba(255,255,255,0.6); border: 1px solid white; border-radius: 50%; cursor: pointer; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; position: relative; z-index: 10; }
+    </style>
+</head>
+<body>
+    <h1 style="position:relative; z-index:10;">Blasen Platzen</h1>
+    <p style="position:relative; z-index:10;">Punkte: <span id="score">0</span></p>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score = 0; const scoreEl = document.getElementById('score');
+        setInterval(() => {
+            const b = document.createElement('div');
+            const size = Math.random() * 50 + 20;
+            b.classList.add('bubble');
+            b.style.width = size + 'px'; b.style.height = size + 'px';
+            b.style.left = Math.random() * window.innerWidth + 'px';
+            b.style.bottom = '-100px';
+            document.body.appendChild(b);
+            let pos = -100;
+            const float = setInterval(() => {
+                pos += 2; b.style.bottom = pos + 'px';
+                if (pos > window.innerHeight) { clearInterval(float); if (b.parentNode) b.remove(); }
+            }, 30);
+            b.onmouseover = () => { score++; scoreEl.textContent = score; clearInterval(float); b.remove(); };
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Klick-Meister</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #d57eeb; padding-top: 50px; }
+        #target { width: 100px; height: 100px; background: white; border-radius: 50%; display: inline-block; margin-top: 50px; font-size: 30px; line-height: 100px; cursor: pointer; user-select: none; }
+        #target:active { transform: scale(0.95); background: #eee; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Klick-Meister</h1>
+    <p>Klicke so oft du kannst in 10 Sekunden!</p>
+    <p>Verbleibende Zeit: <span id="time">10</span>s</p>
+    <div id="target" onclick="clickTarget()">0</div>
+    <br>
+    <button class="btn" onclick="start()">Start</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score = 0, time = 10, playing = false, interval;
+        const target = document.getElementById('target'), timeEl = document.getElementById('time');
+        function start() {
+            score = 0; time = 10; playing = true; target.textContent = score; timeEl.textContent = time;
+            clearInterval(interval);
+            interval = setInterval(() => {
+                time--; timeEl.textContent = time;
+                if (time <= 0) { playing = false; clearInterval(interval); alert('Du hast ' + score + ' mal geklickt!'); }
+            }, 1000);
+        }
+        function clickTarget() { if (playing) { score++; target.textContent = score; } }
+    </script>
+</body>
+</html>

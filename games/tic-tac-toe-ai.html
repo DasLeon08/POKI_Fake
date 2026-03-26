@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic-Tac-Toe KI</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #30cfd0; padding-top: 50px; color: white; }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; justify-content: center; margin: 20px auto; }
+        .cell { width: 100px; height: 100px; background: rgba(0,0,0,0.5); font-size: 60px; line-height: 100px; cursor: pointer; user-select: none; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; color: black; }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe gegen KI</h1>
+    <p>Du bist X, die KI ist O.</p>
+    <div class="board" id="board"></div>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        const board = document.getElementById('board');
+        let state = Array(9).fill(''), player = 'X', gameActive = true;
+        for(let i=0; i<9; i++) {
+            let c = document.createElement('div'); c.className = 'cell';
+            c.onclick = () => {
+                if(!gameActive || state[i] !== '') return;
+                state[i] = player; c.textContent = player;
+                if(checkWin(player)) { alert('Du gewinnst!'); gameActive=false; return; }
+                if(!state.includes('')) { alert('Unentschieden!'); gameActive=false; return; }
+                player = 'O'; setTimeout(aiMove, 500);
+            };
+            board.appendChild(c);
+        }
+        function aiMove() {
+            if(!gameActive) return;
+            let empty = []; state.forEach((v, i) => { if(v==='') empty.push(i); });
+            if(empty.length > 0) {
+                let m = empty[Math.floor(Math.random() * empty.length)];
+                state[m] = 'O'; board.children[m].textContent = 'O';
+                if(checkWin('O')) { alert('KI gewinnt!'); gameActive=false; return; }
+                player = 'X';
+            }
+        }
+        function checkWin(p) {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return wins.some(w => w.every(i => state[i] === p));
+        }
+    </script>
+</body>
+</html>

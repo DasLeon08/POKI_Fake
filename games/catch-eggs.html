@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Eier Fangen</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #ebedee; padding-top: 50px; }
+        canvas { background: #87CEEB; display: block; margin: 0 auto; border: 2px solid #333; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Eier Fangen</h1>
+    <p>Benutze Links/Rechts oder A/D, um den Korb zu bewegen!</p>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+        let basket = { x: 175, y: 450, w: 50, h: 20 }, eggs = [], score = 0, lives = 3;
+        let leftPressed = false, rightPressed = false, gameLoop;
+
+        document.addEventListener('keydown', e => { if(e.key==='ArrowLeft'||e.key==='a') leftPressed=true; if(e.key==='ArrowRight'||e.key==='d') rightPressed=true; });
+        document.addEventListener('keyup', e => { if(e.key==='ArrowLeft'||e.key==='a') leftPressed=false; if(e.key==='ArrowRight'||e.key==='d') rightPressed=false; });
+
+        function update() {
+            if (leftPressed && basket.x > 0) basket.x -= 5;
+            if (rightPressed && basket.x < canvas.width - basket.w) basket.x += 5;
+
+            if (Math.random() < 0.03) eggs.push({ x: Math.random() * 380, y: 0 });
+
+            for (let i = 0; i < eggs.length; i++) {
+                eggs[i].y += 3;
+                if (eggs[i].y > canvas.height) { eggs.splice(i, 1); lives--; i--; }
+                else if (eggs[i].y + 15 > basket.y && eggs[i].x > basket.x && eggs[i].x < basket.x + basket.w) {
+                    score++; eggs.splice(i, 1); i--;
+                }
+            }
+            if (lives <= 0) { alert('Game Over! Punkte: ' + score); basket.x=175; eggs=[]; score=0; lives=3; }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#8B4513'; ctx.fillRect(basket.x, basket.y, basket.w, basket.h);
+            ctx.fillStyle = 'white';
+            eggs.forEach(egg => { ctx.beginPath(); ctx.arc(egg.x, egg.y, 10, 0, Math.PI*2); ctx.fill(); });
+            ctx.fillStyle = 'black'; ctx.font = '20px Arial';
+            ctx.fillText('Punkte: ' + score, 10, 20); ctx.fillText('Leben: ' + lives, 300, 20);
+        }
+
+        setInterval(() => { update(); draw(); }, 1000/60);
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Fidget Spinner</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #96e6a1; padding-top: 50px; }
+        #spinner { font-size: 100px; display: inline-block; cursor: pointer; user-select: none; transition: transform 0.1s linear; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Fidget Spinner</h1>
+    <p>Klicke wiederholt auf den Spinner, um ihn schneller zu drehen!</p>
+    <div id="spinner" onclick="spin()">🌀</div>
+    <p>Drehzahl: <span id="speed">0</span></p>
+    <br>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let angle = 0, speed = 0;
+        const spinner = document.getElementById('spinner'), speedEl = document.getElementById('speed');
+        function spin() { speed += 10; }
+        setInterval(() => {
+            if (speed > 0) speed -= 0.1;
+            if (speed < 0) speed = 0;
+            angle += speed;
+            spinner.style.transform = `rotate(${angle}deg)`;
+            speedEl.textContent = Math.round(speed);
+        }, 20);
+    </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Ballon Zerplatzen</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #fecfef; padding-top: 50px; }
+        #game { position: relative; width: 400px; height: 500px; margin: 0 auto; background: white; border: 2px solid #333; overflow: hidden; }
+        .balloon { position: absolute; font-size: 40px; cursor: pointer; user-select: none; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Ballon Zerplatzen</h1>
+    <p>Punkte: <span id="score">0</span> | Zeit: <span id="time">30</span></p>
+    <div id="game"></div>
+    <br>
+    <button class="btn" onclick="startGame()">Start</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        let score = 0, time = 30, interval, spawnInterval;
+        const scoreEl = document.getElementById('score'), timeEl = document.getElementById('time'), game = document.getElementById('game');
+        function startGame() {
+            score = 0; time = 30; scoreEl.textContent = score; timeEl.textContent = time;
+            game.innerHTML = ''; clearInterval(interval); clearInterval(spawnInterval);
+            interval = setInterval(() => { time--; timeEl.textContent = time; if (time <= 0) endGame(); }, 1000);
+            spawnInterval = setInterval(spawnBalloon, 800);
+        }
+        function spawnBalloon() {
+            const b = document.createElement('div');
+            b.classList.add('balloon');
+            b.textContent = '🎈';
+            b.style.left = Math.random() * 350 + 'px';
+            b.style.bottom = '-50px';
+            game.appendChild(b);
+            let pos = -50;
+            const fly = setInterval(() => {
+                if (time <= 0) { clearInterval(fly); return; }
+                pos += 2; b.style.bottom = pos + 'px';
+                if (pos > 500) { clearInterval(fly); if (game.contains(b)) game.removeChild(b); }
+            }, 20);
+            b.onclick = () => {
+                score++; scoreEl.textContent = score;
+                b.textContent = '💥';
+                setTimeout(() => { if(game.contains(b)) game.removeChild(b); }, 100);
+            };
+        }
+        function endGame() { clearInterval(interval); clearInterval(spawnInterval); alert('Zeit abgelaufen! Punkte: ' + score); }
+    </script>
+</body>
+</html>

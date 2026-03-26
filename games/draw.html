@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Malbrett</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #fbc2eb; padding-top: 20px; }
+        canvas { background: white; border: 2px solid #333; cursor: crosshair; }
+        .btn { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Malbrett</h1>
+    <canvas id="paint" width="600" height="400"></canvas>
+    <br>
+    <button class="btn" onclick="ctx.clearRect(0,0,600,400)">Löschen</button>
+    <button class="btn" onclick="window.location.href='../index.html'">Zurück zum Portal</button>
+
+    <script>
+        const canvas = document.getElementById('paint'), ctx = canvas.getContext('2d');
+        let drawing = false;
+        canvas.addEventListener('mousedown', () => drawing = true);
+        canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+        function draw(e) {
+            if (!drawing) return;
+            ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.strokeStyle = '#333';
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+    </script>
+</body>
+</html>

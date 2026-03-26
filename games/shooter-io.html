@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooter.io - Online PVP Simulation</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 10; text-shadow: 1px 1px 2px black; }
+        #leaderboard { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 5px; width: 150px; pointer-events: none; }
+        h3 { margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; color: #ecf0f1; }
+        ol { margin: 0; padding-left: 20px; font-size: 14px; }
+        li { margin-bottom: 3px; }
+        #back-btn { position: absolute; bottom: 10px; left: 10px; padding: 10px 20px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: Arial, sans-serif; z-index: 20;}
+        #back-btn:hover { background-color: #c0392b; }
+        #game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 30px; border-radius: 10px; text-align: center; display: none; z-index: 30; border: 2px solid #e74c3c;}
+        #game-over h1 { margin-top: 0; color: #e74c3c; }
+        #game-over button { margin-top: 15px; padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #3498db; color: white; }
+        #game-over button:hover { background: #2980b9; }
+        #controls-hint { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; text-align: right; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>Kills: <span id="score">0</span> | HP: <span id="hp">100</span></h2>
+    </div>
+
+    <div id="leaderboard">
+        <h3>Bestenliste</h3>
+        <ol id="lb-list"></ol>
+    </div>
+
+    <div id="controls-hint">
+        WASD: Bewegen<br>
+        Maus: Zielen & Schießen
+    </div>
+
+    <div id="game-over">
+        <h1>Ausgeschaltet!</h1>
+        <p>Deine Kills: <span id="final-score"></span></p>
+        <button onclick="location.reload()">Neustart</button>
+    </div>
+
+    <a href="../index.html" id="back-btn">Zurück zum Portal</a>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const hpEl = document.getElementById('hp');
+        const lbList = document.getElementById('lb-list');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // Constants
+        const WORLD_SIZE = 2000;
+        const BOT_COUNT = 15;
+        const PLAYER_RADIUS = 15;
+        const BULLET_RADIUS = 4;
+        const BULLET_SPEED = 12;
+        const PLAYER_SPEED = 4;
+        const MAX_HP = 100;
+
+        const BOT_NAMES = ['Sniper', 'Gunner', 'Rambo', 'Terminator', 'DoomGuy', 'MasterChief', 'Tracer', 'Reaper', 'Widow', 'Soldier76', 'BotKiller', 'NoobSlayer'];
+        const COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
+        let camera = { x: 0, y: 0 };
+        let players = [];
+        let bullets = [];
+        let isGameOver = false;
+        let keys = {};
+
+        // --- Classes ---
+
+        class Tank {
+            constructor(x, y, color, name, isPlayer = false) {
+                this.x = x;
+                this.y = y;
+                this.radius = PLAYER_RADIUS;
+                this.color = color;
+                this.name = name;
+                this.isPlayer = isPlayer;
+                this.hp = MAX_HP;
+                this.kills = 0;
+                this.angle = 0;
+                this.lastShot = 0;
+                this.fireRate = 200; // ms
+
+                // Bot AI state
+                this.target = null;
+                this.wanderAngle = Math.random() * Math.PI * 2;
+            }
+
+            shoot(targetX, targetY) {
+                const now = Date.now();
+                if (now - this.lastShot > this.fireRate) {
+                    const dx = targetX - this.x;
+                    const dy = targetY - this.y;
+                    const angle = Math.atan2(dy, dx);
+
+                    // Barrel offset
+                    const barrelX = this.x + Math.cos(angle) * (this.radius + 10);
+                    const barrelY = this.y + Math.sin(angle) * (this.radius + 10);
+
+                    bullets.push(new Bullet(barrelX, barrelY, angle, this));
+                    this.lastShot = now;
+
+                    // Small recoil effect
+                    this.x -= Math.cos(angle) * 2;
+                    this.y -= Math.sin(angle) * 2;
+                }
+            }
+
+            update(dt) {
+                if (this.hp <= 0) return;
+
+                if (this.isPlayer) {
+                    // Player movement
+                    let dx = 0, dy = 0;
+                    if (keys['w'] || keys['W']) dy -= 1;
+                    if (keys['s'] || keys['S']) dy += 1;
+                    if (keys['a'] || keys['A']) dx -= 1;
+                    if (keys['d'] || keys['D']) dx += 1;
+
+                    if (dx !== 0 || dy !== 0) {
+                        const len = Math.hypot(dx, dy);
+                        this.x += (dx / len) * PLAYER_SPEED;
+                        this.y += (dy / len) * PLAYER_SPEED;
+                    }
+
+                    // Player aiming
+                    const screenCenterX = canvas.width / 2;
+                    const screenCenterY = canvas.height / 2;
+                    this.angle = Math.atan2(mouse.y - screenCenterY, mouse.x - screenCenterX);
+
+                    if (mouse.down) {
+                        // Calculate world coordinates for mouse
+                        const worldMouseX = mouse.x + camera.x - canvas.width / 2;
+                        const worldMouseY = mouse.y + camera.y - canvas.height / 2;
+                        this.shoot(worldMouseX, worldMouseY);
+                    }
+
+                } else {
+                    // Bot AI
+                    this.updateBot();
+                }
+
+                // Bounds
+                this.x = Math.max(this.radius, Math.min(WORLD_SIZE - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(WORLD_SIZE - this.radius, this.y));
+            }
+
+            updateBot() {
+                // Find nearest target
+                let minDist = Infinity;
+                this.target = null;
+
+                for (const other of players) {
+                    if (other === this || other.hp <= 0) continue;
+                    const dist = Math.hypot(this.x - other.x, this.y - other.y);
+                    if (dist < 600 && dist < minDist) {
+                        minDist = dist;
+                        this.target = other;
+                    }
+                }
+
+                if (this.target) {
+                    // Aim and shoot
+                    const dx = this.target.x - this.x;
+                    const dy = this.target.y - this.y;
+                    this.angle = Math.atan2(dy, dx);
+
+                    // Predict movement slightly (dumb predictive aim)
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < 400) {
+                         this.shoot(this.target.x, this.target.y);
+                    }
+
+                    // Keep some distance, or chase if too far
+                    if (dist > 300) {
+                        this.x += Math.cos(this.angle) * (PLAYER_SPEED * 0.8);
+                        this.y += Math.sin(this.angle) * (PLAYER_SPEED * 0.8);
+                    } else if (dist < 150) {
+                        // Back away
+                        this.x -= Math.cos(this.angle) * (PLAYER_SPEED * 0.5);
+                        this.y -= Math.sin(this.angle) * (PLAYER_SPEED * 0.5);
+                    } else {
+                        // Strafe
+                        this.x += Math.cos(this.angle + Math.PI/2) * (PLAYER_SPEED * 0.5);
+                        this.y += Math.sin(this.angle + Math.PI/2) * (PLAYER_SPEED * 0.5);
+                    }
+
+                } else {
+                    // Wander
+                    if (Math.random() < 0.02) {
+                        this.wanderAngle += (Math.random() - 0.5) * Math.PI;
+                    }
+                    this.x += Math.cos(this.wanderAngle) * (PLAYER_SPEED * 0.4);
+                    this.y += Math.sin(this.wanderAngle) * (PLAYER_SPEED * 0.4);
+                    this.angle = this.wanderAngle;
+                }
+            }
+
+            draw(ctx) {
+                if (this.hp <= 0) return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Draw HP bar
+                const hpWidth = 40;
+                ctx.fillStyle = 'red';
+                ctx.fillRect(-hpWidth/2, -this.radius - 15, hpWidth, 5);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(-hpWidth/2, -this.radius - 15, hpWidth * (this.hp / MAX_HP), 5);
+
+                // Draw Name
+                ctx.fillStyle = 'white';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, 0, -this.radius - 20);
+
+                ctx.rotate(this.angle);
+
+                // Draw Barrel
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(0, -5, this.radius + 15, 10);
+                ctx.strokeStyle = '#2c3e50';
+                ctx.strokeRect(0, -5, this.radius + 15, 10);
+
+                // Draw Body
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#2c3e50';
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, angle, owner) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * BULLET_SPEED;
+                this.vy = Math.sin(angle) * BULLET_SPEED;
+                this.owner = owner;
+                this.distance = 0;
+                this.maxDistance = 800; // Range
+                this.active = true;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.distance += BULLET_SPEED;
+
+                if (this.distance > this.maxDistance ||
+                    this.x < 0 || this.x > WORLD_SIZE ||
+                    this.y < 0 || this.y > WORLD_SIZE) {
+                    this.active = false;
+                }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, BULLET_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fill();
+                ctx.strokeStyle = '#d35400';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // --- Setup ---
+
+        let mainPlayer;
+
+        function init() {
+            let playerName = "Du";
+            if (window.userSystem && window.userSystem.user) {
+                playerName = window.userSystem.user.username;
+            }
+
+            mainPlayer = new Tank(WORLD_SIZE / 2, WORLD_SIZE / 2, '#3498db', playerName, true);
+            players.push(mainPlayer);
+
+            for (let i = 0; i < BOT_COUNT; i++) {
+                spawnBot();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnBot() {
+            const x = Math.random() * WORLD_SIZE;
+            const y = Math.random() * WORLD_SIZE;
+            const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)] + Math.floor(Math.random() * 99);
+            players.push(new Tank(x, y, color, name));
+        }
+
+        // --- Game Loop ---
+
+        function checkCollisions() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                if (!b.active) continue;
+
+                for (let j = 0; j < players.length; j++) {
+                    const p = players[j];
+                    if (p.hp <= 0 || b.owner === p) continue; // Don't shoot self
+
+                    const dist = Math.hypot(b.x - p.x, b.y - p.y);
+                    if (dist < p.radius + BULLET_RADIUS) {
+                        p.hp -= 20; // Damage
+                        b.active = false;
+
+                        if (p.hp <= 0) {
+                            b.owner.kills++;
+                            if (p.isPlayer) {
+                                handleGameOver();
+                            } else {
+                                // Respawn bot after a delay
+                                setTimeout(spawnBot, 2000);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            if (isGameOver) return;
+            scoreEl.innerText = mainPlayer.kills;
+            hpEl.innerText = mainPlayer.hp;
+
+            if (mainPlayer.hp < 30) hpEl.style.color = '#e74c3c';
+            else hpEl.style.color = 'white';
+
+            // Leaderboard
+            const sorted = [...players].sort((a, b) => b.kills - a.kills);
+            lbList.innerHTML = '';
+            for (let i = 0; i < Math.min(10, sorted.length); i++) {
+                const li = document.createElement('li');
+                let nameStr = sorted[i].name;
+                if (sorted[i].isPlayer) nameStr = `<strong>${nameStr}</strong>`;
+                li.innerHTML = `${nameStr} (${sorted[i].kills})`;
+                lbList.appendChild(li);
+            }
+        }
+
+        function handleGameOver() {
+            if (isGameOver) return;
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
+            finalScoreEl.innerText = mainPlayer.kills;
+
+            if (window.userSystem) {
+                window.userSystem.addXP(mainPlayer.kills * 10);
+                window.userSystem.addCoins(mainPlayer.kills * 5);
+            }
+        }
+
+        function drawGrid(ctx) {
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            ctx.beginPath();
+            for (let x = 0; x <= WORLD_SIZE; x += gridSize) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_SIZE);
+            }
+            for (let y = 0; y <= WORLD_SIZE; y += gridSize) {
+                ctx.moveTo(0, y); ctx.lineTo(WORLD_SIZE, y);
+            }
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            // Update
+            players.forEach(p => p.update());
+            bullets.forEach(b => b.update());
+
+            // Clean up dead stuff
+            players = players.filter(p => p.hp > 0 || p.isPlayer); // Keep player for game over screen
+            bullets = bullets.filter(b => b.active);
+
+            checkCollisions();
+
+            if (!isGameOver) {
+                // Smooth camera follow
+                camera.x += (mainPlayer.x - canvas.width / 2 - camera.x) * 0.1;
+                camera.y += (mainPlayer.y - canvas.height / 2 - camera.y) * 0.1;
+
+                // Clamp camera
+                camera.x = Math.max(0, Math.min(WORLD_SIZE - canvas.width, camera.x));
+                camera.y = Math.max(0, Math.min(WORLD_SIZE - canvas.height, camera.y));
+            }
+
+            updateUI();
+
+            // Draw
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // World bounds and background
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+            drawGrid(ctx);
+
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+            // Draw game objects
+            bullets.forEach(b => b.draw(ctx));
+            players.forEach(p => p.draw(ctx));
+
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Input Handling ---
+
+        window.addEventListener('keydown', e => keys[e.key] = true);
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mousedown', e => { if(e.button === 0) mouse.down = true; });
+        window.addEventListener('mouseup', e => { if(e.button === 0) mouse.down = false; });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>

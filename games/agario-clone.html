@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agar.io Clone - Online PVP Simulation</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; color: #333; pointer-events: none; z-index: 10; }
+        #leaderboard { position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 5px; width: 150px; pointer-events: none; }
+        h3 { margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; color: #666; }
+        ol { margin: 0; padding-left: 20px; font-size: 14px; }
+        li { margin-bottom: 3px; }
+        #back-btn { position: absolute; bottom: 10px; left: 10px; padding: 10px 20px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: Arial, sans-serif; z-index: 20;}
+        #back-btn:hover { background-color: #c0392b; }
+        #game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 30px; border-radius: 10px; text-align: center; display: none; z-index: 30;}
+        #game-over h1 { margin-top: 0; color: #e74c3c; }
+        #game-over button { margin-top: 15px; padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #3498db; color: white; }
+        #game-over button:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>Masse: <span id="score">20</span></h2>
+    </div>
+
+    <div id="leaderboard">
+        <h3>Bestenliste</h3>
+        <ol id="lb-list"></ol>
+    </div>
+
+    <div id="game-over">
+        <h1>Gefressen!</h1>
+        <p>Deine Endmasse: <span id="final-score"></span></p>
+        <button onclick="location.reload()">Nochmal spielen</button>
+    </div>
+
+    <a href="../index.html" id="back-btn">Zurück zum Portal</a>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const lbList = document.getElementById('lb-list');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // Game Constants
+        const WORLD_SIZE = 3000;
+        const FOOD_COUNT = 500;
+        const BOT_COUNT = 25;
+        const GRID_SIZE = 50;
+
+        // Colors
+        const COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#34495e'];
+        const BOT_NAMES = ['Killer123', 'NoobMaster', 'SnakeEater', 'ProGamer', 'Bot_Alpha', 'Blobby', 'Titan', 'Apex', 'Ninja', 'Ghost', 'Viper', 'Shadow', 'Neo', 'Matrix'];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let entities = [];
+        let foods = [];
+        let isGameOver = false;
+
+        // --- Classes ---
+
+        class Entity {
+            constructor(x, y, radius, color, name, isPlayer = false) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.targetRadius = radius;
+                this.color = color;
+                this.name = name;
+                this.isPlayer = isPlayer;
+                this.vx = 0;
+                this.vy = 0;
+                this.speed = this.calculateSpeed();
+                this.mass = Math.PI * radius * radius;
+            }
+
+            calculateSpeed() {
+                // Larger entities move slower. Base speed 4, min speed 1.
+                return Math.max(1, 20 / Math.sqrt(this.radius));
+            }
+
+            updateMass(newMass) {
+                this.mass = newMass;
+                this.targetRadius = Math.sqrt(this.mass / Math.PI);
+            }
+
+            update() {
+                // Smooth radius interpolation
+                this.radius += (this.targetRadius - this.radius) * 0.1;
+                this.speed = this.calculateSpeed();
+
+                // Apply velocity constraints
+                const maxV = this.speed;
+                const len = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (len > maxV) {
+                    this.vx = (this.vx / len) * maxV;
+                    this.vy = (this.vy / len) * maxV;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Border collision
+                this.x = Math.max(this.radius, Math.min(WORLD_SIZE - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(WORLD_SIZE - this.radius, this.y));
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw Name
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.font = `bold ${Math.max(12, this.radius / 2.5)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.strokeText(this.name, this.x, this.y);
+                ctx.fillText(this.name, this.x, this.y);
+            }
+        }
+
+        class Food {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = Math.random() * 3 + 3; // 3 to 6
+                this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                this.mass = Math.PI * this.radius * this.radius;
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        // --- Game Setup ---
+
+        function init() {
+            // Create Player
+            let playerName = "Du";
+            if (window.userSystem && window.userSystem.user) {
+                playerName = window.userSystem.user.username;
+            }
+            player = new Entity(WORLD_SIZE / 2, WORLD_SIZE / 2, 20, '#3498db', playerName, true);
+            entities.push(player);
+
+            // Create Bots
+            for (let i = 0; i < BOT_COUNT; i++) {
+                createBot();
+            }
+
+            // Create Food
+            for (let i = 0; i < FOOD_COUNT; i++) {
+                createFood();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function createBot() {
+            const x = Math.random() * WORLD_SIZE;
+            const y = Math.random() * WORLD_SIZE;
+            const radius = Math.random() * 30 + 15; // Initial bot size 15-45
+            const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)] + Math.floor(Math.random() * 99);
+            entities.push(new Entity(x, y, radius, color, name));
+        }
+
+        function createFood() {
+            foods.push(new Food(Math.random() * WORLD_SIZE, Math.random() * WORLD_SIZE));
+        }
+
+        // --- Logic ---
+
+        function handleInput() {
+            if (isGameOver) return;
+
+            // Calculate direction from player center (screen center) to mouse
+            const dx = mouse.x - (canvas.width / 2);
+            const dy = mouse.y - (canvas.height / 2);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 10) { // Deadzone
+                player.vx = (dx / dist) * player.speed;
+                player.vy = (dy / dist) * player.speed;
+            } else {
+                player.vx = 0;
+                player.vy = 0;
+            }
+        }
+
+        function updateBots() {
+            entities.forEach(bot => {
+                if (bot.isPlayer) return;
+
+                // Simple AI: Find nearest smaller entity (food or other bot), avoid bigger ones
+                let targetX = bot.x;
+                let targetY = bot.y;
+                let minSubDist = Infinity;
+                let minDangerDist = Infinity;
+
+                let dangerDx = 0, dangerDy = 0;
+                let foodDx = 0, foodDy = 0;
+
+                // 1. Check danger (bigger blobs)
+                for (const other of entities) {
+                    if (other === bot) continue;
+                    const dist = Math.hypot(bot.x - other.x, bot.y - other.y);
+                    if (dist < 400 && other.radius > bot.radius * 1.1) { // 10% bigger is dangerous
+                        if (dist < minDangerDist) {
+                            minDangerDist = dist;
+                            dangerDx = bot.x - other.x; // Flee vector
+                            dangerDy = bot.y - other.y;
+                        }
+                    }
+                }
+
+                // 2. If in danger, flee. Else find food/smaller blobs
+                if (minDangerDist < 400) {
+                    const fleeLen = Math.hypot(dangerDx, dangerDy);
+                    bot.vx = (dangerDx / fleeLen) * bot.speed;
+                    bot.vy = (dangerDy / fleeLen) * bot.speed;
+                } else {
+                    // Find food
+                    for (const food of foods) {
+                        const dist = Math.hypot(bot.x - food.x, bot.y - food.y);
+                        if (dist < 300 && dist < minSubDist) {
+                            minSubDist = dist;
+                            foodDx = food.x - bot.x;
+                            foodDy = food.y - bot.y;
+                        }
+                    }
+
+                    // Find smaller blobs (prioritize over food if close)
+                    for (const other of entities) {
+                         if (other === bot) continue;
+                         const dist = Math.hypot(bot.x - other.x, bot.y - other.y);
+                         if (dist < 300 && bot.radius > other.radius * 1.1) {
+                             if (dist < minSubDist) {
+                                minSubDist = dist;
+                                foodDx = other.x - bot.x;
+                                foodDy = other.y - bot.y;
+                             }
+                         }
+                    }
+
+                    if (minSubDist < Infinity) {
+                        const chaseLen = Math.hypot(foodDx, foodDy);
+                        bot.vx = (foodDx / chaseLen) * bot.speed;
+                        bot.vy = (foodDy / chaseLen) * bot.speed;
+                    } else {
+                        // Random wander
+                        if (Math.random() < 0.05) {
+                            bot.vx = (Math.random() - 0.5) * bot.speed;
+                            bot.vy = (Math.random() - 0.5) * bot.speed;
+                        }
+                    }
+                }
+            });
+        }
+
+        function checkCollisions() {
+            // Entities eating food
+            for (let i = 0; i < entities.length; i++) {
+                const e = entities[i];
+                for (let j = foods.length - 1; j >= 0; j--) {
+                    const f = foods[j];
+                    const dist = Math.hypot(e.x - f.x, e.y - f.y);
+                    if (dist < e.radius) {
+                        e.updateMass(e.mass + f.mass);
+                        foods.splice(j, 1);
+                        createFood(); // Respawn food
+                    }
+                }
+            }
+
+            // Entities eating entities
+            for (let i = 0; i < entities.length; i++) {
+                const e1 = entities[i];
+                for (let j = 0; j < entities.length; j++) {
+                    if (i === j) continue;
+                    const e2 = entities[j];
+
+                    const dist = Math.hypot(e1.x - e2.x, e1.y - e2.y);
+
+                    // To eat, e1 must be 10% larger, and e2's center must be inside e1
+                    if (e1.radius > e2.radius * 1.1 && dist < e1.radius) {
+                        e1.updateMass(e1.mass + e2.mass);
+
+                        if (e2.isPlayer) {
+                            // Player died
+                            handleGameOver();
+                        } else {
+                            // Bot died, respawn a new one somewhere else
+                            entities.splice(j, 1);
+                            createBot();
+                            // Adjust indices if necessary
+                            if (j < i) i--;
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateCamera() {
+            if (isGameOver) return;
+            // Target camera position is player position
+            camera.x = player.x;
+            camera.y = player.y;
+
+            // Zoom out slightly as player gets bigger
+            const targetZoom = Math.max(0.2, 30 / player.radius);
+            camera.zoom += (targetZoom - camera.zoom) * 0.1;
+        }
+
+        function updateUI() {
+            if (isGameOver) return;
+            scoreEl.innerText = Math.floor(player.mass);
+
+            // Sort entities by mass
+            const sorted = [...entities].sort((a, b) => b.mass - a.mass);
+            lbList.innerHTML = '';
+            for (let i = 0; i < Math.min(10, sorted.length); i++) {
+                const li = document.createElement('li');
+                let nameStr = sorted[i].name;
+                if (sorted[i].isPlayer) nameStr = `<strong>${nameStr}</strong>`;
+                li.innerHTML = `${nameStr} (${Math.floor(sorted[i].mass)})`;
+                lbList.appendChild(li);
+            }
+        }
+
+        function handleGameOver() {
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
+            finalScoreEl.innerText = Math.floor(player.mass);
+
+            if (window.userSystem) {
+                // Reward XP based on mass achieved
+                window.userSystem.addXP(Math.floor(player.mass / 100));
+                window.userSystem.addCoins(Math.floor(player.mass / 500));
+            }
+        }
+
+        // --- Render ---
+
+        function drawGrid(ctx, startX, startY, width, height) {
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            const offsetX = startX % GRID_SIZE;
+            const offsetY = startY % GRID_SIZE;
+
+            for (let x = -offsetX; x <= width; x += GRID_SIZE) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+            for (let y = -offsetY; y <= height; y += GRID_SIZE) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            // Update
+            handleInput();
+            updateBots();
+            entities.forEach(e => e.update());
+            checkCollisions();
+            updateCamera();
+            updateUI();
+
+            // Draw
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Move to center of screen, apply zoom, then translate inverse to camera (player)
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(camera.zoom, camera.zoom);
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw Bounds and Grid
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+            // Calculate visible area for grid optimization (simplified here)
+            // drawGrid(ctx, camera.x - (canvas.width/2)/camera.zoom, camera.y - (canvas.height/2)/camera.zoom, canvas.width/camera.zoom, canvas.height/camera.zoom);
+
+            // Draw world border
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+            // Draw foods (only if roughly in view to save perf)
+            const viewRadius = (Math.max(canvas.width, canvas.height) / 2) / camera.zoom + 100;
+            foods.forEach(f => {
+                if (Math.hypot(f.x - camera.x, f.y - camera.y) < viewRadius) {
+                    f.draw(ctx);
+                }
+            });
+
+            // Draw entities (smallest first so bigger draw on top)
+            entities.sort((a,b) => a.mass - b.mass).forEach(e => {
+                if (Math.hypot(e.x - camera.x, e.y - camera.y) < viewRadius + e.radius) {
+                    e.draw(ctx);
+                }
+            });
+
+            ctx.restore();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Events ---
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>

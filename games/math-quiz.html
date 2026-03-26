@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Mathe Quiz - Jules Spiele</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .quiz-container { background: #34495e; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-top: 20px; width: 400px; }
+        .question { font-size: 3rem; font-weight: bold; margin-bottom: 20px; }
+        .input-area { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        input[type="number"] { font-size: 2rem; width: 150px; text-align: center; border-radius: 5px; border: none; outline: none; padding: 5px; }
+        button { padding: 10px 20px; font-size: 1.5rem; cursor: pointer; background: #2ecc71; border: none; color: white; border-radius: 5px; }
+        button:hover { background: #27ae60; }
+        .feedback { font-size: 1.5rem; height: 30px; margin-top: 10px; }
+        .stats { display: flex; justify-content: space-around; width: 100%; margin-top: 20px; font-size: 1.2rem; border-top: 1px solid #7f8c8d; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+    <h1>Kopfrechnen</h1>
+
+    <div class="quiz-container">
+        <div class="question" id="question">5 + 7</div>
+        <div class="input-area">
+            <input type="number" id="answerInput" placeholder="?" autofocus>
+            <button onclick="checkAnswer()">Prüfen</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+
+        <div class="stats">
+            <div>Richtig: <span id="correctScore" style="color: #2ecc71;">0</span></div>
+            <div>Falsch: <span id="wrongScore" style="color: #e74c3c;">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        const questionEl = document.getElementById('question');
+        const answerInput = document.getElementById('answerInput');
+        const feedbackEl = document.getElementById('feedback');
+        const correctScoreEl = document.getElementById('correctScore');
+        const wrongScoreEl = document.getElementById('wrongScore');
+
+        let currentAnswer;
+        let correct = 0;
+        let wrong = 0;
+
+        function generateQuestion() {
+            const operations = ['+', '-', '*'];
+            const op = operations[Math.floor(Math.random() * operations.length)];
+            let num1, num2;
+
+            if (op === '+') {
+                num1 = Math.floor(Math.random() * 50) + 1;
+                num2 = Math.floor(Math.random() * 50) + 1;
+                currentAnswer = num1 + num2;
+            } else if (op === '-') {
+                num1 = Math.floor(Math.random() * 50) + 20;
+                num2 = Math.floor(Math.random() * num1) + 1; // Ensure positive result
+                currentAnswer = num1 - num2;
+            } else if (op === '*') {
+                num1 = Math.floor(Math.random() * 12) + 2;
+                num2 = Math.floor(Math.random() * 12) + 2;
+                currentAnswer = num1 * num2;
+            }
+
+            questionEl.textContent = `${num1} ${op} ${num2} =`;
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value);
+
+            if (isNaN(userAnswer)) return;
+
+            if (userAnswer === currentAnswer) {
+                feedbackEl.textContent = "Richtig! ✅";
+                feedbackEl.style.color = "#2ecc71";
+                correct++;
+                correctScoreEl.textContent = correct;
+                setTimeout(generateQuestion, 1000);
+            } else {
+                feedbackEl.textContent = `Falsch! ❌ (Antwort war ${currentAnswer})`;
+                feedbackEl.style.color = "#e74c3c";
+                wrong++;
+                wrongScoreEl.textContent = wrong;
+                setTimeout(generateQuestion, 2000);
+            }
+
+            answerInput.value = '';
+            answerInput.focus();
+        }
+
+        answerInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        generateQuestion();
+    </script>
+</body>
+</html>

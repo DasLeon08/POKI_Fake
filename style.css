@@ -79,7 +79,10 @@ main {
 }
 
 .game-tile {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     height: 200px;
     border-radius: 15px;
     text-decoration: none;
@@ -90,9 +93,20 @@ main {
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
+.game-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 .game-tile:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.25);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.3);
+}
+
+.game-tile:hover .game-icon {
+    transform: scale(1.2) rotate(10deg);
 }
 
 .game-info {
@@ -100,8 +114,9 @@ main {
     bottom: 0;
     width: 100%;
     background: rgba(0, 0, 0, 0.6);
-    padding: 1rem;
+    padding: 0.8rem;
     text-align: center;
+    backdrop-filter: blur(5px);
 }
 
 .game-info h2 {

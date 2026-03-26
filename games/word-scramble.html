@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Wortsalat - Jules Spiele</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .game-container { background: #34495e; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-top: 20px; width: 400px; }
+        .scrambled-word { font-size: 3rem; font-weight: bold; margin-bottom: 20px; letter-spacing: 5px; text-transform: uppercase; color: #f1c40f; }
+        .input-area { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { font-size: 1.5rem; width: 200px; text-align: center; border-radius: 5px; border: none; outline: none; padding: 10px; text-transform: uppercase; }
+        button { padding: 10px 20px; font-size: 1.2rem; cursor: pointer; background: #3498db; border: none; color: white; border-radius: 5px; }
+        button:hover { background: #2980b9; }
+        .feedback { font-size: 1.2rem; height: 30px; margin-top: 10px; }
+        .stats { display: flex; justify-content: space-around; font-size: 1.2rem; color: #ecf0f1; border-top: 1px solid #7f8c8d; padding-top: 15px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+    <h1>Wortsalat</h1>
+
+    <div class="game-container">
+        <p>Entwirre die Buchstaben!</p>
+        <div class="scrambled-word" id="scrambledWord">WORT</div>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Dein Tipp..." autofocus>
+            <button onclick="checkWord()">Prüfen</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+
+        <div class="stats">
+            <div>Punkte: <span id="scoreDisplay" style="color: #2ecc71;">0</span></div>
+            <button onclick="nextWord()" style="padding: 5px 10px; font-size: 1rem; margin: 0; background: #e67e22;">Überspringen</button>
+        </div>
+    </div>
+
+    <script>
+        const words = [
+            "APFEL", "BAUM", "COMPUTER", "HAUS", "KATZE", "HUND", "SONNE", "MOND", "STERN", "AUTO",
+            "FAHRRAD", "BUCH", "TISCH", "STUHL", "FENSTER", "TÜR", "VOGEL", "FISCH", "BLUME", "WIESE",
+            "WALD", "BERG", "FLUSS", "MEER", "STRAND", "SAND", "WASSER", "FEUER", "ERDE", "LUFT",
+            "SPIELEN", "LAUFEN", "SPRINGEN", "LACHEN", "WEINEN", "SINGEN", "TANZEN", "LESEN", "SCHREIBEN", "RECHNEN",
+            "SCHULE", "LEHRER", "SCHÜLER", "KLASSE", "TAFEL", "KREIDE", "HEFT", "STIFT", "RADIERGUMMI", "LINEAL",
+            "ROT", "BLAU", "GRÜN", "GELB", "SCHWARZ", "WEIß", "GRAU", "BRAUN", "ORANGE", "LILA"
+        ];
+
+        let currentWord = "";
+        let score = 0;
+
+        const scrambledWordEl = document.getElementById('scrambledWord');
+        const userInput = document.getElementById('userInput');
+        const feedbackEl = document.getElementById('feedback');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+
+        function scramble(word) {
+            let arr = word.split('');
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.join('');
+        }
+
+        function nextWord() {
+            currentWord = words[Math.floor(Math.random() * words.length)];
+
+            // Ensure scrambled word is actually different from original
+            let scrambled = scramble(currentWord);
+            while(scrambled === currentWord && currentWord.length > 2) {
+                scrambled = scramble(currentWord);
+            }
+
+            scrambledWordEl.textContent = scrambled;
+            userInput.value = '';
+            feedbackEl.textContent = '';
+            userInput.focus();
+        }
+
+        function checkWord() {
+            const guess = userInput.value.trim().toUpperCase();
+
+            if (guess === currentWord) {
+                feedbackEl.textContent = "Richtig! ✅";
+                feedbackEl.style.color = "#2ecc71";
+                score += 10;
+                scoreDisplay.textContent = score;
+                setTimeout(nextWord, 1000);
+            } else {
+                feedbackEl.textContent = "Falsch, versuch's nochmal! ❌";
+                feedbackEl.style.color = "#e74c3c";
+            }
+        }
+
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkWord();
+            }
+        });
+
+        nextWord();
+    </script>
+</body>
+</html>

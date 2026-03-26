@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Punkt Fangen - Jules Spiele</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; overflow: hidden; }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; z-index: 10; }
+        .game-area { width: 800px; height: 500px; background: #34495e; position: relative; border: 2px solid #ecf0f1; margin-top: 20px; overflow: hidden; cursor: crosshair; }
+        .dot { position: absolute; width: 30px; height: 30px; background: #f1c40f; border-radius: 50%; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); cursor: pointer; transition: top 0.1s linear, left 0.1s linear; }
+        .stats { display: flex; gap: 30px; font-size: 1.5rem; margin-top: 10px; }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 1.2rem; cursor: pointer; background: #3498db; border: none; color: white; border-radius: 5px; z-index: 10; }
+        button:hover { background: #2980b9; }
+        #startScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+    <h1>Punkt Fangen</h1>
+
+    <div class="stats">
+        <div>Gefangen: <span id="score" style="color: #2ecc71;">0</span></div>
+        <div>Verfehlt: <span id="misses" style="color: #e74c3c;">0</span>/5</div>
+    </div>
+
+    <div class="game-area" id="gameArea">
+        <div class="dot" id="dot" style="display: none;"></div>
+        <div id="startScreen">
+            <h2>Fange den Punkt! (Verfehle max. 5x)</h2>
+            <button onclick="startGame()">Start</button>
+        </div>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const dot = document.getElementById('dot');
+        const scoreEl = document.getElementById('score');
+        const missesEl = document.getElementById('misses');
+        const startScreen = document.getElementById('startScreen');
+
+        let score = 0;
+        let misses = 0;
+        let isPlaying = false;
+        let moveInterval;
+        let speed = 1000;
+
+        function startGame() {
+            score = 0;
+            misses = 0;
+            speed = 1000;
+            scoreEl.textContent = score;
+            missesEl.textContent = misses;
+            startScreen.style.display = 'none';
+            dot.style.display = 'block';
+            isPlaying = true;
+
+            moveDot();
+        }
+
+        function moveDot() {
+            if (!isPlaying) return;
+
+            const maxX = gameArea.clientWidth - 30;
+            const maxY = gameArea.clientHeight - 30;
+
+            dot.style.left = `${Math.random() * maxX}px`;
+            dot.style.top = `${Math.random() * maxY}px`;
+
+            clearInterval(moveInterval);
+            moveInterval = setInterval(() => {
+                if(isPlaying) {
+                    misses++;
+                    missesEl.textContent = misses;
+                    if(misses >= 5) {
+                        endGame();
+                    } else {
+                        moveDot(); // Move it again if missed
+                    }
+                }
+            }, speed);
+        }
+
+        dot.addEventListener('mousedown', (e) => {
+            if (!isPlaying) return;
+            e.stopPropagation(); // Prevent game area click counting as miss
+
+            score++;
+            scoreEl.textContent = score;
+
+            // Increase speed slightly
+            speed = Math.max(300, speed - 50);
+
+            moveDot();
+        });
+
+        gameArea.addEventListener('mousedown', () => {
+            if (!isPlaying) return;
+            // Clicking game area but not dot
+            misses++;
+            missesEl.textContent = misses;
+            if(misses >= 5) {
+                endGame();
+            }
+        });
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(moveInterval);
+            dot.style.display = 'none';
+
+            startScreen.innerHTML = `
+                <h2>Game Over!</h2>
+                <p>Du hast ${score} Punkte gefangen.</p>
+                <button onclick="startGame()">Nochmal spielen</button>
+            `;
+            startScreen.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

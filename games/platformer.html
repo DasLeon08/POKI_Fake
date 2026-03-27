@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Platformer</title>
+    <style>
+        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #2b2b2b; color: #fff; font-family: 'Courier New', Courier, monospace; }
+        .header { display: flex; justify-content: space-between; width: 640px; margin-bottom: 20px; align-items: center; }
+        .btn { background: #8e44ad; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn:hover { background: #9b59b6; }
+        a { color: #ecf0f1; text-decoration: none; font-size: 16px; font-weight: bold; }
+        a:hover { color: #8e44ad; }
+        #gameCanvas { background: #87CEEB; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); image-rendering: pixelated; }
+        .hud { font-size: 20px; font-weight: bold; color: #f1c40f; display: flex; gap: 20px; }
+        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 30px; border-radius: 10px; text-align: center; border: 4px solid #f1c40f; z-index: 10; width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← Zurück</a>
+        <div class="hud">
+            <div>Coins: <span id="coins">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div id="gameOver">
+            <h2 id="endTitle" style="color: #f1c40f; margin-top: 0;">Level Complete!</h2>
+            <p id="finalScore" style="font-size: 20px;">Coins: 0</p>
+            <button class="btn" id="nextBtn" onclick="initLevel(currentLevel + 1)">Next Level</button>
+            <button class="btn" id="restartBtn" style="display:none;" onclick="initLevel(currentLevel)">Restart</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const coinsEl = document.getElementById('coins');
+        const levelEl = document.getElementById('level');
+        const gameOverEl = document.getElementById('gameOver');
+        const endTitle = document.getElementById('endTitle');
+        const finalScoreEl = document.getElementById('finalScore');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+
+        let player, platforms, collectibles, enemies, goal;
+        let score = 0, currentLevel = 1, totalCoins = 0;
+        let isGameOver = false, keys = { left: false, right: false, up: false };
+        let gameLoop, cameraX = 0;
+
+        const GRAVITY = 0.5;
+        const TILE = 32;
+
+        const levels = [
+            {
+                map: [
+                    "........................................",
+                    "........................................",
+                    "........C.........C.....................",
+                    "......####.......####...................",
+                    "...............................C........",
+                    ".................C...E.......####.......",
+                    "P......C.......#####....................",
+                    "###...####...................C...C....G.",
+                    ".........................#########...###",
+                    "........................................",
+                    "........................................",
+                    "########################################"
+                ]
+            },
+            {
+                map: [
+                    "........................................",
+                    "...................C....................",
+                    ".................#####..................",
+                    ".......C...E.....................C......",
+                    ".....#####.....................#####....",
+                    "..................C.....................",
+                    "P...........C...#####.....E.........C.G.",
+                    "####......#####.........#####.....######",
+                    "........................................",
+                    "........................................",
+                    "################...#####################",
+                    "...................E...................."
+                ]
+            }
+        ];
+
+        function initLevel(levelIndex) {
+            if (levelIndex > levels.length) {
+                // Game beat
+                endTitle.textContent = "You Win!";
+                endTitle.style.color = "#2ecc71";
+                finalScoreEl.textContent = `Total Coins: ${totalCoins}`;
+                nextBtn.style.display = "none";
+                restartBtn.style.display = "inline-block";
+                restartBtn.onclick = () => { totalCoins = 0; initLevel(1); };
+                gameOverEl.style.display = 'block';
+                return;
+            }
+
+            currentLevel = levelIndex;
+            const lvl = levels[currentLevel - 1];
+
+            player = { x: 50, y: 100, vx: 0, vy: 0, w: 24, h: 24, speed: 4, jump: -10, grounded: false, color: '#e74c3c' };
+            platforms = [];
+            collectibles = [];
+            enemies = [];
+            goal = null;
+            score = 0;
+            isGameOver = false;
+            cameraX = 0;
+
+            levelEl.textContent = currentLevel;
+            coinsEl.textContent = totalCoins;
+            gameOverEl.style.display = 'none';
+            nextBtn.style.display = "inline-block";
+            restartBtn.style.display = "none";
+
+            // Parse map
+            for (let r = 0; r < lvl.map.length; r++) {
+                for (let c = 0; c < lvl.map[r].length; c++) {
+                    const char = lvl.map[r][c];
+                    const x = c * TILE;
+                    const y = r * TILE;
+
+                    if (char === '#') platforms.push({ x, y, w: TILE, h: TILE });
+                    if (char === 'P') { player.x = x; player.y = y; }
+                    if (char === 'C') collectibles.push({ x: x + 8, y: y + 8, w: 16, h: 16, collected: false });
+                    if (char === 'E') enemies.push({ x, y: y + 8, w: 24, h: 24, vx: 1, startX: x, range: 100 });
+                    if (char === 'G') goal = { x, y: y - TILE, w: TILE, h: TILE * 2 };
+                }
+            }
+
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            loop();
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'ArrowRight') keys.right = true;
+            if (e.key === 'ArrowUp') { keys.up = true; if (player.grounded) player.vy = player.jump; player.grounded = false; }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'ArrowRight') keys.right = false;
+            if (e.key === 'ArrowUp') { keys.up = false; if (player.vy < -4) player.vy = -4; /* Variable jump height */ }
+        });
+
+        function checkCollision(objA, objB) {
+            return objA.x < objB.x + objB.w && objA.x + objA.w > objB.x &&
+                   objA.y < objB.y + objB.h && objA.y + objA.h > objB.y;
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Player Movement (X)
+            if (keys.left) player.vx = -player.speed;
+            else if (keys.right) player.vx = player.speed;
+            else player.vx = 0;
+
+            player.x += player.vx;
+
+            // Platform Collision (X)
+            platforms.forEach(p => {
+                if (checkCollision(player, p)) {
+                    if (player.vx > 0) player.x = p.x - player.w;
+                    else if (player.vx < 0) player.x = p.x + p.w;
+                }
+            });
+
+            // Player Movement (Y)
+            player.vy += GRAVITY;
+            player.y += player.vy;
+            player.grounded = false;
+
+            // Platform Collision (Y)
+            platforms.forEach(p => {
+                if (checkCollision(player, p)) {
+                    if (player.vy > 0) { // Landing
+                        player.y = p.y - player.h;
+                        player.vy = 0;
+                        player.grounded = true;
+                    } else if (player.vy < 0) { // Hitting head
+                        player.y = p.y + p.h;
+                        player.vy = 0;
+                    }
+                }
+            });
+
+            // Camera follow
+            let targetCamX = player.x - canvas.width / 2 + player.w / 2;
+            targetCamX = Math.max(0, targetCamX); // Don't scroll past left edge
+            cameraX += (targetCamX - cameraX) * 0.1; // Smooth follow
+
+            // Fall off screen
+            if (player.y > canvas.height + 100) die();
+
+            // Collectibles
+            collectibles.forEach(c => {
+                if (!c.collected && checkCollision(player, c)) {
+                    c.collected = true;
+                    score++;
+                    totalCoins++;
+                    coinsEl.textContent = totalCoins;
+                }
+            });
+
+            // Enemies
+            enemies.forEach(e => {
+                e.x += e.vx;
+                if (Math.abs(e.x - e.startX) > e.range) e.vx *= -1;
+
+                if (checkCollision(player, e)) {
+                    // Stomp
+                    if (player.vy > 0 && player.y + player.h < e.y + e.h / 2) {
+                        e.dead = true;
+                        player.vy = -6; // Bounce
+                        totalCoins += 2;
+                        coinsEl.textContent = totalCoins;
+                    } else if (!e.dead) {
+                        die();
+                    }
+                }
+            });
+            enemies = enemies.filter(e => !e.dead);
+
+            // Goal
+            if (goal && checkCollision(player, goal)) {
+                levelComplete();
+            }
+        }
+
+        function draw() {
+            // Sky
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Clouds (parallax)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillRect((100 - cameraX * 0.2) % canvas.width, 100, 100, 40);
+            ctx.fillRect((400 - cameraX * 0.2) % canvas.width, 150, 150, 60);
+
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            // Platforms
+            ctx.fillStyle = '#2ecc71'; // Grass
+            platforms.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.w, 8);
+                ctx.fillStyle = '#8e44ad'; // Dirt
+                ctx.fillRect(p.x, p.y + 8, p.w, p.h - 8);
+                ctx.fillStyle = '#2ecc71'; // Reset
+            });
+
+            // Collectibles
+            ctx.fillStyle = '#f1c40f';
+            collectibles.forEach(c => {
+                if (!c.collected) {
+                    ctx.beginPath();
+                    ctx.arc(c.x + c.w/2, c.y + c.h/2, c.w/2, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#d35400';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+
+            // Enemies (Slimes)
+            ctx.fillStyle = '#e67e22';
+            enemies.forEach(e => {
+                ctx.beginPath();
+                ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, Math.PI, 0);
+                ctx.lineTo(e.x + e.w, e.y + e.h);
+                ctx.lineTo(e.x, e.y + e.h);
+                ctx.fill();
+                // Eyes
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(e.x + 4, e.y + 4, 4, 4);
+                ctx.fillRect(e.x + 16, e.y + 4, 4, 4);
+                ctx.fillStyle = '#e67e22'; // Reset
+            });
+
+            // Goal
+            if (goal) {
+                ctx.fillStyle = '#bdc3c7'; // Flagpole
+                ctx.fillRect(goal.x + 10, goal.y, 4, goal.h);
+                ctx.fillStyle = '#e74c3c'; // Flag
+                ctx.beginPath();
+                ctx.moveTo(goal.x + 14, goal.y + 4);
+                ctx.lineTo(goal.x + 30, goal.y + 12);
+                ctx.lineTo(goal.x + 14, goal.y + 20);
+                ctx.fill();
+            }
+
+            // Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            // Face
+            ctx.fillStyle = '#fff';
+            let lookDir = player.vx > 0 ? 8 : (player.vx < 0 ? -8 : 0);
+            ctx.fillRect(player.x + 4 + lookDir, player.y + 4, 4, 4);
+            ctx.fillRect(player.x + 16 + lookDir, player.y + 4, 4, 4);
+
+            ctx.restore();
+        }
+
+        function loop() {
+            if (!isGameOver) {
+                update();
+                draw();
+                gameLoop = requestAnimationFrame(loop);
+            }
+        }
+
+        function die() {
+            isGameOver = true;
+            endTitle.textContent = "You Died!";
+            endTitle.style.color = "#e74c3c";
+            finalScoreEl.textContent = "Try again!";
+            nextBtn.style.display = "none";
+            restartBtn.style.display = "inline-block";
+            gameOverEl.style.display = 'block';
+        }
+
+        function levelComplete() {
+            isGameOver = true;
+            endTitle.textContent = "Level Complete!";
+            endTitle.style.color = "#f1c40f";
+            finalScoreEl.textContent = `Coins: ${totalCoins}`;
+            nextBtn.style.display = "inline-block";
+            restartBtn.style.display = "none";
+            gameOverEl.style.display = 'block';
+
+            if (window.userSystem) {
+                window.userSystem.addXP(currentLevel * 50);
+                window.userSystem.addCoins(score * 2);
+            }
+        }
+
+        // Start
+        initLevel(1);
+    </script>
+</body>
+</html>

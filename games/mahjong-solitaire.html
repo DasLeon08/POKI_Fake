@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mahjong Solitaire</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0 0 0 20px;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: #f39c12;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .controls {
+            margin-right: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            background-color: #34495e;
+            color: white;
+            border: 1px solid #7f8c8d;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #465c72;
+        }
+
+        .back-btn {
+            padding: 8px 15px;
+            background-color: #c0392b;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            border: 1px solid #e74c3c;
+        }
+
+        .back-btn:hover {
+            background-color: #e74c3c;
+        }
+
+        #game-board {
+            position: relative;
+            width: 900px;
+            height: 600px;
+            margin-top: 30px;
+            user-select: none;
+            background: radial-gradient(circle, #34495e 0%, #2c3e50 100%);
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .tile {
+            position: absolute;
+            width: 50px;
+            height: 70px;
+            background-color: #fdf5e6; /* Old lace */
+            border-radius: 5px;
+            border-right: 4px solid #dcd0c0;
+            border-bottom: 4px solid #dcd0c0;
+            border-left: 1px solid #fff;
+            border-top: 1px solid #fff;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            transition: transform 0.1s, filter 0.2s;
+            box-sizing: border-box;
+        }
+
+        .tile:hover {
+            filter: brightness(1.1);
+        }
+
+        .tile.selected {
+            transform: translateY(-5px);
+            border-color: #f39c12;
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.5);
+        }
+
+        .tile.blocked {
+            cursor: not-allowed;
+            filter: brightness(0.7);
+        }
+
+        .tile.blocked:hover {
+            filter: brightness(0.7);
+        }
+
+        .tile-type-bamboo { color: #27ae60; }
+        .tile-type-circle { color: #2980b9; }
+        .tile-type-character { color: #c0392b; }
+        .tile-type-wind { color: #8e44ad; }
+        .tile-type-dragon { color: #d35400; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #2c3e50;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #f39c12;
+            box-shadow: 0 0 20px #f39c12;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            font-size: 32px;
+            color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>MAHJONG</h1>
+        <div class="controls">
+            <div class="stat">Paare: <span id="pairs">0</span>/<span id="total-pairs">72</span></div>
+            <button class="btn" onclick="initGame()">Neues Spiel</button>
+            <a href="../index.html" class="back-btn">Portal</a>
+        </div>
+    </header>
+
+    <div id="game-board"></div>
+
+    <div id="end-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="end-title">GEWONNEN!</h2>
+            <p id="end-desc">Alle Paare gefunden.</p>
+            <button class="btn" onclick="initGame()">Neues Spiel</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        // Simple Mahjong layout & logic
+        const TILE_WIDTH = 50;
+        const TILE_HEIGHT = 70;
+        const TILE_OFFSET_X = 2; // for 3D stack effect
+        const TILE_OFFSET_Y = -2;
+
+        let tiles = [];
+        let selectedTile = null;
+        let pairsFound = 0;
+        const TOTAL_PAIRS = 72; // Standard 144 tiles
+
+        // Symbols mapping (using some unicode for visual appeal)
+        const tileTypes = [
+            // Bamboo 1-9 (using lines or generic shapes)
+            ...Array.from({length: 9}, (_,i) => ({type: 'bamboo', val: i+1, sym: `${i+1}B`, color: 'tile-type-bamboo'})),
+            // Circles 1-9
+            ...Array.from({length: 9}, (_,i) => ({type: 'circle', val: i+1, sym: `${i+1}C`, color: 'tile-type-circle'})),
+            // Characters 1-9
+            ...Array.from({length: 9}, (_,i) => ({type: 'character', val: i+1, sym: `${i+1}W`, color: 'tile-type-character'})),
+            // Winds (N, E, S, W)
+            {type: 'wind', val: 'N', sym: '北', color: 'tile-type-wind'},
+            {type: 'wind', val: 'E', sym: '東', color: 'tile-type-wind'},
+            {type: 'wind', val: 'S', sym: '南', color: 'tile-type-wind'},
+            {type: 'wind', val: 'W', sym: '西', color: 'tile-type-wind'},
+            // Dragons (Red, Green, White)
+            {type: 'dragon', val: 'R', sym: '中', color: 'tile-type-dragon'},
+            {type: 'dragon', val: 'G', sym: '發', color: 'tile-type-dragon'},
+            {type: 'dragon', val: 'W', sym: '白', color: 'tile-type-dragon'},
+        ]; // Total 34 unique tiles.
+        // We need 144 tiles (4 of each of the 34 types = 136). Plus 8 seasons/flowers.
+        // For simplicity, we'll just use 36 types * 4 = 144.
+        // Let's add 2 more unique to make 36.
+        tileTypes.push({type: 'flower', val: 'F1', sym: '🌸', color: 'tile-type-dragon'});
+        tileTypes.push({type: 'flower', val: 'F2', sym: '🌺', color: 'tile-type-dragon'});
+
+        let deck = [];
+
+        // Turtle Layout Definition (layer, row, col)
+        // Simplified grid mapping.
+        // Row: 0-14, Col: 0-29.
+        const layout = [
+            // Layer 0 (Bottom)
+            {l:0, r:3, c:2}, {l:0, r:3, c:4}, {l:0, r:3, c:6}, {l:0, r:3, c:8}, {l:0, r:3, c:10}, {l:0, r:3, c:12}, {l:0, r:3, c:14}, {l:0, r:3, c:16}, {l:0, r:3, c:18}, {l:0, r:3, c:20}, {l:0, r:3, c:22}, {l:0, r:3, c:24},
+            {l:0, r:5, c:4}, {l:0, r:5, c:6}, {l:0, r:5, c:8}, {l:0, r:5, c:10}, {l:0, r:5, c:12}, {l:0, r:5, c:14}, {l:0, r:5, c:16}, {l:0, r:5, c:18}, {l:0, r:5, c:20}, {l:0, r:5, c:22},
+            {l:0, r:7, c:0}, {l:0, r:7, c:2}, {l:0, r:7, c:4}, {l:0, r:7, c:6}, {l:0, r:7, c:8}, {l:0, r:7, c:10}, {l:0, r:7, c:12}, {l:0, r:7, c:14}, {l:0, r:7, c:16}, {l:0, r:7, c:18}, {l:0, r:7, c:20}, {l:0, r:7, c:22}, {l:0, r:7, c:24}, {l:0, r:7, c:26}, {l:0, r:7, c:28},
+            {l:0, r:9, c:2}, {l:0, r:9, c:4}, {l:0, r:9, c:6}, {l:0, r:9, c:8}, {l:0, r:9, c:10}, {l:0, r:9, c:12}, {l:0, r:9, c:14}, {l:0, r:9, c:16}, {l:0, r:9, c:18}, {l:0, r:9, c:20}, {l:0, r:9, c:22}, {l:0, r:9, c:24},
+            {l:0, r:11, c:4}, {l:0, r:11, c:6}, {l:0, r:11, c:8}, {l:0, r:11, c:10}, {l:0, r:11, c:12}, {l:0, r:11, c:14}, {l:0, r:11, c:16}, {l:0, r:11, c:18}, {l:0, r:11, c:20}, {l:0, r:11, c:22},
+            {l:0, r:13, c:2}, {l:0, r:13, c:4}, {l:0, r:13, c:6}, {l:0, r:13, c:8}, {l:0, r:13, c:10}, {l:0, r:13, c:12}, {l:0, r:13, c:14}, {l:0, r:13, c:16}, {l:0, r:13, c:18}, {l:0, r:13, c:20}, {l:0, r:13, c:22}, {l:0, r:13, c:24},
+            // Left & Right extras
+            {l:0, r:7, c:27}, // Right far
+
+            // Due to complexity of manually typing all 144 in perfect turtle,
+            // I'll procedurally generate a pyramid layout.
+        ];
+
+        function generateLayout() {
+            let procLayout = [];
+            // We need exactly 144 tiles. Let's build a stepped pyramid.
+            let count = 0;
+            const maxCols = 14;
+            const maxRows = 8;
+
+            // Base layer (8 x 10) = 80
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<10; c++) {
+                    procLayout.push({l:0, r: r*2, c: c*2 + 2});
+                    count++;
+                }
+            }
+            // Layer 1 (6 x 6) = 36
+            for(let r=1; r<7; r++) {
+                for(let c=2; c<8; c++) {
+                    procLayout.push({l:1, r: r*2, c: c*2 + 1});
+                    count++;
+                }
+            }
+            // Layer 2 (4 x 4) = 16
+            for(let r=2; r<6; r++) {
+                for(let c=3; c<7; c++) {
+                    procLayout.push({l:2, r: r*2, c: c*2 + 2});
+                    count++;
+                }
+            }
+            // Layer 3 (2 x 4) = 8
+            for(let r=3; r<5; r++) {
+                for(let c=4; c<8; c++) {
+                    procLayout.push({l:3, r: r*2, c: c*2 + 1});
+                    count++;
+                }
+            }
+            // Layer 4 (2 x 2) = 4
+            for(let r=3; r<5; r++) {
+                for(let c=5; c<7; c++) {
+                    procLayout.push({l:4, r: r*2, c: c*2 + 2});
+                    count++;
+                }
+            }
+            // Total: 80 + 36 + 16 + 8 + 4 = 144
+            return procLayout;
+        }
+
+        const pyramidLayout = generateLayout();
+
+        function createDeck() {
+            deck = [];
+            for (let type of tileTypes) {
+                for (let i = 0; i < 4; i++) {
+                    deck.push({...type, id: `${type.type}_${type.val}_${i}`});
+                }
+            }
+            // Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function isBlocked(tile) {
+            // A tile is blocked if:
+            // 1. There is a tile directly on top of it (higher layer, intersecting bounds).
+            // 2. There are tiles immediately to its LEFT AND RIGHT on the same layer.
+
+            let hasLeft = false;
+            let hasRight = false;
+
+            for (let other of tiles) {
+                if (!other.active || other === tile) continue;
+
+                // Check top cover
+                if (other.l > tile.l) {
+                    // Check intersection in grid units
+                    // A tile occupies 2 units in col, 2 units in row approx in this simplified check
+                    // Let's use bounding box in pixels for precise check
+                    const dx = Math.abs(other.x - tile.x);
+                    const dy = Math.abs(other.y - tile.y);
+                    if (dx < TILE_WIDTH && dy < TILE_HEIGHT) {
+                        return true; // Covered
+                    }
+                }
+
+                // Check left/right on same or higher layer blocking sides
+                if (other.l >= tile.l) {
+                    const dy = Math.abs(other.y - tile.y);
+                    if (dy < TILE_HEIGHT - 10) { // Same horizontal band
+                        if (other.x < tile.x && tile.x - other.x < TILE_WIDTH + 5) {
+                            hasLeft = true;
+                        }
+                        if (other.x > tile.x && other.x - tile.x < TILE_WIDTH + 5) {
+                            hasRight = true;
+                        }
+                    }
+                }
+            }
+
+            return hasLeft && hasRight;
+        }
+
+        function updateTileStates() {
+            tiles.forEach(tile => {
+                if (!tile.active) return;
+                const blocked = isBlocked(tile);
+                if (blocked) {
+                    tile.el.classList.add('blocked');
+                } else {
+                    tile.el.classList.remove('blocked');
+                }
+            });
+        }
+
+        function initGame() {
+            document.getElementById('end-modal').style.display = 'none';
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            createDeck();
+            tiles = [];
+            pairsFound = 0;
+            selectedTile = null;
+            document.getElementById('pairs').innerText = pairsFound;
+
+            // Base offsets to center the pyramid
+            const boardW = 900;
+            const boardH = 600;
+            const startX = 200;
+            const startY = 100;
+
+            pyramidLayout.forEach((pos, index) => {
+                const cardData = deck[index];
+                if(!cardData) return;
+
+                const tile = {
+                    ...cardData,
+                    l: pos.l,
+                    r: pos.r,
+                    c: pos.c,
+                    active: true,
+                    x: startX + (pos.c * (TILE_WIDTH / 2)) + (pos.l * 5), // pseudo 3D shift
+                    y: startY + (pos.r * (TILE_HEIGHT / 2)) - (pos.l * 5)
+                };
+
+                const el = document.createElement('div');
+                el.className = `tile ${tile.color}`;
+                el.innerText = tile.sym;
+                el.style.left = `${tile.x}px`;
+                el.style.top = `${tile.y}px`;
+                el.style.zIndex = tile.l * 100 + tile.r; // higher layers in front
+
+                el.addEventListener('click', () => handleTileClick(tile));
+
+                tile.el = el;
+                tiles.push(tile);
+                board.appendChild(el);
+            });
+
+            updateTileStates();
+        }
+
+        function handleTileClick(tile) {
+            if (!tile.active || isBlocked(tile)) {
+                return;
+            }
+
+            if (selectedTile === tile) {
+                // Deselect
+                tile.el.classList.remove('selected');
+                selectedTile = null;
+                return;
+            }
+
+            if (selectedTile) {
+                // Check match
+                if (selectedTile.type === tile.type && selectedTile.val === tile.val) {
+                    // Match!
+                    tile.active = false;
+                    selectedTile.active = false;
+
+                    tile.el.style.display = 'none';
+                    selectedTile.el.style.display = 'none';
+
+                    selectedTile = null;
+                    pairsFound++;
+                    document.getElementById('pairs').innerText = pairsFound;
+
+                    updateTileStates();
+                    checkWin();
+                } else {
+                    // No match, switch selection
+                    selectedTile.el.classList.remove('selected');
+                    tile.el.classList.add('selected');
+                    selectedTile = tile;
+                }
+            } else {
+                tile.el.classList.add('selected');
+                selectedTile = tile;
+            }
+        }
+
+        function checkWin() {
+            if (pairsFound === TOTAL_PAIRS) {
+                if (window.userSystem) {
+                    const xpEarned = 150;
+                    const coinsEarned = 100;
+                    window.userSystem.addXP(xpEarned);
+                    window.userSystem.addCoins(coinsEarned);
+                    document.getElementById('end-desc').innerText = `Perfekt abgeräumt!\n\n+${xpEarned} XP\n+${coinsEarned} Coins`;
+                }
+                document.getElementById('end-modal').style.display = 'flex';
+            } else {
+                // Check if any moves left
+                let hasMoves = false;
+                const activeTiles = tiles.filter(t => t.active && !isBlocked(t));
+
+                for (let i=0; i<activeTiles.length; i++) {
+                    for (let j=i+1; j<activeTiles.length; j++) {
+                        if (activeTiles[i].type === activeTiles[j].type && activeTiles[i].val === activeTiles[j].val) {
+                            hasMoves = true;
+                            break;
+                        }
+                    }
+                    if (hasMoves) break;
+                }
+
+                if (!hasMoves) {
+                    document.getElementById('end-title').innerText = "GAME OVER";
+                    document.getElementById('end-desc').innerText = "Keine Züge mehr möglich.";
+                    document.getElementById('end-modal').style.display = 'flex';
+                }
+            }
+        }
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroids</title>
+    <style>
+        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #000; color: white; font-family: monospace; }
+        canvas { background-color: #111; border: 2px solid #fff; box-shadow: 0 0 10px #fff; max-width: 100%; cursor: crosshair;}
+        .header { display: flex; justify-content: space-between; width: 600px; margin-bottom: 20px; }
+        .btn { background: #555; color: white; border: 1px solid #fff; padding: 10px 20px; cursor: pointer; font-size: 16px; font-family: monospace;}
+        .btn:hover { background: #777; }
+        a { color: #fff; text-decoration: none; font-size: 16px; }
+        a:hover { color: #aaa; }
+        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 30px; border: 2px solid #fff; text-align: center; z-index: 10;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← Zurück zur Übersicht</a>
+        <div id="scoreDisplay" style="font-size: 20px;">Score: 0</div>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <div id="gameOver">
+            <h2>GAME OVER</h2>
+            <p id="finalScore" style="font-size: 24px;">Score: 0</p>
+            <button class="btn" onclick="initGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreText = document.getElementById('finalScore');
+
+        let ship, bullets, asteroids, score, keys, isGameOver;
+
+        function initGame() {
+            ship = { x: 300, y: 200, a: 0, r: 10, xv: 0, yv: 0, rot: 0, thrusting: false };
+            bullets = [];
+            asteroids = [];
+            score = 0;
+            keys = {};
+            isGameOver = false;
+
+            for(let i=0; i<5; i++) createAsteroid(Math.random()*600, Math.random()*400, 30);
+
+            scoreDisplay.textContent = `Score: 0`;
+            gameOverScreen.style.display = 'none';
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('keydown', e => keys[e.code] = true);
+        document.addEventListener('keyup', e => keys[e.code] = false);
+
+        function createAsteroid(x, y, r) {
+            let lvlMult = 1 + score/1000;
+            asteroids.push({
+                x: x, y: y, xv: (Math.random()-0.5)*2*lvlMult, yv: (Math.random()-0.5)*2*lvlMult, r: r,
+                a: Math.random()*Math.PI*2, vert: Math.floor(Math.random()*5+5), offs: []
+            });
+            let ast = asteroids[asteroids.length-1];
+            for(let i=0; i<ast.vert; i++) ast.offs.push(Math.random()*0.4 + 0.8);
+        }
+
+        function update() {
+            if (isGameOver) return;
+
+            // Ship controls
+            if (keys['ArrowLeft']) ship.a -= 0.1;
+            if (keys['ArrowRight']) ship.a += 0.1;
+            if (keys['ArrowUp']) {
+                ship.thrusting = true;
+                ship.xv += Math.cos(ship.a) * 0.1;
+                ship.yv += Math.sin(ship.a) * 0.1;
+            } else {
+                ship.thrusting = false;
+                ship.xv *= 0.99;
+                ship.yv *= 0.99;
+            }
+            if (keys['Space'] && bullets.length < 10) {
+                keys['Space'] = false; // Require release
+                bullets.push({
+                    x: ship.x + Math.cos(ship.a)*ship.r,
+                    y: ship.y + Math.sin(ship.a)*ship.r,
+                    xv: ship.xv + Math.cos(ship.a)*5,
+                    yv: ship.yv + Math.sin(ship.a)*5,
+                    life: 60
+                });
+            }
+
+            // Ship movement & wrap
+            ship.x += ship.xv; ship.y += ship.yv;
+            if(ship.x < 0) ship.x = 600; if(ship.x > 600) ship.x = 0;
+            if(ship.y < 0) ship.y = 400; if(ship.y > 400) ship.y = 0;
+
+            // Bullets
+            for(let i=bullets.length-1; i>=0; i--) {
+                bullets[i].x += bullets[i].xv; bullets[i].y += bullets[i].yv;
+                bullets[i].life--;
+                if(bullets[i].x < 0) bullets[i].x = 600; if(bullets[i].x > 600) bullets[i].x = 0;
+                if(bullets[i].y < 0) bullets[i].y = 400; if(bullets[i].y > 400) bullets[i].y = 0;
+                if(bullets[i].life <= 0) bullets.splice(i, 1);
+            }
+
+            // Asteroids
+            for(let i=asteroids.length-1; i>=0; i--) {
+                let a = asteroids[i];
+                a.x += a.xv; a.y += a.yv;
+                if(a.x < 0) a.x = 600; if(a.x > 600) a.x = 0;
+                if(a.y < 0) a.y = 400; if(a.y > 400) a.y = 0;
+
+                // Collision with ship
+                let dx = ship.x - a.x, dy = ship.y - a.y;
+                if (Math.sqrt(dx*dx + dy*dy) < ship.r + a.r) gameOver();
+
+                // Collision with bullets
+                for(let j=bullets.length-1; j>=0; j--) {
+                    let b = bullets[j];
+                    let bx = b.x - a.x, by = b.y - a.y;
+                    if(Math.sqrt(bx*bx + by*by) < a.r) {
+                        score += 100;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        if(a.r > 15) {
+                            createAsteroid(a.x, a.y, a.r/2);
+                            createAsteroid(a.x, a.y, a.r/2);
+                        }
+                        asteroids.splice(i, 1);
+                        bullets.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+
+            // Refill asteroids
+            if(asteroids.length === 0) {
+                for(let i=0; i<5; i++) createAsteroid(Math.random()*600, Math.random()*400, 30);
+            }
+
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000'; ctx.fillRect(0,0,600,400);
+
+            // Ship
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(ship.x + Math.cos(ship.a)*ship.r*2, ship.y + Math.sin(ship.a)*ship.r*2);
+            ctx.lineTo(ship.x - Math.cos(ship.a + 0.5)*ship.r*2, ship.y - Math.sin(ship.a + 0.5)*ship.r*2);
+            ctx.lineTo(ship.x - Math.cos(ship.a - 0.5)*ship.r*2, ship.y - Math.sin(ship.a - 0.5)*ship.r*2);
+            ctx.closePath(); ctx.stroke();
+            if(ship.thrusting) {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(ship.x - Math.cos(ship.a)*ship.r*2.5, ship.y - Math.sin(ship.a)*ship.r*2.5, 3, 3);
+            }
+
+            // Bullets
+            ctx.fillStyle = '#ff0';
+            bullets.forEach(b => ctx.fillRect(b.x, b.y, 3, 3));
+
+            // Asteroids
+            ctx.strokeStyle = '#fff';
+            asteroids.forEach(a => {
+                ctx.beginPath();
+                for(let j=0; j<a.vert; j++) {
+                    ctx.lineTo(a.x + a.r*a.offs[j]*Math.cos(a.a + j*Math.PI*2/a.vert),
+                               a.y + a.r*a.offs[j]*Math.sin(a.a + j*Math.PI*2/a.vert));
+                }
+                ctx.closePath(); ctx.stroke();
+            });
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
+            finalScoreText.textContent = `Score: ${score}`;
+
+            if (window.userSystem) {
+                window.userSystem.addXP(Math.floor(score/10));
+                window.userSystem.addCoins(Math.floor(score/50));
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

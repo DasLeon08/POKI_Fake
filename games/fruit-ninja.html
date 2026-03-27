@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Ninja Clone</title>
+    <style>
+        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #f5deb3; color: #333; font-family: 'Segoe UI', sans-serif; }
+        .header { display: flex; justify-content: space-between; width: 600px; margin-bottom: 20px; align-items: center; }
+        .btn { background: #ff4500; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn:hover { background: #e03e00; }
+        a { color: #8b4513; text-decoration: none; font-size: 16px; font-weight: bold; }
+        a:hover { color: #ff4500; }
+        #gameCanvas { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="500"><rect width="100%" height="100%" fill="%23e8d2a6"/></svg>') #e8d2a6; border: 8px solid #8b4513; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); cursor: crosshair; touch-action: none; }
+        .hud { font-size: 24px; font-weight: bold; color: #8b4513; display: flex; gap: 30px; }
+        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.95); padding: 30px; border-radius: 10px; text-align: center; border: 4px solid #ff4500; z-index: 10; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← Zurück</a>
+        <div class="hud">
+            <div>Score: <span id="score">0</span></div>
+            <div style="color: #ff0000;">Miss: <span id="misses">0</span>/3</div>
+        </div>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="600" height="500"></canvas>
+        <div id="gameOver">
+            <h2 style="color: #ff4500; margin-top: 0;">Game Over!</h2>
+            <p id="finalScore" style="font-size: 24px;">Score: 0</p>
+            <button class="btn" onclick="initGame()">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const missesEl = document.getElementById('misses');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+
+        let fruits = [], particles = [], slicePoints = [];
+        let score = 0, misses = 0, frames = 0;
+        let isGameOver = false, isDrawing = false;
+        let gameLoop;
+
+        const fruitColors = ['#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'];
+        const BOMB_COLOR = '#000';
+
+        function initGame() {
+            fruits = [];
+            particles = [];
+            slicePoints = [];
+            score = 0;
+            misses = 0;
+            frames = 0;
+            isGameOver = false;
+
+            scoreEl.textContent = score;
+            missesEl.textContent = misses;
+            gameOverEl.style.display = 'none';
+
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            loop();
+        }
+
+        canvas.addEventListener('mousedown', e => { isDrawing = true; addSlicePoint(e); });
+        canvas.addEventListener('mousemove', e => { if (isDrawing) addSlicePoint(e); });
+        canvas.addEventListener('mouseup', () => { isDrawing = false; slicePoints = []; });
+        canvas.addEventListener('mouseleave', () => { isDrawing = false; slicePoints = []; });
+
+        // Touch support
+        canvas.addEventListener('touchstart', e => { isDrawing = true; addSlicePoint(e.touches[0]); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchmove', e => { if (isDrawing) addSlicePoint(e.touches[0]); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchend', () => { isDrawing = false; slicePoints = []; });
+
+        function addSlicePoint(e) {
+            const rect = canvas.getBoundingClientRect();
+            slicePoints.push({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+                life: 10
+            });
+            checkSlice();
+        }
+
+        function spawnFruit() {
+            let isBomb = Math.random() < 0.15;
+            let radius = isBomb ? 25 : 30 + Math.random() * 15;
+            fruits.push({
+                x: 100 + Math.random() * (canvas.width - 200),
+                y: canvas.height + radius,
+                vx: (Math.random() - 0.5) * 8,
+                vy: -(12 + Math.random() * 6),
+                r: radius,
+                color: isBomb ? BOMB_COLOR : fruitColors[Math.floor(Math.random() * fruitColors.length)],
+                isBomb: isBomb,
+                sliced: false,
+                rot: Math.random() * Math.PI * 2,
+                vrot: (Math.random() - 0.5) * 0.2
+            });
+        }
+
+        function createSplash(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                    r: Math.random() * 5 + 2,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        function checkSlice() {
+            if (slicePoints.length < 2) return;
+            const p1 = slicePoints[slicePoints.length - 2];
+            const p2 = slicePoints[slicePoints.length - 1];
+
+            for (let i = fruits.length - 1; i >= 0; i--) {
+                let f = fruits[i];
+                if (f.sliced) continue;
+
+                // Simple point-to-circle collision for the line segment
+                // To keep it simple, we just check if the latest point is inside the fruit
+                let dx = p2.x - f.x;
+                let dy = p2.y - f.y;
+                if (Math.sqrt(dx*dx + dy*dy) < f.r + 10) {
+                    if (f.isBomb) {
+                        gameOver();
+                        createSplash(f.x, f.y, '#f00');
+                    } else {
+                        f.sliced = true;
+                        score++;
+                        scoreEl.textContent = score;
+                        createSplash(f.x, f.y, f.color);
+
+                        // Split into halves
+                        fruits.push({ x: f.x-10, y: f.y, vx: f.vx - 3, vy: f.vy, r: f.r, color: f.color, isBomb: false, sliced: true, rot: f.rot, vrot: -0.1, isHalf: true });
+                        fruits.push({ x: f.x+10, y: f.y, vx: f.vx + 3, vy: f.vy, r: f.r, color: f.color, isBomb: false, sliced: true, rot: f.rot, vrot: 0.1, isHalf: true });
+                        fruits.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function update() {
+            if (isGameOver) return;
+            frames++;
+
+            // Spawn
+            if (frames % (Math.max(30, 80 - Math.floor(score/2))) === 0) {
+                let count = 1 + Math.floor(Math.random() * 3);
+                for(let i=0; i<count; i++) spawnFruit();
+            }
+
+            // Gravity & Move Fruits
+            for (let i = fruits.length - 1; i >= 0; i--) {
+                let f = fruits[i];
+                f.vy += 0.2; // Gravity
+                f.x += f.vx;
+                f.y += f.vy;
+                f.rot += f.vrot;
+
+                if (f.y - f.r > canvas.height) {
+                    if (!f.isBomb && !f.sliced && !f.isHalf) {
+                        misses++;
+                        missesEl.textContent = misses;
+                        if (misses >= 3) gameOver();
+                    }
+                    fruits.splice(i, 1);
+                }
+            }
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy;
+                p.vy += 0.2;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Slice trail fading
+            for (let i = slicePoints.length - 1; i >= 0; i--) {
+                slicePoints[i].life--;
+                if (slicePoints[i].life <= 0) slicePoints.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fruits
+            fruits.forEach(f => {
+                ctx.save();
+                ctx.translate(f.x, f.y);
+                ctx.rotate(f.rot);
+
+                if (f.isBomb) {
+                    ctx.fillStyle = BOMB_COLOR;
+                    ctx.beginPath(); ctx.arc(0, 0, f.r, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#f00';
+                    ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('B', 0, 0);
+                    // Spark
+                    ctx.strokeStyle = '#ffa500'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(0, -f.r); ctx.lineTo(10, -f.r-10); ctx.stroke();
+                } else {
+                    ctx.fillStyle = f.color;
+                    ctx.beginPath();
+                    if (f.isHalf) {
+                        ctx.arc(0, 0, f.r, 0, Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff'; // Inner fruit
+                        ctx.beginPath(); ctx.arc(0, 0, f.r*0.8, 0, Math.PI); ctx.fill();
+                    } else {
+                        ctx.arc(0, 0, f.r, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            });
+
+            // Particles (Juice)
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 30;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // Slice Trail
+            if (slicePoints.length > 1) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 6;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(slicePoints[0].x, slicePoints[0].y);
+                for (let i = 1; i < slicePoints.length; i++) {
+                    ctx.lineTo(slicePoints[i].x, slicePoints[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function loop() {
+            if (!isGameOver) {
+                update();
+                draw();
+                gameLoop = requestAnimationFrame(loop);
+            }
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            gameOverEl.style.display = 'block';
+            finalScoreEl.textContent = `Score: ${score}`;
+
+            if (window.userSystem) {
+                window.userSystem.addXP(Math.floor(score * 2));
+                window.userSystem.addCoins(Math.floor(score / 5));
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

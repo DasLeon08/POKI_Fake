@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Clone</title>
+    <style>
+        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #111; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { background-color: #000; border: 4px solid #333; box-shadow: 0 0 20px rgba(255, 255, 0, 0.2); max-width: 100%; }
+        .header { display: flex; justify-content: space-between; width: 400px; margin-bottom: 20px; }
+        .btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn:hover { background: #45a049; }
+        a { color: #fff; text-decoration: none; font-size: 16px; }
+        a:hover { color: #ffeb3b; }
+        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 30px; border-radius: 10px; text-align: center; border: 2px solid #ffeb3b; z-index: 10;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html">← Zurück zur Übersicht</a>
+        <div id="scoreDisplay">Punkte: 0</div>
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="gameOver">
+            <h2>Spiel Vorbei!</h2>
+            <p id="finalScore">Punkte: 0</p>
+            <button class="btn" onclick="initGame()">Nochmal Spielen</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreText = document.getElementById('finalScore');
+
+        let pacman, ghosts, pellets, score, gameLoop, isGameOver;
+        const TILE = 20;
+
+        function initGame() {
+            pacman = { x: 200, y: 300, vx: 0, vy: 0, size: 8, angle: 0.2, mouthDir: 1 };
+            ghosts = [
+                { x: 180, y: 180, vx: 2, vy: 0, color: 'red' },
+                { x: 200, y: 180, vx: -2, vy: 0, color: 'pink' },
+                { x: 220, y: 180, vx: 0, vy: -2, color: 'cyan' }
+            ];
+            pellets = [];
+            score = 0;
+            isGameOver = false;
+
+            // Generate pellets
+            for(let i=1; i<19; i++) {
+                for(let j=1; j<19; j++) {
+                    if (i % 2 === 0 || j % 2 === 0) {
+                        pellets.push({x: i*20+10, y: j*20+10});
+                    }
+                }
+            }
+
+            scoreDisplay.textContent = `Punkte: ${score}`;
+            gameOverScreen.style.display = 'none';
+            if(gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, 1000/30);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+            const speed = 4;
+            if(e.key === 'ArrowUp') { pacman.vx = 0; pacman.vy = -speed; }
+            if(e.key === 'ArrowDown') { pacman.vx = 0; pacman.vy = speed; }
+            if(e.key === 'ArrowLeft') { pacman.vx = -speed; pacman.vy = 0; }
+            if(e.key === 'ArrowRight') { pacman.vx = speed; pacman.vy = 0; }
+        });
+
+        function update() {
+            // Move Pacman
+            pacman.x += pacman.vx;
+            pacman.y += pacman.vy;
+
+            // Screen wrap
+            if(pacman.x < 0) pacman.x = 400;
+            if(pacman.x > 400) pacman.x = 0;
+            if(pacman.y < 0) pacman.y = 400;
+            if(pacman.y > 400) pacman.y = 0;
+
+            pacman.mouthDir = pacman.angle > 0.8 ? -1 : (pacman.angle < 0.2 ? 1 : pacman.mouthDir);
+            pacman.angle += 0.1 * pacman.mouthDir;
+
+            // Move Ghosts
+            ghosts.forEach(g => {
+                g.x += g.vx;
+                g.y += g.vy;
+                if(g.x <= 0 || g.x >= 400 || Math.random() < 0.05) { g.vx *= -1; }
+                if(g.y <= 0 || g.y >= 400 || Math.random() < 0.05) { g.vy *= -1; }
+
+                // Collision
+                const dx = pacman.x - g.x;
+                const dy = pacman.y - g.y;
+                if(Math.sqrt(dx*dx + dy*dy) < 15) {
+                    gameOver();
+                }
+            });
+
+            // Eat Pellets
+            for(let i = pellets.length-1; i >= 0; i--) {
+                const p = pellets[i];
+                const dx = pacman.x - p.x;
+                const dy = pacman.y - p.y;
+                if(Math.sqrt(dx*dx + dy*dy) < 10) {
+                    pellets.splice(i, 1);
+                    score += 10;
+                    scoreDisplay.textContent = `Punkte: ${score}`;
+                }
+            }
+
+            if(pellets.length === 0) gameOver(); // Win
+
+            draw();
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 400, 400);
+
+            // Pellets
+            ctx.fillStyle = '#fff';
+            pellets.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // Pacman
+            ctx.save();
+            ctx.translate(pacman.x, pacman.y);
+            if(pacman.vx > 0) ctx.rotate(0);
+            else if(pacman.vx < 0) ctx.rotate(Math.PI);
+            else if(pacman.vy > 0) ctx.rotate(Math.PI/2);
+            else if(pacman.vy < 0) ctx.rotate(-Math.PI/2);
+
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(0, 0, pacman.size*1.5, pacman.angle, Math.PI*2 - pacman.angle);
+            ctx.lineTo(0, 0);
+            ctx.fill();
+            ctx.restore();
+
+            // Ghosts
+            ghosts.forEach(g => {
+                ctx.fillStyle = g.color;
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, 10, Math.PI, 0);
+                ctx.lineTo(g.x+10, g.y+10);
+                ctx.lineTo(g.x-10, g.y+10);
+                ctx.fill();
+            });
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            clearInterval(gameLoop);
+            gameOverScreen.style.display = 'block';
+            finalScoreText.textContent = `Punkte: ${score}`;
+
+            if (window.userSystem) {
+                const xp = Math.floor(score / 20);
+                const coins = Math.floor(score / 50);
+                window.userSystem.addXP(xp);
+                window.userSystem.addCoins(coins);
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

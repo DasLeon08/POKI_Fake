@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solitaire</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #006600; /* Classic felt green */
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0 0 0 20px;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: #f1c40f;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .controls {
+            margin-right: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            background-color: #2c3e50;
+            color: white;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #34495e;
+        }
+
+        .back-btn {
+            padding: 8px 15px;
+            background-color: #c0392b;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            border: 1px solid #e74c3c;
+        }
+
+        .back-btn:hover {
+            background-color: #e74c3c;
+        }
+
+        #game-board {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            margin-top: 20px;
+            user-select: none;
+        }
+
+        .card-slot {
+            position: absolute;
+            width: 100px;
+            height: 140px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            position: absolute;
+            width: 100px;
+            height: 140px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding: 5px;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        .card.dragging {
+            z-index: 1000 !important;
+            pointer-events: none;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .card.face-down {
+            background-color: #2980b9;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, #3498db 10px, #3498db 20px);
+            border: 2px solid #fff;
+            cursor: default;
+        }
+
+        .card.face-down .card-content {
+            display: none;
+        }
+
+        .card.red { color: #e74c3c; }
+        .card.black { color: #2c3e50; }
+
+        .card-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 20px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .card-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+        }
+
+        .card-bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 20px;
+            font-size: 18px;
+            line-height: 1;
+            align-self: flex-end;
+            transform: rotate(180deg);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #2c3e50;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #f1c40f;
+            box-shadow: 0 0 20px #f1c40f;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            font-size: 32px;
+            color: #f1c40f;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SOLITAIRE</h1>
+        <div class="controls">
+            <div class="stat">Züge: <span id="moves">0</span></div>
+            <button class="btn" id="new-game-btn">Neues Spiel</button>
+            <a href="../index.html" class="back-btn">Portal</a>
+        </div>
+    </header>
+
+    <div id="game-board">
+        <!-- Stock (Deck) -->
+        <div class="card-slot" id="slot-stock" style="left: 20px; top: 20px;"></div>
+        <!-- Waste (Discard) -->
+        <div class="card-slot" id="slot-waste" style="left: 140px; top: 20px; border: none;"></div>
+
+        <!-- Foundations (4 slots) -->
+        <div class="card-slot" id="slot-foundation-0" style="left: 400px; top: 20px;"></div>
+        <div class="card-slot" id="slot-foundation-1" style="left: 520px; top: 20px;"></div>
+        <div class="card-slot" id="slot-foundation-2" style="left: 640px; top: 20px;"></div>
+        <div class="card-slot" id="slot-foundation-3" style="left: 760px; top: 20px;"></div>
+
+        <!-- Tableau (7 slots) -->
+        <div class="card-slot" id="slot-tableau-0" style="left: 20px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-1" style="left: 140px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-2" style="left: 260px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-3" style="left: 380px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-4" style="left: 500px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-5" style="left: 620px; top: 180px;"></div>
+        <div class="card-slot" id="slot-tableau-6" style="left: 740px; top: 180px;"></div>
+    </div>
+
+    <div id="end-modal" class="modal">
+        <div class="modal-content">
+            <h2>GEWONNEN!</h2>
+            <p id="win-desc">Du hast das Spiel beendet.</p>
+            <button class="btn" onclick="initGame()">Neues Spiel</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const suitSymbols = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+        const colors = { hearts: 'red', diamonds: 'red', clubs: 'black', spades: 'black' };
+
+        let deck = [];
+        let state = {
+            stock: [],
+            waste: [],
+            foundations: [[], [], [], []],
+            tableau: [[], [], [], [], [], [], []],
+            moves: 0
+        };
+
+        const board = document.getElementById('game-board');
+        const movesEl = document.getElementById('moves');
+        let draggedCards = null; // Array of card elements
+        let dragSource = null; // {type, index}
+        let dragOffset = { x: 0, y: 0 };
+
+        function createDeck() {
+            deck = [];
+            for (let s of suits) {
+                for (let i = 0; i < values.length; i++) {
+                    deck.push({
+                        suit: s,
+                        value: values[i],
+                        rank: i + 1,
+                        color: colors[s],
+                        id: `${values[i]}_of_${s}`
+                    });
+                }
+            }
+            // Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function createCardElement(card) {
+            const el = document.createElement('div');
+            el.className = `card face-down ${card.color}`;
+            el.id = card.id;
+            el.dataset.suit = card.suit;
+            el.dataset.value = card.value;
+            el.dataset.rank = card.rank;
+            el.dataset.color = card.color;
+
+            el.innerHTML = `
+                <div class="card-content">
+                    <div class="card-top">
+                        <span>${card.value}</span>
+                        <span>${suitSymbols[card.suit]}</span>
+                    </div>
+                    <div class="card-center">${suitSymbols[card.suit]}</div>
+                    <div class="card-bottom">
+                        <span>${card.value}</span>
+                        <span>${suitSymbols[card.suit]}</span>
+                    </div>
+                </div>
+            `;
+
+            // Setup drag events
+            el.addEventListener('mousedown', handleDragStart);
+            return el;
+        }
+
+        function initGame() {
+            document.getElementById('end-modal').style.display = 'none';
+            // Clear board
+            document.querySelectorAll('.card').forEach(el => el.remove());
+
+            createDeck();
+
+            state = {
+                stock: [],
+                waste: [],
+                foundations: [[], [], [], []],
+                tableau: [[], [], [], [], [], [], []],
+                moves: 0
+            };
+            updateMoves();
+
+            // Deal Tableau
+            let cardIndex = 0;
+            for (let i = 0; i < 7; i++) {
+                for (let j = i; j < 7; j++) {
+                    let card = deck[cardIndex++];
+                    card.faceUp = (i === j); // Only last card is face up
+                    state.tableau[j].push(card);
+                }
+            }
+
+            // Rest to stock
+            while (cardIndex < deck.length) {
+                let card = deck[cardIndex++];
+                card.faceUp = false;
+                state.stock.push(card);
+            }
+
+            renderAll();
+        }
+
+        function updateMoves() {
+            movesEl.innerText = state.moves;
+        }
+
+        function renderAll() {
+            // Render Stock
+            renderPile(state.stock, document.getElementById('slot-stock'), {type: 'stock'}, 0, 0);
+
+            // Render Waste
+            renderPile(state.waste, document.getElementById('slot-waste'), {type: 'waste'}, 0, 0, true); // Only top 3 logic handled later if needed, we'll just stack exactly on top
+
+            // Render Foundations
+            for (let i = 0; i < 4; i++) {
+                renderPile(state.foundations[i], document.getElementById(`slot-foundation-${i}`), {type: 'foundation', index: i}, 0, 0);
+            }
+
+            // Render Tableau
+            for (let i = 0; i < 7; i++) {
+                renderPile(state.tableau[i], document.getElementById(`slot-tableau-${i}`), {type: 'tableau', index: i}, 0, 20); // 20px vertical offset
+            }
+        }
+
+        function renderPile(cards, slot, location, offsetX, offsetY, isWaste = false) {
+            const slotRect = slot.getBoundingClientRect();
+            const boardRect = board.getBoundingClientRect();
+            const basePathX = slotRect.left - boardRect.left;
+            const basePathY = slotRect.top - boardRect.top;
+
+            cards.forEach((card, i) => {
+                let el = document.getElementById(card.id);
+                if (!el) {
+                    el = createCardElement(card);
+                    board.appendChild(el);
+                }
+
+                // Make sure face up/down is correct
+                if (card.faceUp) {
+                    el.classList.remove('face-down');
+                } else {
+                    el.classList.add('face-down');
+                }
+
+                // Positioning
+                let targetX = basePathX + (offsetX * i);
+                let targetY = basePathY + (offsetY * i);
+
+                // For waste, maybe fan out top 3 slightly (simplified: just stack)
+                if (isWaste && i === cards.length - 1) {
+                    // Top waste card
+                } else if (isWaste) {
+                    // Hide under top card
+                    targetX = basePathX;
+                    targetY = basePathY;
+                }
+
+                el.style.left = `${targetX}px`;
+                el.style.top = `${targetY}px`;
+                el.style.zIndex = i + 1;
+
+                // Update data attributes for drag logic
+                el.dataset.locType = location.type;
+                if (location.index !== undefined) el.dataset.locIndex = location.index;
+                el.dataset.pileIndex = i;
+            });
+        }
+
+        // --- Interaction Logic ---
+
+        document.getElementById('slot-stock').addEventListener('mousedown', (e) => {
+            // Click empty stock slot to reset waste
+            if (e.target.id === 'slot-stock' || (e.target.classList.contains('card') && e.target.dataset.locType === 'stock')) {
+                handleStockClick();
+            }
+        });
+
+        function handleStockClick() {
+            if (state.stock.length > 0) {
+                // Draw 1 card (or 3, we'll do 1 for simplicity)
+                const card = state.stock.pop();
+                card.faceUp = true;
+                state.waste.push(card);
+                state.moves++;
+            } else if (state.waste.length > 0) {
+                // Reset waste to stock
+                while (state.waste.length > 0) {
+                    const card = state.waste.pop();
+                    card.faceUp = false;
+                    state.stock.push(card);
+                }
+                state.moves++;
+            }
+            updateMoves();
+            renderAll();
+        }
+
+        // --- Drag and Drop ---
+
+        function handleDragStart(e) {
+            // Left click only
+            if (e.button !== 0) return;
+
+            const el = e.currentTarget;
+            if (el.classList.contains('face-down')) return;
+
+            const locType = el.dataset.locType;
+            if (locType === 'stock') {
+                handleStockClick();
+                return;
+            }
+
+            const locIndex = parseInt(el.dataset.locIndex);
+            const pileIndex = parseInt(el.dataset.pileIndex);
+
+            // Determine what cards are being dragged
+            draggedCards = [];
+            dragSource = { type: locType, index: locIndex };
+
+            if (locType === 'waste') {
+                // Only top card can be dragged
+                if (pileIndex !== state.waste.length - 1) return;
+                draggedCards = [state.waste[state.waste.length - 1]];
+            } else if (locType === 'foundation') {
+                // Only top card
+                if (pileIndex !== state.foundations[locIndex].length - 1) return;
+                draggedCards = [state.foundations[locIndex][state.foundations[locIndex].length - 1]];
+            } else if (locType === 'tableau') {
+                // Can drag stack
+                const pile = state.tableau[locIndex];
+                draggedCards = pile.slice(pileIndex);
+            }
+
+            if (draggedCards.length === 0) return;
+
+            // Setup drag visuals
+            const rect = el.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+
+            // Bring dragged elements to front and set absolute position based on mouse
+            draggedCards.forEach((card, i) => {
+                const cardEl = document.getElementById(card.id);
+                cardEl.classList.add('dragging');
+                cardEl.style.zIndex = 1000 + i;
+            });
+
+            moveDrag(e); // Initial position
+
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('mouseup', dropDrag);
+        }
+
+        function moveDrag(e) {
+            if (!draggedCards) return;
+            const boardRect = board.getBoundingClientRect();
+            const x = e.clientX - boardRect.left - dragOffset.x;
+            const y = e.clientY - boardRect.top - dragOffset.y;
+
+            draggedCards.forEach((card, i) => {
+                const cardEl = document.getElementById(card.id);
+                cardEl.style.left = `${x}px`;
+                cardEl.style.top = `${y + (i * 20)}px`; // 20px vertical offset for stack
+            });
+        }
+
+        function dropDrag(e) {
+            document.removeEventListener('mousemove', moveDrag);
+            document.removeEventListener('mouseup', dropDrag);
+
+            if (!draggedCards) return;
+
+            // Find drop target
+            const dropTarget = getDropTarget(e.clientX, e.clientY);
+
+            if (dropTarget && isValidMove(draggedCards, dropTarget)) {
+                executeMove(draggedCards, dragSource, dropTarget);
+            } else {
+                // Snap back
+                renderAll();
+            }
+
+            // Cleanup
+            draggedCards.forEach(card => {
+                const cardEl = document.getElementById(card.id);
+                if(cardEl) cardEl.classList.remove('dragging');
+            });
+
+            draggedCards = null;
+            dragSource = null;
+        }
+
+        function getDropTarget(x, y) {
+            // Check slots
+            const slots = document.querySelectorAll('.card-slot');
+            for (let slot of slots) {
+                const rect = slot.getBoundingClientRect();
+                // Expanded hitbox for tableau columns
+                const height = slot.id.startsWith('slot-tableau') ? 600 : rect.height;
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.top + height) {
+                    const parts = slot.id.split('-');
+                    return { type: parts[1], index: parseInt(parts[2]) };
+                }
+            }
+            return null;
+        }
+
+        function isValidMove(cards, target) {
+            const bottomCard = cards[0];
+
+            if (target.type === 'foundation') {
+                if (cards.length > 1) return false; // Can only move 1 card to foundation
+                const fPile = state.foundations[target.index];
+
+                if (fPile.length === 0) {
+                    return bottomCard.rank === 1; // Ace
+                } else {
+                    const topCard = fPile[fPile.length - 1];
+                    return (bottomCard.suit === topCard.suit && bottomCard.rank === topCard.rank + 1);
+                }
+            }
+
+            if (target.type === 'tableau') {
+                const tPile = state.tableau[target.index];
+
+                if (tPile.length === 0) {
+                    return bottomCard.rank === 13; // King can go on empty slot
+                } else {
+                    const topCard = tPile[tPile.length - 1];
+                    // Must be opposite color and 1 rank lower
+                    return (bottomCard.color !== topCard.color && bottomCard.rank === topCard.rank - 1);
+                }
+            }
+
+            return false;
+        }
+
+        function executeMove(cards, source, target) {
+            // Remove from source
+            let sourcePile;
+            if (source.type === 'waste') sourcePile = state.waste;
+            else if (source.type === 'foundation') sourcePile = state.foundations[source.index];
+            else if (source.type === 'tableau') sourcePile = state.tableau[source.index];
+
+            // Splice the cards off
+            sourcePile.splice(sourcePile.length - cards.length, cards.length);
+
+            // Flip top card of source tableau if needed
+            if (source.type === 'tableau' && sourcePile.length > 0) {
+                const newTop = sourcePile[sourcePile.length - 1];
+                if (!newTop.faceUp) {
+                    newTop.faceUp = true;
+                }
+            }
+
+            // Add to target
+            let targetPile;
+            if (target.type === 'foundation') targetPile = state.foundations[target.index];
+            else if (target.type === 'tableau') targetPile = state.tableau[target.index];
+
+            cards.forEach(c => targetPile.push(c));
+
+            state.moves++;
+            updateMoves();
+            renderAll();
+            checkWin();
+        }
+
+        function checkWin() {
+            // Win condition: All foundations have 13 cards
+            let won = true;
+            for (let i = 0; i < 4; i++) {
+                if (state.foundations[i].length !== 13) {
+                    won = false;
+                    break;
+                }
+            }
+
+            if (won) {
+                if (window.userSystem) {
+                    const xpEarned = 100;
+                    const coinsEarned = 50;
+                    window.userSystem.addXP(xpEarned);
+                    window.userSystem.addCoins(coinsEarned);
+                    document.getElementById('win-desc').innerText = `Gespielt in ${state.moves} Zügen.\n\n+${xpEarned} XP\n+${coinsEarned} Coins`;
+                } else {
+                    document.getElementById('win-desc').innerText = `Gespielt in ${state.moves} Zügen.`;
+                }
+                document.getElementById('end-modal').style.display = 'flex';
+            }
+        }
+
+        document.getElementById('new-game-btn').addEventListener('click', initGame);
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+node_modules/
+node_modules
+package-lock.json
+package.json
+verify_solitaire.js
+solitaire_init.png
+solitaire_after_stock.png

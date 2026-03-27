@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chameleon Run - Poki Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 2px solid #3498db;
+        }
+        .back-btn {
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .back-btn:hover { background-color: #2980b9; }
+        #game-container {
+            position: relative;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #ecf0f1; /* Light background for contrast */
+        }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden { display: none !important; }
+        .screen {
+            background-color: rgba(44, 62, 80, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto;
+            border: 2px solid #3498db;
+        }
+        h1 { margin-top: 0; color: #f1c40f; }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #c0392b; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .controls-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Chameleon Run</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="hud" class="hidden">
+            <div id="scoreDisplay">Score: 0</div>
+            <div id="colorDisplay">Color: Red</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Chameleon Run</h1>
+                <p>Match your color to the platforms!</p>
+                <div class="controls-info">
+                    SPACE or UP: Jump<br>
+                    SHIFT or DOWN: Switch Color (Red/Blue)
+                </div>
+                <button id="start-btn">Start Running</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>Wrong Color!</h1>
+                <p>Score: <span id="final-score">0</span></p>
+                <button id="restart-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const colorDisplay = document.getElementById('colorDisplay');
+
+        let gameState = 'start';
+        let score = 0;
+        let lastTime = 0;
+        let speed = 5;
+
+        const colors = ['#e74c3c', '#3498db']; // Red, Blue
+
+        const player = {
+            x: 100,
+            y: 0,
+            width: 30,
+            height: 30,
+            vy: 0,
+            gravity: 0.6,
+            jumpPower: -12,
+            isGrounded: false,
+            colorIndex: 0 // 0 = red, 1 = blue
+        };
+
+        let platforms = [];
+        let particles = [];
+
+        // Input
+        window.addEventListener('keydown', (e) => {
+            if(gameState !== 'playing') return;
+
+            if(e.code === 'Space' || e.key === 'ArrowUp') {
+                if(player.isGrounded) {
+                    player.vy = player.jumpPower;
+                    player.isGrounded = false;
+                    createDust(player.x, player.y + player.height, player.colorIndex);
+                }
+            }
+            if(e.key === 'Shift' || e.key === 'ArrowDown') {
+                player.colorIndex = 1 - player.colorIndex; // toggle 0/1
+                updateHUD();
+                createDust(player.x + player.width/2, player.y + player.height/2, player.colorIndex, true);
+            }
+        });
+
+        function spawnPlatform() {
+            let lastPlatform = platforms[platforms.length - 1];
+            let x = lastPlatform ? lastPlatform.x + lastPlatform.width + (Math.random() * 100 + 50) : canvas.width;
+            let y = canvas.height - 100 + (Math.random() * 60 - 30);
+
+            // Random length
+            let width = Math.random() * 200 + 100;
+
+            // Random color
+            let colorIndex = Math.random() > 0.5 ? 0 : 1;
+
+            platforms.push({ x, y, width, height: 20, colorIndex });
+        }
+
+        function createDust(x, y, colorIndex, burst = false) {
+            let count = burst ? 15 : 5;
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: burst ? (Math.random() - 0.5) * 4 : Math.random() * -2,
+                    life: 1,
+                    color: colors[colorIndex]
+                });
+            }
+        }
+
+        function initPlatforms() {
+            platforms = [];
+            // Initial long platform
+            platforms.push({ x: 0, y: canvas.height - 50, width: canvas.width, height: 50, colorIndex: 0 });
+            for(let i=0; i<3; i++) spawnPlatform();
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+
+            // Difficulty increase
+            speed += dt * 0.1;
+            score += dt * 10;
+            scoreDisplay.innerText = `Score: ${Math.floor(score)}`;
+
+            // Physics
+            player.vy += player.gravity;
+            player.y += player.vy;
+            player.isGrounded = false;
+
+            // Platforms
+            for(let i=platforms.length-1; i>=0; i--) {
+                let p = platforms[i];
+                p.x -= speed;
+
+                // Collision
+                if (player.x < p.x + p.width &&
+                    player.x + player.width > p.x &&
+                    player.y + player.height > p.y &&
+                    player.y + player.height - player.vy <= p.y + 10) { // +10 for wiggle room
+
+                    player.y = p.y - player.height;
+                    player.vy = 0;
+                    player.isGrounded = true;
+
+                    // Color Match Check
+                    if (player.colorIndex !== p.colorIndex) {
+                        endGame();
+                        return; // Stop update
+                    }
+                }
+
+                // Remove off screen
+                if(p.x + p.width < 0) {
+                    platforms.splice(i, 1);
+                    spawnPlatform();
+                }
+            }
+
+            // Fall off screen check
+            if (player.y > canvas.height) {
+                endGame();
+            }
+
+            // Particles
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= dt * 2;
+                if(p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            // Background
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Speed lines (Background)
+            ctx.strokeStyle = '#bdc3c7';
+            ctx.lineWidth = 1;
+            for(let i=0; i<5; i++) {
+                ctx.beginPath();
+                let y = (i * 80 + performance.now() * 0.1) % canvas.height;
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            if(gameState === 'playing') {
+                // Platforms
+                platforms.forEach(p => {
+                    ctx.fillStyle = colors[p.colorIndex];
+                    // Glow
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = colors[p.colorIndex];
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+
+                    // Top highlight
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    ctx.shadowBlur = 0;
+                    ctx.fillRect(p.x, p.y, p.width, 4);
+                });
+
+                // Particles
+                particles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.life;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+
+                // Player (Chameleon abstraction)
+                ctx.save();
+                ctx.translate(player.x, player.y);
+
+                // Rotation based on velocity
+                let rot = Math.min(Math.max(player.vy * 0.05, -0.5), 0.5);
+                ctx.translate(player.width/2, player.height/2);
+                ctx.rotate(rot);
+                ctx.translate(-player.width/2, -player.height/2);
+
+                ctx.fillStyle = colors[player.colorIndex];
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = colors[player.colorIndex];
+
+                // Body
+                ctx.beginPath();
+                ctx.arc(player.width/2, player.height/2, player.width/2, 0, Math.PI*2);
+                ctx.fill();
+
+                // Tail
+                ctx.beginPath();
+                ctx.moveTo(0, player.height/2);
+                ctx.quadraticCurveTo(-15, player.height, -10, player.height/2 - 10);
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = colors[player.colorIndex];
+                ctx.stroke();
+
+                // Eye
+                ctx.fillStyle = 'white';
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(player.width - 8, player.height/2 - 5, 5, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(player.width - 6, player.height/2 - 5, 2, 0, Math.PI*2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        function updateHUD() {
+            colorDisplay.innerText = player.colorIndex === 0 ? 'Color: Red' : 'Color: Blue';
+            colorDisplay.style.color = colors[player.colorIndex];
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            speed = 5;
+            player.y = 100;
+            player.vy = 0;
+            player.colorIndex = 0;
+            particles = [];
+
+            initPlatforms();
+            updateHUD();
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = Math.floor(score);
+
+            // Explode player
+            createDust(player.x + player.width/2, player.y + player.height/2, player.colorIndex, true);
+
+            if (window.ProgressSystem) {
+                window.ProgressSystem.addXP(Math.floor(score / 10));
+                window.ProgressSystem.addCoins(Math.floor(score / 50));
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            if(dt < 0.1) {
+                update(dt);
+            }
+            draw();
+
+            if(gameState === 'playing') {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        draw();
+    </script>
+</body>
+</html>

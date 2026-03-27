@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheese Rolling - Poki Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f1c40f;
+            color: #2c3e50;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #f39c12;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 2px solid #e67e22;
+        }
+        .back-btn {
+            background-color: #d35400;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .back-btn:hover { background-color: #e67e22; }
+        #game-container {
+            position: relative;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #87CEEB; /* Sky blue */
+        }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden { display: none !important; }
+        .screen {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto;
+            border: 2px solid #e67e22;
+        }
+        h1 { margin-top: 0; color: #d35400; }
+        button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #27ae60; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+        }
+        .controls-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Cheese Rolling</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="distanceDisplay">Distance: 0m</div>
+            <div id="speedDisplay">Speed: 0 km/h</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Cheese Rolling</h1>
+                <p>Roll the cheese wheel down the hill!</p>
+                <div class="controls-info">
+                    Tap/Click rapidly to gain initial speed.<br>
+                    Use LEFT/RIGHT arrows to steer around obstacles.
+                </div>
+                <button id="start-btn">Start Rolling</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>Crash!</h1>
+                <p>You rolled <span id="final-distance">0</span> meters.</p>
+                <button id="restart-btn">Roll Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const distanceDisplay = document.getElementById('distanceDisplay');
+        const speedDisplay = document.getElementById('speedDisplay');
+
+        let gameState = 'start'; // start, buildup, rolling, gameover
+        let distance = 0;
+        let speed = 0;
+        let lastTime = 0;
+        let hillSlope = 0.5; // Steeper = faster
+
+        // Entity
+        const cheese = {
+            x: canvas.width / 2,
+            y: 100, // Fixed vertically, background moves
+            radius: 30,
+            rotation: 0,
+            steer: 0,
+            maxSpeed: 30,
+            acceleration: 0.1,
+            friction: 0.98
+        };
+
+        let obstacles = [];
+        let grassLines = [];
+
+        // Input
+        const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
+
+        window.addEventListener('keydown', e => {
+            if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+        });
+        window.addEventListener('keyup', e => {
+            if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+        });
+
+        // Click for buildup
+        canvas.addEventListener('mousedown', () => {
+            if(gameState === 'buildup') {
+                speed += 2; // Tap to speed up
+                if(speed > cheese.maxSpeed * 0.8) gameState = 'rolling'; // Transition
+            }
+        });
+
+        function spawnObstacle(y) {
+            const types = ['rock', 'log', 'pothole'];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            obstacles.push({
+                x: Math.random() * (canvas.width - 60) + 30,
+                y: y,
+                type: type,
+                width: type === 'log' ? 80 : 40,
+                height: type === 'log' ? 20 : 40
+            });
+        }
+
+        function initLevel() {
+            obstacles = [];
+            grassLines = [];
+            for(let i=0; i<10; i++) {
+                spawnObstacle(canvas.height + i * 200);
+            }
+            for(let i=0; i<20; i++) {
+                grassLines.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    length: Math.random() * 20 + 10
+                });
+            }
+        }
+
+        function update(dt) {
+            if(gameState !== 'rolling' && gameState !== 'buildup') return;
+
+            // Buildup logic
+            if(gameState === 'buildup') {
+                speed *= 0.95; // Decay if not tapping
+                distanceDisplay.innerText = "Tap rapidly to start!";
+                if(speed < 0.1) speed = 0;
+
+                // Visual rotation
+                cheese.rotation += speed * 0.1;
+                return; // Wait for transition
+            }
+
+            // Gravity/Slope acceleration
+            speed += hillSlope * dt * 10;
+            speed *= cheese.friction; // Air resistance/ground friction
+
+            // Limit speed
+            if(speed > cheese.maxSpeed) speed = cheese.maxSpeed;
+
+            distance += speed * dt * 2;
+
+            // Steering
+            if(keys.ArrowLeft || keys.a) cheese.steer -= 15 * dt;
+            if(keys.ArrowRight || keys.d) cheese.steer += 15 * dt;
+
+            cheese.steer *= 0.9; // Return to center
+            cheese.x += cheese.steer * speed * 0.2;
+
+            // Boundaries
+            if(cheese.x < cheese.radius) cheese.x = cheese.radius;
+            if(cheese.x > canvas.width - cheese.radius) cheese.x = canvas.width - cheese.radius;
+
+            // Rotation based on speed
+            cheese.rotation += speed * 0.1;
+
+            // Move world (obstacles & grass) up
+            const moveY = speed * dt * 60; // Pixels per frame approx
+
+            for(let i=obstacles.length-1; i>=0; i--) {
+                let obs = obstacles[i];
+                obs.y -= moveY;
+
+                // Collision Detection (AABB vs Circle approx)
+                const closestX = Math.max(obs.x - obs.width/2, Math.min(cheese.x, obs.x + obs.width/2));
+                const closestY = Math.max(obs.y - obs.height/2, Math.min(cheese.y, obs.y + obs.height/2));
+
+                const distanceX = cheese.x - closestX;
+                const distanceY = cheese.y - closestY;
+                const distSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+                if(distSquared < (cheese.radius * cheese.radius)) {
+                    // CRASH!
+                    endGame();
+                    return;
+                }
+
+                // Remove off screen and spawn new
+                if(obs.y + obs.height < 0) {
+                    obstacles.splice(i, 1);
+                    spawnObstacle(canvas.height + 200 + Math.random() * 200); // Spawn ahead
+                }
+            }
+
+            for(let i=grassLines.length-1; i>=0; i--) {
+                grassLines[i].y -= moveY;
+                if(grassLines[i].y < 0) {
+                    grassLines[i].y = canvas.height;
+                    grassLines[i].x = Math.random() * canvas.width;
+                }
+            }
+
+            // HUD
+            distanceDisplay.innerText = `Distance: ${Math.floor(distance)}m`;
+            speedDisplay.innerText = `Speed: ${Math.floor(speed * 3.6)} km/h`; // arbitrary scale
+        }
+
+        function draw() {
+            // Background (Hill)
+            ctx.fillStyle = '#2ecc71'; // Grass green
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grass details
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2;
+            grassLines.forEach(g => {
+                ctx.beginPath();
+                ctx.moveTo(g.x, g.y);
+                ctx.lineTo(g.x, g.y + g.length);
+                ctx.stroke();
+            });
+
+            if(gameState === 'rolling' || gameState === 'buildup') {
+                // Obstacles
+                obstacles.forEach(obs => {
+                    ctx.save();
+                    ctx.translate(obs.x, obs.y);
+
+                    if(obs.type === 'rock') {
+                        ctx.fillStyle = '#7f8c8d';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obs.width/2, 0, Math.PI*2);
+                        ctx.fill();
+                        // Highlight
+                        ctx.fillStyle = '#95a5a6';
+                        ctx.beginPath();
+                        ctx.arc(-5, -5, obs.width/4, 0, Math.PI*2);
+                        ctx.fill();
+                    } else if(obs.type === 'log') {
+                        ctx.fillStyle = '#8e44ad'; // brown approx
+                        ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+                        ctx.strokeStyle = '#2c3e50';
+                        ctx.strokeRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+                    } else { // pothole
+                        ctx.fillStyle = '#2c3e50';
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, obs.width/2, obs.height/2, 0, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                });
+
+                // Cheese
+                ctx.save();
+                ctx.translate(cheese.x, cheese.y);
+                ctx.rotate(cheese.rotation);
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(0, 10, cheese.radius, 0, Math.PI*2);
+                ctx.fill();
+
+                // Base Wheel
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.arc(0, 0, cheese.radius, 0, Math.PI*2);
+                ctx.fill();
+
+                // Rind/Border
+                ctx.strokeStyle = '#e67e22';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Holes (Swiss cheese style)
+                ctx.fillStyle = '#f39c12';
+                ctx.beginPath(); ctx.arc(-10, -10, 6, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(15, -5, 8, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(5, 15, 5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(-12, 12, 7, 0, Math.PI*2); ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        function startGame() {
+            gameState = 'buildup';
+            distance = 0;
+            speed = 0;
+            cheese.x = canvas.width/2;
+            cheese.steer = 0;
+            cheese.rotation = 0;
+
+            initLevel();
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+
+            distanceDisplay.innerText = "Distance: 0m";
+            speedDisplay.innerText = "Speed: 0 km/h";
+
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-distance').innerText = Math.floor(distance);
+
+            if (window.ProgressSystem) {
+                window.ProgressSystem.addXP(Math.floor(distance / 50));
+                window.ProgressSystem.addCoins(Math.floor(distance / 200));
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            if(dt < 0.1) {
+                update(dt);
+            }
+            draw();
+
+            if(gameState === 'rolling' || gameState === 'buildup') {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        draw();
+    </script>
+</body>
+</html>

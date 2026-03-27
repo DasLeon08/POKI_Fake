@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumo Wrestling (2 Spieler) - PlayZone</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #2c3e50; color: white; font-family: 'Arial', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
+        #game-header { width: 100%; padding: 10px 20px; background-color: #1a252f; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+        h1 { margin: 0; font-size: 1.5rem; color: #e74c3c; }
+        .back-btn { padding: 8px 16px; background-color: #34495e; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        .back-btn:hover { background-color: #2c3e50; }
+        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 50%; border: 8px solid #95a5a6; overflow: hidden; background: #ecf0f1; width: 600px; height: 600px; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; z-index: 10; }
+        .score-board { display: flex; justify-content: space-between; width: 100%; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px #000; }
+        .p1-score { color: #3498db; }
+        .p2-score { color: #e74c3c; text-align: right; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 20; border-radius: 50%; }
+        #overlay h2 { font-size: 2.5rem; margin-bottom: 20px; color: #fff; text-shadow: 2px 2px 4px #000; text-align: center; }
+        #start-btn { padding: 15px 40px; font-size: 1.5rem; background-color: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .controls-info { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; color: #333; font-weight: bold; width: 100%; z-index: 5; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="game-header">
+        <h1>Sumo Wrestling</h1>
+        <a href="../index.html" class="back-btn">Zurück</a>
+    </div>
+
+    <div id="game-container" id="matter-container">
+        <!-- Matter.js Canvas will be inserted here -->
+        <div id="ui-layer">
+            <div class="score-board">
+                <div class="p1-score">Blau: <span id="score1">0</span></div>
+                <div class="p2-score">Rot: <span id="score2">0</span></div>
+            </div>
+        </div>
+        <div class="controls-info">P1: W,A,S,D (Blau) | P2: Pfeiltasten (Rot)<br>Schiebe den Gegner aus dem Ring!</div>
+        <div id="overlay">
+            <h2 id="overlay-title">Sumo Ring</h2>
+            <button id="start-btn">Kämpfen!</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const Engine = Matter.Engine,
+              Render = Matter.Render,
+              Runner = Matter.Runner,
+              Bodies = Matter.Bodies,
+              Composite = Matter.Composite,
+              Events = Matter.Events,
+              Vector = Matter.Vector;
+
+        const container = document.getElementById('game-container');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const startBtn = document.getElementById('start-btn');
+        const score1El = document.getElementById('score1');
+        const score2El = document.getElementById('score2');
+
+        const width = 600;
+        const height = 600;
+        const radius = width / 2;
+
+        const engine = Engine.create();
+        engine.world.gravity.y = 0; // Top-down view
+
+        const render = Render.create({
+            element: container,
+            engine: engine,
+            options: {
+                width, height,
+                wireframes: false,
+                background: 'transparent'
+            }
+        });
+
+        // Ring inner circle (visual only handled by CSS mostly, but we add a sensor to detect ring out)
+        const ringCenter = { x: width/2, y: height/2 };
+        const ringRadius = radius - 10;
+
+        let p1, p2;
+        let score1 = 0, score2 = 0;
+        let gameState = 'start';
+        const winScore = 3;
+
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        function createPlayer(x, y, color, label) {
+            return Bodies.circle(x, y, 30, {
+                label: label,
+                restitution: 0.8,
+                friction: 0.1,
+                frictionAir: 0.05,
+                density: 0.04,
+                render: {
+                    fillStyle: color,
+                    strokeStyle: '#222',
+                    lineWidth: 3
+                }
+            });
+        }
+
+        function initRound() {
+            Composite.clear(engine.world);
+            Engine.clear(engine);
+
+            // Ring Boundary (Visual only in Matter.js, logic handles out of bounds)
+            // No physical walls, players fall off
+
+            p1 = createPlayer(width/4, height/2, '#3498db', 'p1');
+            p2 = createPlayer(width*3/4, height/2, '#e74c3c', 'p2');
+
+            Composite.add(engine.world, [p1, p2]);
+
+            gameState = 'playing';
+            overlay.classList.add('hidden');
+        }
+
+        function startGame() {
+            score1 = 0;
+            score2 = 0;
+            score1El.textContent = score1;
+            score2El.textContent = score2;
+            initRound();
+        }
+
+        function endRound(winner) {
+            gameState = 'roundOver';
+            if (winner === 'p1') { score1++; overlayTitle.textContent = "Blau gewinnt Runde!"; }
+            else { score2++; overlayTitle.textContent = "Rot gewinnt Runde!"; }
+
+            score1El.textContent = score1;
+            score2El.textContent = score2;
+
+            if (score1 >= winScore || score2 >= winScore) {
+                overlayTitle.textContent = (winner === 'p1' ? "Blau" : "Rot") + " GEWINNT MATCH!";
+                startBtn.textContent = "Neues Spiel";
+                if(window.userSystem) {
+                    window.userSystem.addCoins(40);
+                    window.userSystem.addXP(100);
+                }
+            } else {
+                startBtn.textContent = "Nächste Runde";
+            }
+            overlay.classList.remove('hidden');
+        }
+
+        Events.on(engine, 'beforeUpdate', () => {
+            if (gameState !== 'playing') return;
+
+            const forceMagnitude = 0.005;
+
+            // P1 Controls
+            if (keys['KeyW']) Matter.Body.applyForce(p1, p1.position, {x: 0, y: -forceMagnitude});
+            if (keys['KeyS']) Matter.Body.applyForce(p1, p1.position, {x: 0, y: forceMagnitude});
+            if (keys['KeyA']) Matter.Body.applyForce(p1, p1.position, {x: -forceMagnitude, y: 0});
+            if (keys['KeyD']) Matter.Body.applyForce(p1, p1.position, {x: forceMagnitude, y: 0});
+
+            // P2 Controls
+            if (keys['ArrowUp']) Matter.Body.applyForce(p2, p2.position, {x: 0, y: -forceMagnitude});
+            if (keys['ArrowDown']) Matter.Body.applyForce(p2, p2.position, {x: 0, y: forceMagnitude});
+            if (keys['ArrowLeft']) Matter.Body.applyForce(p2, p2.position, {x: -forceMagnitude, y: 0});
+            if (keys['ArrowRight']) Matter.Body.applyForce(p2, p2.position, {x: forceMagnitude, y: 0});
+
+            // Check out of bounds (Ring Out)
+            const d1 = Vector.magnitude(Vector.sub(p1.position, ringCenter));
+            const d2 = Vector.magnitude(Vector.sub(p2.position, ringCenter));
+
+            if (d1 > ringRadius) endRound('p2');
+            else if (d2 > ringRadius) endRound('p1');
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (score1 >= winScore || score2 >= winScore) startGame();
+            else initRound();
+        });
+
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Draw ring interior
+        Events.on(render, 'afterRender', () => {
+            const context = render.context;
+            context.beginPath();
+            context.arc(ringCenter.x, ringCenter.y, ringRadius, 0, 2 * Math.PI);
+            context.lineWidth = 4;
+            context.strokeStyle = '#bdc3c7';
+            context.stroke();
+
+            // Inner lines (Dohyo styling)
+            context.beginPath();
+            context.moveTo(width/2 - 20, height/2 - 100);
+            context.lineTo(width/2 - 20, height/2 + 100);
+            context.moveTo(width/2 + 20, height/2 - 100);
+            context.lineTo(width/2 + 20, height/2 + 100);
+            context.lineWidth = 4;
+            context.strokeStyle = '#fff';
+            context.stroke();
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Racer (2 Spieler) - PlayZone</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #111; color: white; font-family: 'Space Mono', monospace, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
+        #game-header { width: 100%; padding: 10px 20px; background-color: #222; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #00ff00; }
+        h1 { margin: 0; font-size: 1.5rem; color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+        .back-btn { padding: 8px 16px; background-color: transparent; border: 1px solid #00ff00; color: #00ff00; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        .back-btn:hover { background-color: rgba(0,255,0,0.2); }
+        #game-container { position: relative; margin-top: 20px; border: 2px solid #333; overflow: hidden; background: #000; box-shadow: 0 0 30px rgba(0,255,0,0.2); }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; padding: 10px 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+        .score-board { display: flex; justify-content: space-between; width: 100%; font-size: 20px; font-weight: bold; }
+        .p1-score { color: #00ffff; text-shadow: 0 0 5px #00ffff; }
+        .p2-score { color: #ff00ff; text-align: right; text-shadow: 0 0 5px #ff00ff; }
+        .controls-info { text-align: center; color: #888; font-size: 12px; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 10; }
+        #overlay h2 { font-size: 2.5rem; margin-bottom: 20px; color: #fff; text-shadow: 0 0 10px #fff; }
+        #start-btn { padding: 15px 40px; font-size: 1.2rem; background-color: transparent; color: #00ff00; border: 2px solid #00ff00; border-radius: 4px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; font-family: inherit; letter-spacing: 2px; }
+        #start-btn:hover { background-color: rgba(0,255,0,0.2); box-shadow: 0 0 15px #00ff00; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="game-header">
+        <h1>Gravity Racer</h1>
+        <a href="../index.html" class="back-btn">Zurück</a>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui-layer">
+            <div class="score-board">
+                <div class="p1-score">P1 (Cyan): <span id="dist1">0</span>m</div>
+                <div class="p2-score">P2 (Magenta): <span id="dist2">0</span>m</div>
+            </div>
+            <div class="controls-info">P1: W (Gravitation umkehren) | P2: Pfeil Hoch (Gravitation umkehren)<br>Überlebe so lange wie möglich!</div>
+        </div>
+        <div id="overlay">
+            <h2 id="overlay-title">Gravity Flip</h2>
+            <button id="start-btn">Start Race</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const startBtn = document.getElementById('start-btn');
+        const dist1El = document.getElementById('dist1');
+        const dist2El = document.getElementById('dist2');
+
+        const keys = {};
+        window.addEventListener('keydown', e => { keys[e.code] = true; });
+        window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        let gameState = 'start';
+        let distance = 0;
+        let speed = 5;
+        let obstacles = [];
+
+        class Racer {
+            constructor(y, color, controls) {
+                this.x = 100;
+                this.y = y;
+                this.w = 30;
+                this.h = 30;
+                this.vy = 0;
+                this.gravity = 0.8;
+                this.isFlipped = false;
+                this.color = color;
+                this.controls = controls;
+                this.alive = true;
+                this.score = 0;
+                this.lastFlip = false;
+            }
+
+            update() {
+                if (!this.alive) return;
+
+                // Handle flip input (on keydown edge)
+                if (keys[this.controls.flip] && !this.lastFlip) {
+                    this.isFlipped = !this.isFlipped;
+                    this.gravity *= -1;
+                }
+                this.lastFlip = keys[this.controls.flip];
+
+                this.vy += this.gravity;
+                this.y += this.vy;
+
+                // Ceiling/Floor collision
+                if (this.y < 50) { // Top floor
+                    this.y = 50;
+                    this.vy = 0;
+                } else if (this.y > canvas.height - 50 - this.h) { // Bottom floor
+                    this.y = canvas.height - 50 - this.h;
+                    this.vy = 0;
+                }
+
+                this.score += speed * 0.1;
+
+                // Obstacle Collision
+                for (let obs of obstacles) {
+                    if (this.x < obs.x + obs.w && this.x + this.w > obs.x &&
+                        this.y < obs.y + obs.h && this.y + this.h > obs.y) {
+                        this.alive = false;
+                    }
+                }
+            }
+
+            draw() {
+                if (!this.alive) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)'; // Ghostly if dead
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                }
+
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                // Draw trail/exhaust
+                if (this.alive) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.fillRect(this.x - 15, this.y + (this.isFlipped ? 5 : 20), 10, 5);
+                }
+
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        let p1, p2;
+
+        function spawnObstacle() {
+            // Top or Bottom obstacle
+            let isTop = Math.random() > 0.5;
+            let h = 30 + Math.random() * 150;
+            let y = isTop ? 50 : canvas.height - 50 - h;
+
+            obstacles.push({
+                x: canvas.width,
+                y: y,
+                w: 40,
+                h: h
+            });
+        }
+
+        function initRound() {
+            p1 = new Racer(canvas.height - 80, '#00ffff', { flip: 'KeyW' });
+            p2 = new Racer(50, '#ff00ff', { flip: 'ArrowUp' });
+            p2.isFlipped = true; p2.gravity = -0.8; // P2 starts top
+
+            obstacles = [];
+            distance = 0;
+            speed = 5;
+
+            dist1El.textContent = 0;
+            dist2El.textContent = 0;
+
+            gameState = 'playing';
+            overlay.classList.add('hidden');
+        }
+
+        let frames = 0;
+
+        function update() {
+            if (gameState !== 'playing') return;
+
+            p1.update();
+            p2.update();
+
+            if (p1.alive) dist1El.textContent = Math.floor(p1.score);
+            if (p2.alive) dist2El.textContent = Math.floor(p2.score);
+
+            // Obstacles
+            frames++;
+            let spawnRate = Math.max(30, 80 - Math.floor(speed * 2)); // gets faster
+
+            if (frames % spawnRate === 0) spawnObstacle();
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= speed;
+                if (obstacles[i].x + obstacles[i].w < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Speed up
+            speed += 0.002;
+
+            // Check game over
+            if (!p1.alive && !p2.alive) {
+                gameState = 'gameover';
+
+                let winnerText = "Unentschieden!";
+                if (p1.score > p2.score + 1) winnerText = "P1 Gewinnt!";
+                else if (p2.score > p1.score + 1) winnerText = "P2 Gewinnt!";
+
+                overlayTitle.textContent = winnerText;
+                startBtn.textContent = "Neues Rennen";
+
+                if(window.userSystem) {
+                    window.userSystem.addCoins(30);
+                    window.userSystem.addXP(80);
+                }
+
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Floors
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, 0, canvas.width, 50); // Top
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50); // Bottom
+
+            // Neon Line
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(0, 48, canvas.width, 2);
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 2);
+
+            // Grid background effect
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.beginPath();
+            let offset = (frames * speed) % 40;
+            for(let x = -offset; x < canvas.width; x += 40) {
+                ctx.moveTo(x, 50);
+                ctx.lineTo(x, canvas.height - 50);
+            }
+            ctx.stroke();
+
+            // Draw Obstacles
+            ctx.fillStyle = '#ff0000';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ff0000';
+            for (let obs of obstacles) {
+                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            }
+            ctx.shadowBlur = 0;
+
+            if (p1) p1.draw();
+            if (p2) p2.draw();
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        startBtn.addEventListener('click', initRound);
+        loop();
+    </script>
+</body>
+</html>

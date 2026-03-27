@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tron Bikes (2 Spieler) - PlayZone</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow: hidden; }
+        #game-header { width: 100%; padding: 10px 20px; background-color: #111; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #0ff; }
+        h1 { margin: 0; font-size: 1.5rem; color: #0ff; text-shadow: 0 0 10px #0ff; }
+        .back-btn { padding: 8px 16px; background-color: transparent; border: 1px solid #f0f; color: #f0f; text-decoration: none; border-radius: 4px; font-weight: bold; text-shadow: 0 0 5px #f0f; }
+        .back-btn:hover { background-color: rgba(255, 0, 255, 0.2); }
+        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 30px rgba(0,255,255,0.3); border: 2px solid #0ff; border-radius: 4px; overflow: hidden; }
+        canvas { display: block; background-color: #050510; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+        .score-board { display: flex; justify-content: space-between; width: 100%; font-size: 24px; font-weight: bold; }
+        .p1-score { color: #0ff; text-shadow: 0 0 5px #0ff; }
+        .p2-score { color: #f0f; text-shadow: 0 0 5px #f0f; text-align: right; }
+        .controls-info { font-size: 12px; color: #888; text-align: center; margin-top: auto; padding-bottom: 10px; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 10; }
+        #overlay h2 { font-size: 3rem; margin-bottom: 20px; color: #fff; text-shadow: 0 0 20px #fff; }
+        #start-btn { padding: 15px 40px; font-size: 1.5rem; background-color: transparent; color: #0ff; border: 2px solid #0ff; border-radius: 4px; cursor: pointer; text-shadow: 0 0 10px #0ff; box-shadow: 0 0 15px rgba(0,255,255,0.5); transition: all 0.2s; }
+        #start-btn:hover { background-color: rgba(0,255,255,0.2); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="game-header">
+        <h1>Tron Bikes</h1>
+        <a href="../index.html" class="back-btn">Exit Grid</a>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui-layer">
+            <div class="score-board">
+                <div class="p1-score">P1 (Cyan): <span id="score1">0</span></div>
+                <div class="p2-score">P2 (Magenta): <span id="score2">0</span></div>
+            </div>
+            <div class="controls-info">P1: W,A,S,D | P2: Pfeiltasten</div>
+        </div>
+        <div id="overlay">
+            <h2 id="overlay-title">Light Cycle Battle</h2>
+            <button id="start-btn">Enter Grid</button>
+        </div>
+    </div>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const startBtn = document.getElementById('start-btn');
+        const score1El = document.getElementById('score1');
+        const score2El = document.getElementById('score2');
+
+        const TILE_SIZE = 5;
+        const cols = canvas.width / TILE_SIZE;
+        const rows = canvas.height / TILE_SIZE;
+
+        let grid = [];
+        let gameState = 'start';
+        let score1 = 0;
+        let score2 = 0;
+
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        class Bike {
+            constructor(x, y, dx, dy, color, id, controls) {
+                this.x = x;
+                this.y = y;
+                this.dx = dx; // 1, 0, -1
+                this.dy = dy; // 1, 0, -1
+                this.color = color;
+                this.id = id;
+                this.controls = controls;
+                this.alive = true;
+                this.trail = [];
+
+                // Setze Startposition im Grid
+                grid[this.x][this.y] = this.id;
+            }
+
+            update() {
+                if (!this.alive) return;
+
+                // Steuerung
+                if (keys[this.controls.up] && this.dy === 0) { this.dx = 0; this.dy = -1; }
+                else if (keys[this.controls.down] && this.dy === 0) { this.dx = 0; this.dy = 1; }
+                else if (keys[this.controls.left] && this.dx === 0) { this.dx = -1; this.dy = 0; }
+                else if (keys[this.controls.right] && this.dx === 0) { this.dx = 1; this.dy = 0; }
+
+                this.trail.push({x: this.x, y: this.y});
+
+                this.x += this.dx;
+                this.y += this.dy;
+
+                // Kollision Wand
+                if (this.x < 0 || this.x >= cols || this.y < 0 || this.y >= rows) {
+                    this.die();
+                    return;
+                }
+
+                // Kollision Trail
+                if (grid[this.x][this.y] !== 0) {
+                    this.die();
+                    return;
+                }
+
+                grid[this.x][this.y] = this.id;
+            }
+
+            die() {
+                this.alive = false;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+
+                // Draw head
+                ctx.fillRect(this.x * TILE_SIZE, this.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+                // Draw trail (optimiert: nur letztes Element)
+                if(this.trail.length > 0) {
+                     const last = this.trail[this.trail.length-1];
+                     ctx.fillRect(last.x * TILE_SIZE, last.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+
+                ctx.shadowBlur = 0; // Reset
+            }
+        }
+
+        let p1, p2;
+
+        function initGrid() {
+            grid = new Array(cols).fill(0).map(() => new Array(rows).fill(0));
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+
+            // Draw Grid lines
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = 0; x <= canvas.width; x += TILE_SIZE * 4) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+            }
+            for (let y = 0; y <= canvas.height; y += TILE_SIZE * 4) {
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+        }
+
+        function initRound() {
+            initGrid();
+            p1 = new Bike(Math.floor(cols/4), Math.floor(rows/2), 1, 0, '#0ff', 1, {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD'});
+            p2 = new Bike(Math.floor(cols*3/4), Math.floor(rows/2), -1, 0, '#f0f', 2, {up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight'});
+
+            gameState = 'playing';
+            overlay.classList.add('hidden');
+        }
+
+        function startGame() {
+            score1 = 0;
+            score2 = 0;
+            updateScoreUI();
+            initRound();
+        }
+
+        function updateScoreUI() {
+            score1El.textContent = score1;
+            score2El.textContent = score2;
+        }
+
+        let lastTime = 0;
+        const tickRate = 1000 / 30; // 30 FPS logic
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = timestamp - lastTime;
+
+            if (gameState === 'playing' && delta >= tickRate) {
+                p1.update();
+                p2.update();
+
+                // Draw only changes
+                if(p1.alive) p1.draw();
+                if(p2.alive) p2.draw();
+
+                // Head to head collision tie break
+                if (p1.x === p2.x && p1.y === p2.y) {
+                    p1.die();
+                    p2.die();
+                }
+
+                if (!p1.alive || !p2.alive) {
+                    gameState = 'roundOver';
+
+                    if (!p1.alive && p2.alive) { score2++; overlayTitle.textContent = "P2 Gewinnt!"; }
+                    else if (!p2.alive && p1.alive) { score1++; overlayTitle.textContent = "P1 Gewinnt!"; }
+                    else { overlayTitle.textContent = "Unentschieden!"; }
+
+                    updateScoreUI();
+
+                    if (score1 >= 5 || score2 >= 5) {
+                        overlayTitle.textContent = (score1 >= 5 ? "P1" : "P2") + " SIEGT!";
+                        startBtn.textContent = "Neues Spiel";
+                        if(window.userSystem) {
+                            window.userSystem.addCoins(30);
+                            window.userSystem.addXP(80);
+                        }
+                    } else {
+                        startBtn.textContent = "Nächste Runde";
+                    }
+
+                    setTimeout(() => overlay.classList.remove('hidden'), 500);
+                }
+                lastTime = timestamp;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (score1 >= 5 || score2 >= 5) startGame();
+            else initRound();
+        });
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

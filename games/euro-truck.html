@@ -130,7 +130,7 @@
         </div>
     </div>
 
-    <script src="../js/progress.js"></script>
+    <script src="../js/user-system.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -440,8 +440,8 @@
 
             if (won && window.ProgressSystem) {
                 let score = Math.floor(truck.health) + Math.floor(timeRemaining);
-                window.ProgressSystem.addXP(score);
-                window.ProgressSystem.addCoins(Math.floor(score / 2));
+                window.userSystem.addXP(score);
+                window.userSystem.addCoins(Math.floor(score / 2));
             }
         }
 

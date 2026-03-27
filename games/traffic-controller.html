@@ -49,7 +49,7 @@
             </div>
         </div>
     </div>
-    <script src="../js/progress.js"></script>
+    <script src="../js/user-system.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -273,8 +273,8 @@
             gameOverScreen.classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
             if(window.ProgressSystem) {
-                window.ProgressSystem.addXP(score * 5);
-                window.ProgressSystem.addCoins(score);
+                window.userSystem.addXP(score * 5);
+                window.userSystem.addCoins(score);
             }
         }
 

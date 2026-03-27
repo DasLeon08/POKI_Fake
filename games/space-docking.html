@@ -54,7 +54,7 @@
             </div>
         </div>
     </div>
-    <script src="../js/progress.js"></script>
+    <script src="../js/user-system.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -307,8 +307,8 @@
 
             if(won && window.ProgressSystem) {
                 let fuelBonus = Math.floor(ship.fuel);
-                window.ProgressSystem.addXP(100 + fuelBonus);
-                window.ProgressSystem.addCoins(50);
+                window.userSystem.addXP(100 + fuelBonus);
+                window.userSystem.addCoins(50);
             }
         }
 

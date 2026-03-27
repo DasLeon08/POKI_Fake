@@ -129,7 +129,7 @@
         </div>
     </div>
 
-    <script src="../js/progress.js"></script>
+    <script src="../js/user-system.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -389,9 +389,9 @@
             gameOverScreen.classList.remove('hidden');
             document.getElementById('final-distance').innerText = Math.floor(distance);
 
-            if (window.ProgressSystem) {
-                window.ProgressSystem.addXP(Math.floor(distance / 50));
-                window.ProgressSystem.addCoins(Math.floor(distance / 200));
+            if (window.userSystem) {
+                window.userSystem.addXP(Math.floor(distance / 50));
+                window.userSystem.addCoins(Math.floor(distance / 200));
             }
         }
 

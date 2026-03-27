@@ -50,7 +50,7 @@
             </div>
         </div>
     </div>
-    <script src="../js/progress.js"></script>
+    <script src="../js/user-system.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -284,8 +284,8 @@
             gameOverScreen.classList.remove('hidden');
             document.getElementById('final-depth').innerText = Math.floor(depth);
             if(window.ProgressSystem) {
-                window.ProgressSystem.addXP(Math.floor(depth/10));
-                window.ProgressSystem.addCoins(Math.floor(depth/50));
+                window.userSystem.addXP(Math.floor(depth/10));
+                window.userSystem.addCoins(Math.floor(depth/50));
             }
         }
 

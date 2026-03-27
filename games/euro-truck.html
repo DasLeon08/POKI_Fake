@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Euro Truck 2D - Poki Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 2px solid #f39c12;
+        }
+        .back-btn {
+            background-color: #f39c12;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .back-btn:hover { background-color: #e67e22; }
+        #game-container {
+            position: relative;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #27ae60; /* Grass background */
+        }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden { display: none !important; }
+        .screen {
+            background-color: rgba(44, 62, 80, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto;
+            border: 2px solid #f39c12;
+        }
+        h1 { margin-top: 0; color: #f1c40f; }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #2980b9; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .controls-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Euro Truck 2D</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="cargoDisplay">Cargo Health: 100%</div>
+            <div id="timerDisplay">Time: 60</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Euro Truck 2D</h1>
+                <p>Deliver the cargo to the destination zone.</p>
+                <div class="controls-info">
+                    W / Up : Accelerate<br>
+                    S / Down : Brake / Reverse<br>
+                    A / D / Left / Right : Steer
+                </div>
+                <button id="start-btn">Start Engine</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1 id="end-title">Delivery Failed!</h1>
+                <p id="end-message">You ran out of time.</p>
+                <button id="restart-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const cargoDisplay = document.getElementById('cargoDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const endTitle = document.getElementById('end-title');
+        const endMessage = document.getElementById('end-message');
+
+        let gameState = 'start';
+        let lastTime = 0;
+        let timeRemaining = 60;
+
+        // World coordinates for camera
+        let camera = { x: 0, y: 0 };
+
+        // Input
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, s: false, a: false, d: false };
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        // Truck properties
+        const truck = {
+            x: 400, y: 500,
+            width: 24, height: 50,
+            angle: -Math.PI/2,
+            speed: 0,
+            maxSpeed: 300,
+            acceleration: 150,
+            braking: 300,
+            friction: 50,
+            turnSpeed: 1.5,
+            health: 100,
+
+            // Trailer
+            trailerAngle: -Math.PI/2,
+            trailerWidth: 26,
+            trailerHeight: 80,
+            hitchDistance: 30
+        };
+
+        const worldSize = { width: 2400, height: 2400 };
+        const roadWidth = 120;
+        let roads = [];
+        let deliveryZone = { x: 0, y: 0, w: 150, h: 150 };
+        let obstacles = [];
+
+        function initLevel() {
+            truck.x = 400; truck.y = worldSize.height - 200;
+            truck.angle = -Math.PI/2;
+            truck.trailerAngle = -Math.PI/2;
+            truck.speed = 0;
+            truck.health = 100;
+            timeRemaining = 60;
+
+            roads = [
+                { x: 340, y: worldSize.height - 800, w: roadWidth, h: 800 }, // Start vertical
+                { x: 340, y: worldSize.height - 800, w: 1000, h: roadWidth }, // Turn right
+                { x: 1220, y: 400, w: roadWidth, h: worldSize.height - 1200 }, // Go up
+                { x: 600, y: 400, w: 740, h: roadWidth }, // Turn left
+                { x: 600, y: 100, w: roadWidth, h: 420 }, // Go up to delivery
+            ];
+
+            deliveryZone = { x: 585, y: 50, w: 150, h: 100 };
+
+            // Trees/Buildings (visual only outside road)
+            obstacles = [];
+            for(let i=0; i<200; i++) {
+                obstacles.push({
+                    x: Math.random() * worldSize.width,
+                    y: Math.random() * worldSize.height,
+                    type: Math.random() > 0.5 ? 'tree' : 'house'
+                });
+            }
+        }
+
+        function checkOffRoad(x, y) {
+            for(let r of roads) {
+                if(x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+                    return false; // On road
+                }
+            }
+            return true; // Off road
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+
+            timeRemaining -= dt;
+            if(timeRemaining <= 0) {
+                endGame(false, "You ran out of time.");
+                return;
+            }
+
+            // Acceleration & Braking
+            let driving = false;
+            if(keys.ArrowUp || keys.w) {
+                truck.speed += truck.acceleration * dt;
+                driving = true;
+            }
+            if(keys.ArrowDown || keys.s) {
+                truck.speed -= truck.braking * dt;
+                driving = true;
+            }
+
+            // Friction
+            if(!driving) {
+                if(truck.speed > 0) {
+                    truck.speed -= truck.friction * dt;
+                    if(truck.speed < 0) truck.speed = 0;
+                } else if(truck.speed < 0) {
+                    truck.speed += truck.friction * dt;
+                    if(truck.speed > 0) truck.speed = 0;
+                }
+            }
+
+            // Limit speed
+            if(truck.speed > truck.maxSpeed) truck.speed = truck.maxSpeed;
+            if(truck.speed < -truck.maxSpeed/2) truck.speed = -truck.maxSpeed/2;
+
+            // Off-road penalty
+            if(checkOffRoad(truck.x, truck.y)) {
+                // Slower on grass, damage cargo if moving fast
+                if(truck.speed > truck.maxSpeed * 0.4) {
+                    truck.speed *= 0.95;
+                    truck.health -= 10 * dt;
+                }
+            }
+
+            // Steering (only if moving)
+            if(Math.abs(truck.speed) > 5) {
+                let turnAmt = truck.turnSpeed * dt;
+                // Reverse steering logic
+                let dir = truck.speed > 0 ? 1 : -1;
+
+                if(keys.ArrowLeft || keys.a) truck.angle -= turnAmt * dir;
+                if(keys.ArrowRight || keys.d) truck.angle += turnAmt * dir;
+            }
+
+            // Update Truck Position
+            let moveX = Math.cos(truck.angle) * truck.speed * dt;
+            let moveY = Math.sin(truck.angle) * truck.speed * dt;
+
+            truck.x += moveX;
+            truck.y += moveY;
+
+            // Trailer Physics (Follow the hitch)
+            let hitchX = truck.x - Math.cos(truck.angle) * (truck.height/2);
+            let hitchY = truck.y - Math.sin(truck.angle) * (truck.height/2);
+
+            let dx = hitchX - (truck.x - Math.cos(truck.trailerAngle) * truck.hitchDistance * 2); // approx trailer center
+            let dy = hitchY - (truck.y - Math.sin(truck.trailerAngle) * truck.hitchDistance * 2);
+
+            truck.trailerAngle = Math.atan2(dy, dx);
+
+            // Boundaries
+            truck.x = Math.max(0, Math.min(worldSize.width, truck.x));
+            truck.y = Math.max(0, Math.min(worldSize.height, truck.y));
+
+            // Camera follow
+            camera.x = truck.x - canvas.width / 2;
+            camera.y = truck.y - canvas.height / 2;
+
+            // Clamp camera
+            camera.x = Math.max(0, Math.min(worldSize.width - canvas.width, camera.x));
+            camera.y = Math.max(0, Math.min(worldSize.height - canvas.height, camera.y));
+
+            // Check Delivery
+            if(truck.x > deliveryZone.x && truck.x < deliveryZone.x + deliveryZone.w &&
+               truck.y > deliveryZone.y && truck.y < deliveryZone.y + deliveryZone.h) {
+                if(Math.abs(truck.speed) < 10) {
+                    endGame(true, "Cargo delivered successfully!");
+                }
+            }
+
+            // Check Health
+            if(truck.health <= 0) {
+                endGame(false, "Cargo was destroyed!");
+            }
+
+            // HUD
+            cargoDisplay.innerText = `Cargo Health: ${Math.max(0, Math.floor(truck.health))}%`;
+            if(truck.health < 30) cargoDisplay.style.color = '#e74c3c';
+            else cargoDisplay.style.color = 'white';
+
+            timerDisplay.innerText = `Time: ${Math.ceil(timeRemaining)}s`;
+        }
+
+        function draw() {
+            // Clear / Background
+            ctx.fillStyle = '#27ae60'; // Grass
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw Roads
+            ctx.fillStyle = '#7f8c8d'; // Asphalt
+            roads.forEach(r => {
+                ctx.fillRect(r.x, r.y, r.w, r.h);
+            });
+            // Road lines
+            ctx.strokeStyle = '#f1c40f';
+            ctx.setLineDash([20, 20]);
+            ctx.lineWidth = 4;
+            roads.forEach(r => {
+                ctx.beginPath();
+                if(r.w > r.h) { // Horizontal
+                    ctx.moveTo(r.x, r.y + r.h/2);
+                    ctx.lineTo(r.x + r.w, r.y + r.h/2);
+                } else { // Vertical
+                    ctx.moveTo(r.x + r.w/2, r.y);
+                    ctx.lineTo(r.x + r.w/2, r.y + r.h);
+                }
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+
+            // Delivery Zone
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.5)';
+            ctx.strokeStyle = '#2ecc71';
+            ctx.lineWidth = 4;
+            ctx.fillRect(deliveryZone.x, deliveryZone.y, deliveryZone.w, deliveryZone.h);
+            ctx.strokeRect(deliveryZone.x, deliveryZone.y, deliveryZone.w, deliveryZone.h);
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText("DELIVERY", deliveryZone.x + 20, deliveryZone.y + 50);
+
+            // Scenery (Obstacles)
+            obstacles.forEach(o => {
+                // Don't draw if on road (simple check)
+                if(!checkOffRoad(o.x, o.y)) return;
+
+                if(o.type === 'tree') {
+                    ctx.fillStyle = '#2ecc71';
+                    ctx.beginPath(); ctx.arc(o.x, o.y, 20, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#27ae60';
+                    ctx.beginPath(); ctx.arc(o.x, o.y, 15, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#c0392b';
+                    ctx.fillRect(o.x-20, o.y-15, 40, 30);
+                    ctx.fillStyle = '#34495e';
+                    ctx.fillRect(o.x-15, o.y-10, 30, 20);
+                }
+            });
+
+            // Draw Trailer
+            let hitchX = truck.x - Math.cos(truck.angle) * (truck.height/2 - 5);
+            let hitchY = truck.y - Math.sin(truck.angle) * (truck.height/2 - 5);
+
+            let trailerCenterX = hitchX - Math.cos(truck.trailerAngle) * (truck.trailerHeight/2);
+            let trailerCenterY = hitchY - Math.sin(truck.trailerAngle) * (truck.trailerHeight/2);
+
+            ctx.save();
+            ctx.translate(trailerCenterX, trailerCenterY);
+            ctx.rotate(truck.trailerAngle);
+            ctx.fillStyle = '#bdc3c7'; // White/Grey trailer
+            ctx.fillRect(-truck.trailerHeight/2, -truck.trailerWidth/2, truck.trailerHeight, truck.trailerWidth);
+            // Cargo box details
+            ctx.strokeStyle = '#95a5a6';
+            ctx.strokeRect(-truck.trailerHeight/2 + 2, -truck.trailerWidth/2 + 2, truck.trailerHeight - 4, truck.trailerWidth - 4);
+            ctx.restore();
+
+            // Draw Truck Cab
+            ctx.save();
+            ctx.translate(truck.x, truck.y);
+            ctx.rotate(truck.angle);
+            ctx.fillStyle = '#e74c3c'; // Red cab
+            ctx.fillRect(-truck.height/2, -truck.width/2, truck.height, truck.width);
+            // Windshield
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(truck.height/4, -truck.width/2 + 2, truck.height/4, truck.width - 4);
+            // Headlights
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath(); ctx.arc(truck.height/2, -truck.width/2 + 4, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(truck.height/2, truck.width/2 - 4, 3, 0, Math.PI*2); ctx.fill();
+
+            if(keys.ArrowDown || keys.s) { // Brake lights
+                ctx.fillStyle = 'red';
+                ctx.beginPath(); ctx.arc(-truck.height/2, -truck.width/2 + 4, 4, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(-truck.height/2, truck.width/2 - 4, 4, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+
+            ctx.restore(); // Restore camera translation
+        }
+
+        function startGame() {
+            initLevel();
+            gameState = 'playing';
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(won, message) {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            endTitle.innerText = won ? "Delivery Complete!" : "Delivery Failed!";
+            endTitle.style.color = won ? "#2ecc71" : "#e74c3c";
+            endMessage.innerText = message;
+
+            if (won && window.ProgressSystem) {
+                let score = Math.floor(truck.health) + Math.floor(timeRemaining);
+                window.ProgressSystem.addXP(score);
+                window.ProgressSystem.addCoins(Math.floor(score / 2));
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            if(dt < 0.1) update(dt);
+            draw();
+
+            if(gameState === 'playing') requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Initial draw
+        initLevel();
+        draw();
+    </script>
+</body>
+</html>

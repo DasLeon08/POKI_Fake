@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Dispatcher - Poki Clone</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        header {
+            width: 100%;
+            padding: 10px 20px;
+            background-color: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 2px solid #e74c3c;
+        }
+        .back-btn {
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .back-btn:hover { background-color: #c0392b; }
+        #game-container {
+            position: relative;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #27ae60; /* Grass background */
+        }
+        canvas { display: block; cursor: pointer; }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden { display: none !important; }
+        .screen {
+            background-color: rgba(44, 62, 80, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto;
+            border: 2px solid #e74c3c;
+        }
+        h1 { margin-top: 0; color: #f1c40f; }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #2980b9; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .controls-info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Train Dispatcher</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="scoreDisplay">Delivered: 0</div>
+            <div id="timerDisplay">Time: 0</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Train Dispatcher</h1>
+                <p>Route colored trains to their matching stations.</p>
+                <div class="controls-info">
+                    Click on the track switches (circles) to change the route.<br>
+                    Avoid crashes!
+                </div>
+                <button id="start-btn">Start Dispatching</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>Train Crash!</h1>
+                <p>You delivered <span id="final-score">0</span> trains.</p>
+                <button id="restart-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        let gameState = 'start';
+        let lastTime = 0;
+        let score = 0;
+        let gameTime = 0;
+
+        // Track nodes and edges
+        const nodes = [
+            { id: 0, x: 50, y: 300, type: 'spawn' },
+            { id: 1, x: 250, y: 300, type: 'switch', state: 0, connections: [2, 3] },
+            { id: 2, x: 450, y: 150, type: 'switch', state: 0, connections: [4, 5] },
+            { id: 3, x: 450, y: 450, type: 'switch', state: 0, connections: [6, 7] },
+            { id: 4, x: 700, y: 100, type: 'station', color: '#e74c3c' }, // Red
+            { id: 5, x: 700, y: 200, type: 'station', color: '#3498db' }, // Blue
+            { id: 6, x: 700, y: 400, type: 'station', color: '#2ecc71' }, // Green
+            { id: 7, x: 700, y: 500, type: 'station', color: '#f1c40f' }  // Yellow
+        ];
+
+        // Directed edges based on node connections
+        const edges = [
+            { from: 0, to: 1 },
+            { from: 1, to: 2 }, { from: 1, to: 3 },
+            { from: 2, to: 4 }, { from: 2, to: 5 },
+            { from: 3, to: 6 }, { from: 3, to: 7 }
+        ];
+
+        let trains = [];
+        let trainSpeed = 50; // pixels per second
+        let spawnTimer = 0;
+        const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f'];
+
+        // Input handling
+        canvas.addEventListener('click', (e) => {
+            if(gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Check switch clicks
+            nodes.forEach(node => {
+                if(node.type === 'switch') {
+                    const dx = mouseX - node.x;
+                    const dy = mouseY - node.y;
+                    if(Math.sqrt(dx*dx + dy*dy) < 20) {
+                        node.state = (node.state + 1) % node.connections.length;
+                    }
+                }
+            });
+        });
+
+        function spawnTrain() {
+            trains.push({
+                x: nodes[0].x,
+                y: nodes[0].y,
+                currentNode: 0,
+                nextNode: 1,
+                progress: 0, // 0 to 1 along current edge
+                color: colors[Math.floor(Math.random() * colors.length)],
+                length: 20
+            });
+        }
+
+        function getEdgeLength(fromNode, toNode) {
+            const dx = toNode.x - fromNode.x;
+            const dy = toNode.y - fromNode.y;
+            return Math.sqrt(dx*dx + dy*dy);
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+
+            gameTime += dt;
+            timerDisplay.innerText = `Time: ${Math.floor(gameTime)}s`;
+
+            // Spawning (faster over time)
+            spawnTimer -= dt;
+            if(spawnTimer <= 0) {
+                spawnTrain();
+                spawnTimer = Math.max(2, 5 - gameTime / 30); // decrease spawn time
+                trainSpeed = Math.min(150, 50 + gameTime * 0.5); // increase speed
+            }
+
+            // Update Trains
+            for(let i=trains.length-1; i>=0; i--) {
+                let t = trains[i];
+                let current = nodes[t.currentNode];
+                let next = nodes[t.nextNode];
+
+                let edgeLen = getEdgeLength(current, next);
+                let moveAmount = (trainSpeed * dt) / edgeLen;
+
+                t.progress += moveAmount;
+
+                // Move visual position
+                t.x = current.x + (next.x - current.x) * t.progress;
+                t.y = current.y + (next.y - current.y) * t.progress;
+
+                // Reached next node
+                if(t.progress >= 1) {
+                    if(next.type === 'station') {
+                        // Check color match
+                        if(t.color === next.color) {
+                            score++;
+                            scoreDisplay.innerText = `Delivered: ${score}`;
+                            trains.splice(i, 1);
+                        } else {
+                            endGame(false, `Wrong station! Expected ${next.color}`);
+                            return;
+                        }
+                    } else if(next.type === 'switch') {
+                        t.currentNode = t.nextNode;
+                        t.nextNode = next.connections[next.state];
+                        t.progress = 0;
+                        // Set start position precisely
+                        t.x = nodes[t.currentNode].x;
+                        t.y = nodes[t.currentNode].y;
+                    }
+                }
+            }
+
+            // Collision Detection (Train vs Train)
+            for(let i=0; i<trains.length; i++) {
+                for(let j=i+1; j<trains.length; j++) {
+                    const t1 = trains[i];
+                    const t2 = trains[j];
+                    const dx = t1.x - t2.x;
+                    const dy = t1.y - t2.y;
+                    if(Math.sqrt(dx*dx + dy*dy) < 15) { // Collision radius
+                        endGame(false, "Trains crashed!");
+                        return;
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#27ae60'; // Grass
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Edges (Tracks)
+            ctx.strokeStyle = '#7f8c8d'; // Grey tracks
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            edges.forEach(e => {
+                ctx.beginPath();
+                ctx.moveTo(nodes[e.from].x, nodes[e.from].y);
+                ctx.lineTo(nodes[e.to].x, nodes[e.to].y);
+                ctx.stroke();
+
+                // Track ties (sleepers) - simple dashed line over it
+                ctx.strokeStyle = '#bdc3c7';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 10]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            });
+
+            // Draw Nodes
+            nodes.forEach(n => {
+                if(n.type === 'switch') {
+                    // Switch base
+                    ctx.fillStyle = '#34495e';
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
+                    ctx.fill();
+
+                    // Active route indicator
+                    let nextNode = nodes[n.connections[n.state]];
+                    let angle = Math.atan2(nextNode.y - n.y, nextNode.x - n.x);
+
+                    ctx.strokeStyle = '#f1c40f'; // Yellow active path
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(n.x, n.y);
+                    ctx.lineTo(n.x + Math.cos(angle)*15, n.y + Math.sin(angle)*15);
+                    ctx.stroke();
+                } else if(n.type === 'station') {
+                    // Station building
+                    ctx.fillStyle = n.color;
+                    ctx.fillRect(n.x - 20, n.y - 30, 40, 60);
+                    // Roof
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.beginPath();
+                    ctx.moveTo(n.x - 25, n.y - 30);
+                    ctx.lineTo(n.x + 25, n.y - 30);
+                    ctx.lineTo(n.x, n.y - 45);
+                    ctx.fill();
+                } else if(n.type === 'spawn') {
+                    ctx.fillStyle = '#34495e';
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 20, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px Arial';
+                    ctx.fillText('SPAWN', n.x-18, n.y+4);
+                }
+            });
+
+            // Draw Trains
+            trains.forEach(t => {
+                // Determine angle based on movement direction
+                let current = nodes[t.currentNode];
+                let next = nodes[t.nextNode];
+                let angle = Math.atan2(next.y - current.y, next.x - current.x);
+
+                ctx.save();
+                ctx.translate(t.x, t.y);
+                ctx.rotate(angle);
+
+                // Train body
+                ctx.fillStyle = t.color;
+                ctx.fillRect(-t.length/2, -8, t.length, 16);
+
+                // Train cabin
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillRect(t.length/2 - 6, -6, 6, 12);
+
+                ctx.restore();
+            });
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            gameTime = 0;
+            trains = [];
+            trainSpeed = 50;
+            spawnTimer = 3;
+
+            // Reset switches
+            nodes.forEach(n => { if(n.type === 'switch') n.state = 0; });
+
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+
+            scoreDisplay.innerText = "Delivered: 0";
+
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(won, reason) {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            // Log reason (optional)
+            console.log(reason);
+
+            if (window.ProgressSystem) {
+                window.ProgressSystem.addXP(score * 10);
+                window.ProgressSystem.addCoins(score * 2);
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            if(dt < 0.1) update(dt);
+            draw();
+
+            if(gameState === 'playing') requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        draw(); // Initial draw
+    </script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Controller - Poki Clone</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #27ae60; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        header { width: 100%; padding: 10px 20px; background-color: #2c3e50; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #e74c3c; }
+        .back-btn { background-color: #e74c3c; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+        .back-btn:hover { background-color: #c0392b; }
+        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; background-color: #27ae60; }
+        canvas { display: block; cursor: pointer; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
+        .screen { background-color: rgba(44, 62, 80, 0.9); padding: 30px; border-radius: 10px; text-align: center; pointer-events: auto; border: 2px solid #e74c3c; }
+        h1 { margin-top: 0; color: #f1c40f; }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        button:hover { background-color: #2980b9; }
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
+        .controls-info { margin-top: 15px; font-size: 14px; color: #bdc3c7; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Traffic Controller</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="scoreDisplay">Safe Cars: 0</div>
+            <div id="crashDisplay">Crashes: 0/3</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Traffic Controller</h1>
+                <p>Manage the busy intersection.</p>
+                <div class="controls-info">
+                    Click a car to stop or start it.<br>
+                    Prevent crashes!
+                </div>
+                <button id="start-btn">Start Directing</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>Too Many Crashes!</h1>
+                <p>You safely guided <span id="final-score">0</span> cars.</p>
+                <button id="restart-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+
+        let gameState = 'start';
+        let lastTime = 0;
+        let score = 0;
+        let crashes = 0;
+
+        // Roads
+        const roadW = 100;
+        const intersection = { x: canvas.width/2 - roadW/2, y: canvas.height/2 - roadW/2, w: roadW, h: roadW };
+
+        // Lanes (center paths)
+        // N/S road: N->S is x=380, S->N is x=420
+        // E/W road: W->E is y=320, E->W is y=280
+
+        let cars = [];
+        let spawnTimer = 0;
+        let gameTime = 0;
+
+        const colors = ['#e74c3c', '#3498db', '#f1c40f', '#9b59b6'];
+
+        canvas.addEventListener('mousedown', (e) => {
+            if(gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Check if clicked on a car
+            for(let i=cars.length-1; i>=0; i--) {
+                let c = cars[i];
+                if(mouseX > c.x - c.w/2 && mouseX < c.x + c.w/2 &&
+                   mouseY > c.y - c.h/2 && mouseY < c.y + c.h/2) {
+                    c.stopped = !c.stopped;
+                    return; // Only toggle one car
+                }
+            }
+        });
+
+        function spawnCar() {
+            let directions = ['N', 'S', 'E', 'W'];
+            let dir = directions[Math.floor(Math.random()*directions.length)];
+
+            let car = { w: 20, h: 40, color: colors[Math.floor(Math.random()*colors.length)], stopped: false, speed: 100, passed: false };
+
+            if(dir === 'N') { car.x = 380; car.y = -20; car.vx = 0; car.vy = 1; }
+            if(dir === 'S') { car.x = 420; car.y = canvas.height+20; car.vx = 0; car.vy = -1; }
+            if(dir === 'E') { car.x = canvas.width+20; car.y = 280; car.vx = -1; car.vy = 0; car.w = 40; car.h = 20; }
+            if(dir === 'W') { car.x = -20; car.y = 320; car.vx = 1; car.vy = 0; car.w = 40; car.h = 20; }
+
+            cars.push(car);
+        }
+
+        function isIntersecting(c1, c2) {
+            return !(c2.x - c2.w/2 > c1.x + c1.w/2 ||
+                     c2.x + c2.w/2 < c1.x - c1.w/2 ||
+                     c2.y - c2.h/2 > c1.y + c1.h/2 ||
+                     c2.y + c2.h/2 < c1.y - c1.h/2);
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+            gameTime += dt;
+
+            spawnTimer -= dt;
+            if(spawnTimer <= 0) {
+                spawnCar();
+                spawnTimer = Math.max(0.5, 2 - gameTime/60); // Spawns faster over time
+            }
+
+            // Move cars
+            for(let i=0; i<cars.length; i++) {
+                let c = cars[i];
+                if(!c.stopped) {
+                    // Check rear-end collision
+                    let safeToMove = true;
+                    for(let j=0; j<cars.length; j++) {
+                        if(i === j) continue;
+                        let other = cars[j];
+                        // If same direction, check distance ahead
+                        if(c.vx === other.vx && c.vy === other.vy) {
+                            let dist = (other.x - c.x)*c.vx + (other.y - c.y)*c.vy; // Distance along motion vector
+                            if(dist > 0 && dist < 50) safeToMove = false; // Too close
+                        }
+                    }
+
+                    if(safeToMove) {
+                        c.x += c.vx * c.speed * dt;
+                        c.y += c.vy * c.speed * dt;
+                    }
+                }
+
+                // Check scoring (leaving intersection)
+                if(!c.passed) {
+                    if( (c.vx > 0 && c.x > intersection.x + intersection.w) ||
+                        (c.vx < 0 && c.x < intersection.x) ||
+                        (c.vy > 0 && c.y > intersection.y + intersection.h) ||
+                        (c.vy < 0 && c.y < intersection.y) ) {
+                        c.passed = true;
+                        score++;
+                    }
+                }
+            }
+
+            // Check crashes
+            for(let i=0; i<cars.length; i++) {
+                for(let j=i+1; j<cars.length; j++) {
+                    if(isIntersecting(cars[i], cars[j])) {
+                        // Mark crashed, remove them, increment crash counter
+                        createExplosion(cars[i].x, cars[i].y);
+                        cars.splice(j, 1);
+                        cars.splice(i, 1);
+                        crashes++;
+
+                        // Flash screen red?
+                        if(crashes >= 3) endGame();
+                        return; // Break out to avoid index errors after splice
+                    }
+                }
+            }
+
+            // Clean up off-screen cars
+            for(let i=cars.length-1; i>=0; i--) {
+                let c = cars[i];
+                if(c.x < -100 || c.x > canvas.width+100 || c.y < -100 || c.y > canvas.height+100) {
+                    cars.splice(i, 1);
+                }
+            }
+
+            // HUD
+            document.getElementById('scoreDisplay').innerText = `Safe Cars: ${score}`;
+            document.getElementById('crashDisplay').innerText = `Crashes: ${crashes}/3`;
+        }
+
+        let particles = [];
+        function createExplosion(x,y) {
+            for(let i=0; i<30; i++) {
+                particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, life: 1, c: Math.random()>0.5?'#e74c3c':'#f1c40f' });
+            }
+        }
+
+        function draw() {
+            // Background
+            ctx.fillStyle = '#27ae60';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Roads
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(canvas.width/2 - roadW/2, 0, roadW, canvas.height); // N/S
+            ctx.fillRect(0, canvas.height/2 - roadW/2, canvas.width, roadW); // E/W
+
+            // Center markings
+            ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 4; ctx.setLineDash([20, 20]);
+            // N/S lines
+            ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, intersection.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(canvas.width/2, intersection.y + intersection.h); ctx.lineTo(canvas.width/2, canvas.height); ctx.stroke();
+            // E/W lines
+            ctx.beginPath(); ctx.moveTo(0, canvas.height/2); ctx.lineTo(intersection.x, canvas.height/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(intersection.x + intersection.w, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Crosswalks
+            ctx.fillStyle = 'white';
+            for(let i=0; i<5; i++) {
+                ctx.fillRect(intersection.x + 5 + i*20, intersection.y - 15, 10, 15); // N
+                ctx.fillRect(intersection.x + 5 + i*20, intersection.y + intersection.h, 10, 15); // S
+                ctx.fillRect(intersection.x - 15, intersection.y + 5 + i*20, 15, 10); // W
+                ctx.fillRect(intersection.x + intersection.w, intersection.y + 5 + i*20, 15, 10); // E
+            }
+
+            // Particles
+            for(let i=particles.length-1; i>=0; i--) {
+                let p = particles[i];
+                ctx.fillStyle = p.c; ctx.globalAlpha = p.life;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1;
+
+                // update here for simplicity
+                if(gameState === 'playing') { p.x += p.vx*0.016; p.y += p.vy*0.016; p.life -= 0.03; if(p.life<=0) particles.splice(i,1); }
+            }
+
+            // Cars
+            cars.forEach(c => {
+                ctx.fillStyle = c.color;
+                ctx.fillRect(c.x - c.w/2, c.y - c.h/2, c.w, c.h);
+                // Windows (simulated direction)
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                if(c.vy !== 0) { // vertical
+                    ctx.fillRect(c.x - c.w/2 + 2, c.y - c.h/2 + 5, c.w - 4, 10); // windshield
+                } else { // horizontal
+                    ctx.fillRect(c.x - c.w/2 + 5, c.y - c.h/2 + 2, 10, c.h - 4);
+                }
+
+                // Stopped indicator (brake lights)
+                if(c.stopped) {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(c.w,c.h)/2 + 5, 0, Math.PI*2);
+                    ctx.globalAlpha = 0.5; ctx.fill(); ctx.globalAlpha = 1;
+                }
+            });
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            score = 0; crashes = 0; gameTime = 0; spawnTimer = 1;
+            cars = []; particles = [];
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            if(window.ProgressSystem) {
+                window.ProgressSystem.addXP(score * 5);
+                window.ProgressSystem.addCoins(score);
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            if(dt < 0.1) update(dt);
+            draw();
+            if(gameState === 'playing') requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        draw();
+    </script>
+</body>
+</html>

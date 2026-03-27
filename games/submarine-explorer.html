@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submarine Explorer - Poki Clone</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #1a252c; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        header { width: 100%; padding: 10px 20px; background-color: #2c3e50; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #3498db; }
+        .back-btn { background-color: #3498db; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+        .back-btn:hover { background-color: #2980b9; }
+        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; background-color: #001f3f; }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
+        .screen { background-color: rgba(44, 62, 80, 0.9); padding: 30px; border-radius: 10px; text-align: center; pointer-events: auto; border: 2px solid #3498db; }
+        h1 { margin-top: 0; color: #3498db; }
+        button { background-color: #2ecc71; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        button:hover { background-color: #27ae60; }
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
+        .controls-info { margin-top: 15px; font-size: 14px; color: #bdc3c7; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Submarine Explorer</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="depthDisplay">Depth: 0m</div>
+            <div id="hullDisplay">Hull: 100%</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Submarine Explorer</h1>
+                <p>Navigate the deep underwater trench.</p>
+                <div class="controls-info">
+                    W / S : Control Ballast (Up/Down)<br>
+                    A / D : Propeller (Left/Right)<br>
+                    Avoid walls and mines!
+                </div>
+                <button id="start-btn">Dive</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1>Hull Breach!</h1>
+                <p>Max Depth Reached: <span id="final-depth">0</span>m</p>
+                <button id="restart-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+
+        let gameState = 'start';
+        let lastTime = 0;
+        let depth = 0;
+
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        const sub = {
+            x: 400, y: 100,
+            width: 50, height: 25,
+            vx: 0, vy: 0,
+            thrustX: 60, thrustY: 40,
+            drag: 0.98, waterDragY: 0.95,
+            hull: 100, maxHull: 100
+        };
+
+        let obstacles = [];
+        let bubbles = [];
+        let caveWidth = 500;
+        let caveOffset = 150;
+
+        function initLevel() {
+            sub.x = canvas.width / 2;
+            sub.y = 100;
+            sub.vx = 0; sub.vy = 0;
+            sub.hull = sub.maxHull;
+            depth = 0;
+            obstacles = [];
+            for(let i=0; i<10; i++) spawnObstacle(canvas.height + i * 150);
+        }
+
+        function spawnObstacle(y) {
+            caveOffset += (Math.random() - 0.5) * 100;
+            caveOffset = Math.max(50, Math.min(canvas.width - caveWidth - 50, caveOffset));
+            caveWidth -= 1; // Gets narrower
+            caveWidth = Math.max(200, caveWidth);
+
+            let type = Math.random() > 0.8 ? 'mine' : 'wall';
+            if (type === 'mine') {
+                obstacles.push({ type: 'mine', x: caveOffset + Math.random() * caveWidth, y: y, radius: 15 });
+            }
+            // Add left/right walls as rects
+            obstacles.push({ type: 'wall', x: 0, y: y, w: caveOffset, h: 200 });
+            obstacles.push({ type: 'wall', x: caveOffset + caveWidth, y: y, w: canvas.width - (caveOffset + caveWidth), h: 200 });
+        }
+
+        function spawnBubble() {
+            bubbles.push({
+                x: sub.x - 20, y: sub.y,
+                r: Math.random() * 3 + 2,
+                vx: -sub.vx * 0.5 + (Math.random()-0.5)*20,
+                vy: -sub.vy * 0.5 - 50 - Math.random()*20,
+                life: 1
+            });
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+
+            // Controls
+            if(keys.w || keys.ArrowUp) { sub.vy -= sub.thrustY * dt; if(Math.random()<0.3) spawnBubble(); }
+            if(keys.s || keys.ArrowDown) sub.vy += sub.thrustY * dt;
+            if(keys.a || keys.ArrowLeft) { sub.vx -= sub.thrustX * dt; if(Math.random()<0.3) spawnBubble(); }
+            if(keys.d || keys.ArrowRight) { sub.vx += sub.thrustX * dt; if(Math.random()<0.3) spawnBubble(); }
+
+            // Gravity/Buoyancy (Slight sinking)
+            sub.vy += 15 * dt;
+
+            // Drag
+            sub.vx *= sub.drag;
+            sub.vy *= sub.waterDragY;
+
+            sub.x += sub.vx * dt * 60;
+            sub.y += sub.vy * dt * 60;
+
+            // Auto scroll (sinking effect)
+            let scrollSpeed = Math.max(20, sub.y - 200);
+            if(sub.y > 300) {
+                let diff = sub.y - 300;
+                sub.y = 300;
+                depth += diff * dt;
+
+                // Move obstacles up
+                for(let i=obstacles.length-1; i>=0; i--) {
+                    obstacles[i].y -= diff;
+                    if(obstacles[i].y < -200) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // Spawn new
+                if(obstacles[obstacles.length-1].y < canvas.height - 100) {
+                    spawnObstacle(canvas.height + 100);
+                }
+            }
+
+            // Boundaries
+            if(sub.x < sub.width/2) { sub.x = sub.width/2; sub.vx = 0; }
+            if(sub.x > canvas.width - sub.width/2) { sub.x = canvas.width - sub.width/2; sub.vx = 0; }
+            if(sub.y < 50) { sub.y = 50; sub.vy = 0; }
+
+            // Collisions
+            for(let obs of obstacles) {
+                if(obs.type === 'mine') {
+                    let dx = sub.x - obs.x; let dy = sub.y - obs.y;
+                    if(Math.sqrt(dx*dx + dy*dy) < obs.radius + 15) {
+                        sub.hull -= 25;
+                        obs.y = -1000; // remove
+                        createExplosion(obs.x, obs.y);
+                    }
+                } else if(obs.type === 'wall') {
+                    if(sub.x + sub.width/2 > obs.x && sub.x - sub.width/2 < obs.x + obs.w &&
+                       sub.y + sub.height/2 > obs.y && sub.y - sub.height/2 < obs.y + obs.h) {
+                        sub.hull -= 10 * dt; // scraping damage
+                        // push back
+                        if(sub.x < obs.x + obs.w/2) { sub.x = obs.x - sub.width/2; sub.vx = -1; }
+                        else { sub.x = obs.x + obs.w + sub.width/2; sub.vx = 1; }
+                    }
+                }
+            }
+
+            // Bubbles
+            for(let i=bubbles.length-1; i>=0; i--) {
+                let b = bubbles[i];
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.life -= dt;
+                if(b.life <= 0) bubbles.splice(i, 1);
+            }
+
+            if(sub.hull <= 0) endGame();
+
+            // HUD
+            document.getElementById('depthDisplay').innerText = `Depth: ${Math.floor(depth)}m`;
+            let hDisp = document.getElementById('hullDisplay');
+            hDisp.innerText = `Hull: ${Math.floor(sub.hull)}%`;
+            hDisp.style.color = sub.hull < 30 ? '#e74c3c' : '#fff';
+        }
+
+        function createExplosion(x,y) {
+            for(let i=0; i<20; i++) {
+                bubbles.push({ x: x, y: y, r: Math.random()*5+2, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, life: 1 });
+            }
+        }
+
+        function draw() {
+            // Background
+            let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#001f3f');
+            bgGrad.addColorStop(1, '#001122');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Obstacles
+            obstacles.forEach(obs => {
+                if(obs.type === 'wall') {
+                    ctx.fillStyle = '#2c3e50'; // Dark rock
+                    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                    ctx.strokeStyle = '#34495e';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+                } else if(obs.type === 'mine') {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.beginPath(); ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#c0392b';
+                    ctx.beginPath(); ctx.arc(obs.x, obs.y, obs.radius*0.6, 0, Math.PI*2); ctx.fill();
+                    // Spikes
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+                    for(let i=0; i<4; i++) {
+                        ctx.beginPath(); ctx.moveTo(obs.x, obs.y);
+                        ctx.lineTo(obs.x + Math.cos(i*Math.PI/2)*obs.radius*1.4, obs.y + Math.sin(i*Math.PI/2)*obs.radius*1.4); ctx.stroke();
+                    }
+                }
+            });
+
+            // Bubbles
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            bubbles.forEach(b => {
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+            });
+
+            // Submarine
+            ctx.save();
+            ctx.translate(sub.x, sub.y);
+            // Tilt based on velocity
+            ctx.rotate(sub.vx * 0.05);
+
+            // Body
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath(); ctx.ellipse(0, 0, sub.width/2, sub.height/2, 0, 0, Math.PI*2); ctx.fill();
+
+            // Conning tower
+            ctx.fillRect(-5, -sub.height/2 - 10, 15, 12);
+
+            // Periscope
+            ctx.strokeStyle = '#95a5a6'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(5, -sub.height/2 - 10); ctx.lineTo(5, -sub.height/2 - 18); ctx.lineTo(10, -sub.height/2 - 18); ctx.stroke();
+
+            // Window
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath(); ctx.arc(10, 0, 6, 0, Math.PI*2); ctx.fill();
+
+            // Propeller
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillRect(-sub.width/2 - 5, -5, 5, 10);
+
+            ctx.restore();
+        }
+
+        function startGame() {
+            initLevel();
+            gameState = 'playing';
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-depth').innerText = Math.floor(depth);
+            if(window.ProgressSystem) {
+                window.ProgressSystem.addXP(Math.floor(depth/10));
+                window.ProgressSystem.addCoins(Math.floor(depth/50));
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            if(dt < 0.1) update(dt);
+            draw();
+            if(gameState === 'playing') requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        draw();
+    </script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crane Operator - Poki Clone</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #87CEEB; color: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        header { width: 100%; padding: 10px 20px; background-color: #f39c12; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #e67e22; }
+        .back-btn { background-color: #d35400; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
+        .back-btn:hover { background-color: #e67e22; }
+        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; background-color: #ecf0f1; }
+        canvas { display: block; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
+        .screen { background-color: rgba(255, 255, 255, 0.9); padding: 30px; border-radius: 10px; text-align: center; pointer-events: auto; border: 2px solid #e67e22; }
+        h1 { margin-top: 0; color: #d35400; }
+        button { background-color: #2ecc71; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        button:hover { background-color: #27ae60; }
+        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; font-size: 20px; font-weight: bold; color: #34495e; text-shadow: 1px 1px 2px #fff; }
+        .controls-info { margin-top: 15px; font-size: 14px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Crane Operator</h2>
+        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+    </header>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div id="levelDisplay">Level: 1</div>
+            <div id="timerDisplay">Time: 60</div>
+        </div>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen">
+                <h1>Crane Operator</h1>
+                <p>Move the cargo to the target zone without dropping it too hard.</p>
+                <div class="controls-info">
+                    A / D : Move Trolley Left/Right<br>
+                    W / S : Hoist Cable Up/Down<br>
+                    SPACE : Attach/Detach Magnet
+                </div>
+                <button id="start-btn">Start Shift</button>
+            </div>
+            <div id="game-over-screen" class="screen hidden">
+                <h1 id="end-title">Job Done</h1>
+                <p id="end-message">Containers moved: <span id="final-score">0</span></p>
+                <button id="restart-btn">Next Shift</button>
+            </div>
+        </div>
+    </div>
+    <script src="../js/progress.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+
+        let gameState = 'start';
+        let lastTime = 0;
+        let score = 0;
+        let timeRemaining = 60;
+
+        const keys = { a: false, d: false, w: false, s: false, ' ': false };
+        let spacePressed = false;
+
+        window.addEventListener('keydown', e => {
+            if(keys.hasOwnProperty(e.key) || e.key === ' ') {
+                keys[e.key] = true;
+                if(e.key === ' ' && !spacePressed) {
+                    toggleMagnet();
+                    spacePressed = true;
+                }
+            }
+        });
+        window.addEventListener('keyup', e => {
+            if(keys.hasOwnProperty(e.key) || e.key === ' ') {
+                keys[e.key] = false;
+                if(e.key === ' ') spacePressed = false;
+            }
+        });
+
+        // Simplified Pendulum Physics
+        const crane = {
+            baseX: 100, baseY: canvas.height,
+            towerHeight: 500,
+            jibY: canvas.height - 500,
+            trolleyX: 300, minTrolley: 150, maxTrolley: 750,
+            cableLen: 200, minCable: 50, maxCable: 450,
+            trolleySpeed: 100, hoistSpeed: 80,
+            magnetActive: false,
+
+            // Pendulum state
+            angle: 0, vAngle: 0,
+            mass: 1 // mass of empty hook
+        };
+
+        let container = {
+            x: 600, y: canvas.height - 40,
+            width: 80, height: 40,
+            attached: false,
+            targetX: 200, targetY: canvas.height - 40, targetW: 100, targetH: 40
+        };
+
+        const gravity = 500; // pixels/s^2
+
+        function initLevel() {
+            crane.trolleyX = 300; crane.cableLen = 200;
+            crane.angle = 0; crane.vAngle = 0;
+            crane.magnetActive = false;
+
+            container.attached = false;
+            container.x = 500 + Math.random() * 200;
+            container.y = canvas.height - container.height;
+
+            container.targetX = 150 + Math.random() * 200;
+            container.targetY = canvas.height - container.height;
+
+            timeRemaining = 60;
+            score = 0;
+        }
+
+        function toggleMagnet() {
+            if(gameState !== 'playing') return;
+
+            crane.magnetActive = !crane.magnetActive;
+
+            let hookX = crane.trolleyX + Math.sin(crane.angle) * crane.cableLen;
+            let hookY = crane.jibY + Math.cos(crane.angle) * crane.cableLen;
+
+            if(crane.magnetActive && !container.attached) {
+                // Check distance
+                let dx = hookX - (container.x + container.width/2);
+                let dy = hookY - container.y; // Top of container
+
+                if(Math.abs(dx) < 30 && Math.abs(dy) < 20) {
+                    container.attached = true;
+                    // Adjust pendulum mass/damping
+                    crane.mass = 5;
+                } else {
+                    crane.magnetActive = false; // Failed to attach
+                }
+            } else if(!crane.magnetActive && container.attached) {
+                container.attached = false;
+                crane.mass = 1;
+                // Drop container (simple, just snap to ground for now, real physics complex)
+                container.y = canvas.height - container.height;
+                container.x = hookX - container.width/2;
+
+                checkDelivery();
+            }
+        }
+
+        function checkDelivery() {
+            // Check if container center is in target bounds
+            let cx = container.x + container.width/2;
+            if(cx > container.targetX && cx < container.targetX + container.targetW) {
+                score++;
+                // Spawn new
+                container.x = 500 + Math.random() * 200;
+                container.y = canvas.height - container.height;
+                container.targetX = 150 + Math.random() * 200;
+            } else {
+                // Missed, reset it
+                container.x = 500 + Math.random() * 200;
+            }
+        }
+
+        function update(dt) {
+            if(gameState !== 'playing') return;
+
+            timeRemaining -= dt;
+            if(timeRemaining <= 0) endGame();
+
+            let targetTrolleyX = crane.trolleyX;
+            if(keys.a) targetTrolleyX -= crane.trolleySpeed * dt;
+            if(keys.d) targetTrolleyX += crane.trolleySpeed * dt;
+            targetTrolleyX = Math.max(crane.minTrolley, Math.min(crane.maxTrolley, targetTrolleyX));
+
+            let targetCableLen = crane.cableLen;
+            if(keys.w) targetCableLen -= crane.hoistSpeed * dt;
+            if(keys.s) targetCableLen += crane.hoistSpeed * dt;
+            targetCableLen = Math.max(crane.minCable, Math.min(crane.maxCable, targetCableLen));
+
+            // Calculate acceleration of pivot (trolley)
+            let aTrolley = (targetTrolleyX - crane.trolleyX) / dt;
+
+            // Pendulum Equation of Motion:
+            // L * theta'' + g * sin(theta) = -a_trolley * cos(theta) - 2 * L' * theta'
+
+            let cableVel = (targetCableLen - crane.cableLen) / dt;
+
+            let aAngle = (-gravity * Math.sin(crane.angle) - aTrolley * Math.cos(crane.angle) - 2 * cableVel * crane.vAngle) / crane.cableLen;
+
+            // Damping (air resistance / internal friction)
+            crane.vAngle *= (1 - 0.5 * dt);
+
+            crane.vAngle += aAngle * dt;
+            crane.angle += crane.vAngle * dt;
+
+            // Clamp angle to prevent crazy swinging
+            crane.angle = Math.max(-Math.PI/3, Math.min(Math.PI/3, crane.angle));
+
+            crane.trolleyX = targetTrolleyX;
+            crane.cableLen = targetCableLen;
+
+            // Ground collision check for attached container
+            if(container.attached) {
+                let hookY = crane.jibY + Math.cos(crane.angle) * crane.cableLen;
+                if(hookY + container.height > canvas.height) {
+                    // Force detach if hit ground hard, or just stop lowering
+                    crane.cableLen = (canvas.height - container.height - crane.jibY) / Math.cos(crane.angle);
+                }
+            }
+
+            // HUD
+            document.getElementById('levelDisplay').innerText = `Score: ${score}`;
+            document.getElementById('timerDisplay').innerText = `Time: ${Math.ceil(timeRemaining)}`;
+        }
+
+        function draw() {
+            // Background (Sky)
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Ground
+            ctx.fillStyle = '#95a5a6'; // Concrete dock
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+            // Target Zone
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.4)';
+            ctx.fillRect(container.targetX, container.targetY - 10, container.targetW, container.targetH + 10);
+            ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 2; ctx.setLineDash([5,5]);
+            ctx.strokeRect(container.targetX, container.targetY - 10, container.targetW, container.targetH + 10);
+            ctx.setLineDash([]);
+
+            // Container
+            let drawCX = container.x;
+            let drawCY = container.y;
+
+            let hookX = crane.trolleyX + Math.sin(crane.angle) * crane.cableLen;
+            let hookY = crane.jibY + Math.cos(crane.angle) * crane.cableLen;
+
+            if(container.attached) {
+                drawCX = hookX - container.width/2;
+                drawCY = hookY;
+            }
+
+            ctx.fillStyle = '#e74c3c'; // Red shipping container
+            ctx.fillRect(drawCX, drawCY, container.width, container.height);
+            // Container details (corrugation)
+            ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 1;
+            for(let i=10; i<container.width; i+=10) {
+                ctx.beginPath(); ctx.moveTo(drawCX+i, drawCY); ctx.lineTo(drawCX+i, drawCY+container.height); ctx.stroke();
+            }
+
+            // Crane Tower
+            ctx.fillStyle = '#f1c40f'; // Yellow crane
+            ctx.fillRect(crane.baseX - 20, crane.jibY, 40, crane.towerHeight);
+
+            // Jib (Horizontal arm)
+            ctx.fillRect(crane.baseX - 50, crane.jibY, 700, 20);
+
+            // Trolley
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(crane.trolleyX - 15, crane.jibY + 20, 30, 15);
+
+            // Cable
+            ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(crane.trolleyX, crane.jibY + 35);
+            ctx.lineTo(hookX, hookY);
+            ctx.stroke();
+
+            // Hook/Magnet
+            ctx.save();
+            ctx.translate(hookX, hookY);
+            ctx.rotate(crane.angle); // Hook rotates with cable
+
+            ctx.fillStyle = crane.magnetActive ? '#e74c3c' : '#7f8c8d'; // Red if active
+            ctx.fillRect(-15, 0, 30, 10);
+            if(crane.magnetActive) {
+                // Electric arcs
+                ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(-10, 10); ctx.lineTo(-5, 15); ctx.lineTo(0, 10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(5, 15); ctx.lineTo(10, 10); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function startGame() {
+            initLevel();
+            gameState = 'playing';
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            hud.classList.add('hidden');
+            gameOverScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            if(window.ProgressSystem) {
+                window.ProgressSystem.addXP(score * 20);
+                window.ProgressSystem.addCoins(score * 5);
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            if(dt < 0.1) update(dt);
+            draw();
+            if(gameState === 'playing') requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        draw();
+    </script>
+</body>
+</html>

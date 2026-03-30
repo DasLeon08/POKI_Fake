@@ -11,6 +11,15 @@
     </style>
 </head>
 <body>
+
+    <div class="ingame-header">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+        <h1 class="ingame-title">Ball Hochhalten</h1>
+        <div class="ingame-controls">
+            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
+        </div>
+    </div>
+
     <h1>Ball Hochhalten</h1>
     <p>Klicke den Ball, damit er nicht den Boden berührt!</p>
     <p>Punkte: <span id="score">0</span></p>
@@ -32,5 +41,32 @@
             ball.style.top = y + 'px'; ball.style.left = x + 'px';
         }, 20);
     </script>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'keep-up';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new UserSystem();
+
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

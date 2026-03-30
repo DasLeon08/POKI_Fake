@@ -12,6 +12,15 @@
     </style>
 </head>
 <body>
+
+    <div class="ingame-header">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+        <h1 class="ingame-title">Wortsuchen</h1>
+        <div class="ingame-controls">
+            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
+        </div>
+    </div>
+
     <h1>Wortsuchen (SPIEL)</h1>
     <p>Klicke auf die Buchstaben in der richtigen Reihenfolge, um S-P-I-E-L zu finden!</p>
     <div class="grid" id="grid"></div>
@@ -36,5 +45,32 @@
             grid.appendChild(el);
         }
     </script>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'word-search';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new UserSystem();
+
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

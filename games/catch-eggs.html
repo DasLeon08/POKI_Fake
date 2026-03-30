@@ -10,6 +10,15 @@
     </style>
 </head>
 <body>
+
+    <div class="ingame-header">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+        <h1 class="ingame-title">Eier Fangen</h1>
+        <div class="ingame-controls">
+            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
+        </div>
+    </div>
+
     <h1>Eier Fangen</h1>
     <p>Benutze Links/Rechts oder A/D, um den Korb zu bewegen!</p>
     <canvas id="gameCanvas" width="400" height="500"></canvas>
@@ -51,5 +60,32 @@
 
         setInterval(() => { update(); draw(); }, 1000/60);
     </script>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'catch-eggs';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new UserSystem();
+
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

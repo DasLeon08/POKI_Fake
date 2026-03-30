@@ -26,9 +26,18 @@
 </head>
 <body>
 
+    <div class="ingame-header">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+        <h1 class="ingame-title">Tank Battle (2 Spieler) - PlayZone</h1>
+        <div class="ingame-controls">
+            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
+        </div>
+    </div>
+
+
     <div id="game-header">
         <h1>Tank Battle (2 Spieler)</h1>
-        <a href="../index.html" class="back-btn">Zurück zur Übersicht</a>
+
     </div>
 
     <div id="game-container">
@@ -347,5 +356,32 @@
         startBtn.addEventListener('click', startGame);
         loop();
     </script>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'tank-battle';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new UserSystem();
+
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

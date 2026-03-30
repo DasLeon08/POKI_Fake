@@ -10,6 +10,15 @@
     </style>
 </head>
 <body>
+
+    <div class="ingame-header">
+        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
+        <h1 class="ingame-title">Malbrett</h1>
+        <div class="ingame-controls">
+            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
+        </div>
+    </div>
+
     <h1>Malbrett</h1>
     <canvas id="paint" width="600" height="400"></canvas>
     <br>
@@ -32,5 +41,32 @@
             ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         }
     </script>
+
+    <script src="../js/user-system.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'draw';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new UserSystem();
+
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

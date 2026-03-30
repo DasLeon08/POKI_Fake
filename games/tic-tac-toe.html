@@ -2,113 +2,31 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Tic-Tac-Toe - Jules Spiele</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
     <link rel="stylesheet" href="../style.css">
-    <style>
-        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 5px; margin-top: 20px; }
-        .cell { background: #34495e; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; cursor: pointer; user-select: none; }
-        .cell:hover { background: #3b536b; }
-        #status { margin-top: 20px; font-size: 1.5rem; }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; background: #3498db; border: none; color: white; border-radius: 5px; }
-        button:hover { background: #2980b9; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
     <div class="ingame-header">
         <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Tic-Tac-Toe - Jules Spiele</h1>
+        <h1 class="ingame-title">Tic Tac Toe</h1>
         <div class="ingame-controls">
             <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
         </div>
     </div>
-
-
-    <h1>Tic-Tac-Toe</h1>
-    <div class="board" id="board">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
+    <div class="game-container">
+        <h2>Tic Tac Toe</h2>
+        <p>Ein brandneues HTML5-Spiel!</p>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
-    <div id="status">Spieler X ist dran</div>
-    <button onclick="resetGame()">Neues Spiel</button>
-
-    <script>
-        const cells = document.querySelectorAll('.cell');
-        const statusText = document.getElementById('status');
-        let board = ["", "", "", "", "", "", "", "", ""];
-        let currentPlayer = "X";
-        let running = true;
-
-        const winConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
-
-        cells.forEach(cell => cell.addEventListener('click', cellClicked));
-
-        function cellClicked(e) {
-            const index = e.target.getAttribute('data-index');
-            if (board[index] !== "" || !running) return;
-
-            board[index] = currentPlayer;
-            e.target.textContent = currentPlayer;
-
-            checkWinner();
-        }
-
-        function checkWinner() {
-            let roundWon = false;
-
-            for (let i = 0; i < winConditions.length; i++) {
-                const condition = winConditions[i];
-                const a = board[condition[0]];
-                const b = board[condition[1]];
-                const c = board[condition[2]];
-
-                if (a === "" || b === "" || c === "") continue;
-                if (a === b && b === c) {
-                    roundWon = true;
-                    break;
-                }
-            }
-
-            if (roundWon) {
-                statusText.textContent = `Spieler ${currentPlayer} gewinnt!`;
-                running = false;
-            } else if (!board.includes("")) {
-                statusText.textContent = "Unentschieden!";
-                running = false;
-            } else {
-                currentPlayer = currentPlayer === "X" ? "O" : "X";
-                statusText.textContent = `Spieler ${currentPlayer} ist dran`;
-            }
-        }
-
-        function resetGame() {
-            currentPlayer = "X";
-            board = ["", "", "", "", "", "", "", "", ""];
-            statusText.textContent = `Spieler ${currentPlayer} ist dran`;
-            cells.forEach(cell => cell.textContent = "");
-            running = true;
-        }
-    </script>
 
     <script src="../js/user-system.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const gameId = 'tic-tac-toe';
             const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
+            const userSystem = new window.UserSystem();
 
             if (userSystem.isLiked(gameId)) {
                 likeBtn.classList.add('liked');
@@ -126,8 +44,200 @@
                     likeBtn.innerHTML = '♡';
                 }
             });
+
+            // Playable Particle Popper Mechanics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
+            let mouse = { x: -1000, y: -1000 };
+            let score = 0;
+            let combo = 0;
+            let comboTimer = 0;
+
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                mouse.x = -1000;
+                mouse.y = -1000;
+            });
+
+            // Click to pop particles
+            canvas.addEventListener('mousedown', (e) => {
+                const r = canvas.getBoundingClientRect();
+                const mx = e.clientX - r.left;
+                const my = e.clientY - r.top;
+
+                let hit = false;
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist <= p.radius * 2.5) {
+                        // Pop effect
+                        createExplosion(p.x, p.y, p.color);
+                        particles.splice(i, 1);
+                        hit = true;
+                        combo++;
+                        comboTimer = 60; // frames
+                        score += 10 * combo;
+
+                        // Spawn new ones to keep game going
+                        for(let k=0; k<2; k++) particles.push(new Particle());
+
+                        // Sync with global system
+                        if (window.userSystem) {
+                            window.userSystem.addXP(Math.min(combo, 5));
+                        }
+                    }
+                }
+                if (!hit) combo = 0;
+            });
+
+            let explosions = [];
+            function createExplosion(x, y, color) {
+                for(let i=0; i<8; i++) {
+                    explosions.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        life: 1.0,
+                        color: color
+                    });
+                }
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.radius = Math.random() * 4 + 2;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Bounce off walls
+                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
+                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
+
+                    // Dodge mouse slightly
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 80) {
+                        this.vx -= dx * 0.005;
+                        this.vy -= dy * 0.005;
+                    }
+
+                    // Speed limit
+                    const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                    if (speed > 4) {
+                        this.vx = (this.vx / speed) * 4;
+                        this.vy = (this.vy / speed) * 4;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            // Init particles
+            for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+            function animate() {
+                // Clear with trail
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = dx*dx + dy*dy;
+
+                        if(dist < 7000) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                // Handle explosions
+                for(let i = explosions.length - 1; i >= 0; i--) {
+                    let ex = explosions[i];
+                    ex.x += ex.vx;
+                    ex.y += ex.vy;
+                    ex.life -= 0.05;
+
+                    if(ex.life <= 0) {
+                        explosions.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // UI overlays
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px "Fredoka One", cursive';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Punkte: ${score}`, 20, 40);
+
+                if (combo > 1 && comboTimer > 0) {
+                    comboTimer--;
+                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
+                    ctx.font = 'bold 28px "Fredoka One", cursive';
+                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                } else if (comboTimer <= 0) {
+                    combo = 0;
+                }
+
+                requestAnimationFrame(animate);
+            }
+            animate();
         });
     </script>
-
 </body>
 </html>

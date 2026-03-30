@@ -3,46 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird Clone</title>
-    <style>
-        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #70c5ce; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        canvas { background-color: #4ec0ca; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); max-width: 100%; cursor: pointer;}
-        .header { display: flex; justify-content: space-between; width: 320px; margin-bottom: 20px; }
-        .btn { background: #e86101; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn:hover { background: #d35400; }
-        a { color: #fff; text-decoration: none; font-size: 16px; font-weight: bold;}
-        a:hover { color: #f1c40f; }
-        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 30px; border-radius: 10px; text-align: center; border: 4px solid #e86101; z-index: 10; color: #333;}
-    </style>
+    <title>Flappy Clone</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
     <div class="ingame-header">
         <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Flappy Bird Clone</h1>
+        <h1 class="ingame-title">Flappy Clone</h1>
         <div class="ingame-controls">
             <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
         </div>
     </div>
-
-    <div class="header">
-        <a href="../index.html">← Zurück zur Übersicht</a>
-        <div id="scoreDisplay" style="font-size: 20px; font-weight: bold;">0</div>
-    </div>
-
-    <div style="position: relative;">
-        <canvas id="gameCanvas" width="320" height="480"></canvas>
-        <div id="gameOver">
-            <h2>Spiel Vorbei!</h2>
-            <p id="finalScore" style="font-size: 24px; font-weight: bold;">0</p>
-            <button class="btn" onclick="initGame()">Nochmal</button>
-        </div>
+    <div class="game-container">
+        <h2>Flappy Clone</h2>
+        <p>Ein brandneues HTML5-Spiel!</p>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
 
     <script src="../js/user-system.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameId = 'flappy-bird-clone';
+            const likeBtn = document.getElementById('inGameLikeBtn');
+            const userSystem = new window.UserSystem();
 
-            // Advanced Particle System Graphics
+            if (userSystem.isLiked(gameId)) {
+                likeBtn.classList.add('liked');
+                likeBtn.innerHTML = '♥';
+            }
+
+            likeBtn.addEventListener('click', () => {
+                const isLiked = userSystem.toggleLike(gameId);
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeBtn.innerHTML = '♥';
+                    userSystem.showToast('Spiel geliked! +5 XP');
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeBtn.innerHTML = '♡';
+                }
+            });
 
             // Playable Particle Popper Mechanics
             const canvas = document.getElementById('gameCanvas');
@@ -87,7 +88,7 @@
                     const dy = my - p.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
 
-                    if (dist <= p.radius * 2.5) { // generous hit box
+                    if (dist <= p.radius * 2.5) {
                         // Pop effect
                         createExplosion(p.x, p.y, p.color);
                         particles.splice(i, 1);
@@ -236,34 +237,7 @@
                 requestAnimationFrame(animate);
             }
             animate();
-
-</script>
-
-    <script src="../js/user-system.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameId = 'flappy-bird-clone';
-            const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
-
-            if (userSystem.isLiked(gameId)) {
-                likeBtn.classList.add('liked');
-                likeBtn.innerHTML = '♥';
-            }
-
-            likeBtn.addEventListener('click', () => {
-                const isLiked = userSystem.toggleLike(gameId);
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.innerHTML = '♥';
-                    userSystem.showToast('Spiel geliked! +5 XP');
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.innerHTML = '♡';
-                }
-            });
         });
     </script>
-
 </body>
 </html>

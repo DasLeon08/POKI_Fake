@@ -1,69 +1,10 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submarine Explorer - Poki Clone</title>
-    <style>
-        body { margin: 0; padding: 0; background-color: #1a252c; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-        header { width: 100%; padding: 10px 20px; background-color: #2c3e50; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #3498db; }
-        .back-btn { background-color: #3498db; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
-        .back-btn:hover { background-color: #2980b9; }
-        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; background-color: #001f3f; }
-        canvas { display: block; }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .hidden { display: none !important; }
-        .screen { background-color: rgba(44, 62, 80, 0.9); padding: 30px; border-radius: 10px; text-align: center; pointer-events: auto; border: 2px solid #3498db; }
-        h1 { margin-top: 0; color: #3498db; }
-        button { background-color: #2ecc71; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        button:hover { background-color: #27ae60; }
-        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; font-size: 20px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
-        .controls-info { margin-top: 15px; font-size: 14px; color: #bdc3c7; }
-    </style>
-</head>
-<body>
+const fs = require('fs');
+const path = require('path');
 
-    <div class="ingame-header">
-        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Submarine Explorer - Poki Clone</h1>
-        <div class="ingame-controls">
-            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
-        </div>
-    </div>
+const gamesDir = path.join(__dirname, 'games');
+const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
 
-    <header>
-        <h2>Submarine Explorer</h2>
-
-    </header>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="hud" class="hidden">
-            <div id="depthDisplay">Depth: 0m</div>
-            <div id="hullDisplay">Hull: 100%</div>
-        </div>
-        <div id="ui-layer">
-            <div id="start-screen" class="screen">
-                <h1>Submarine Explorer</h1>
-                <p>Navigate the deep underwater trench.</p>
-                <div class="controls-info">
-                    W / S : Control Ballast (Up/Down)<br>
-                    A / D : Propeller (Left/Right)<br>
-                    Avoid walls and mines!
-                </div>
-                <button id="start-btn">Dive</button>
-            </div>
-            <div id="game-over-screen" class="screen hidden">
-                <h1>Hull Breach!</h1>
-                <p>Max Depth Reached: <span id="final-depth">0</span>m</p>
-                <button id="restart-btn">Try Again</button>
-            </div>
-        </div>
-    </div>
-    <script src="../js/user-system.js"></script>
-    <script>
-
-            // Advanced Particle System Graphics
-
+const playableGraphicsScript = `
             // Playable Particle Popper Mechanics
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -73,8 +14,8 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = \`\${rect.width}px\`;
+            canvas.style.height = \`\${rect.height}px\`;
 
             let particles = [];
             const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
@@ -207,7 +148,7 @@
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.strokeStyle = \`rgba(255, 255, 255, \${0.15 - dist/46000})\`;
                             ctx.lineWidth = 1;
                             ctx.stroke();
                         }
@@ -233,7 +174,7 @@
 
                     ctx.beginPath();
                     ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fillStyle = \`rgba(255, 255, 255, \${ex.life})\`;
                     ctx.fill();
                     ctx.closePath();
                 }
@@ -242,13 +183,13 @@
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 24px "Fredoka One", cursive';
                 ctx.textAlign = 'left';
-                ctx.fillText(`Punkte: ${score}`, 20, 40);
+                ctx.fillText(\`Punkte: \${score}\`, 20, 40);
 
                 if (combo > 1 && comboTimer > 0) {
                     comboTimer--;
-                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
+                    ctx.fillStyle = \`rgba(255, 71, 87, \${comboTimer/60})\`;
                     ctx.font = 'bold 28px "Fredoka One", cursive';
-                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                    ctx.fillText(\`\${combo}x COMBO!\`, 20, 75);
                 } else if (comboTimer <= 0) {
                     combo = 0;
                 }
@@ -256,34 +197,35 @@
                 requestAnimationFrame(animate);
             }
             animate();
+`;
 
-</script>
+let upgradedCount = 0;
 
-    <script src="../js/user-system.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameId = 'submarine-explorer';
-            const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
+games.forEach(gameFile => {
+    const filePath = path.join(gamesDir, gameFile);
+    let content = fs.readFileSync(filePath, 'utf-8');
 
-            if (userSystem.isLiked(gameId)) {
-                likeBtn.classList.add('liked');
-                likeBtn.innerHTML = '♥';
-            }
+    // Check if it already has the previous advanced Particle system
+    if (content.includes('class Particle') || content.includes('let hue = 0;')) {
+        const regex1 = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?requestAnimationFrame\(animate\);\s*\}\s*animate\(\);/g;
+        const regex2 = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?draw\(\);/g;
 
-            likeBtn.addEventListener('click', () => {
-                const isLiked = userSystem.toggleLike(gameId);
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.innerHTML = '♥';
-                    userSystem.showToast('Spiel geliked! +5 XP');
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.innerHTML = '♡';
-                }
-            });
-        });
-    </script>
+        let didReplace = false;
+        if (regex1.test(content)) {
+            content = content.replace(regex1, playableGraphicsScript);
+            didReplace = true;
+        } else if (regex2.test(content)) {
+            content = content.replace(regex2, playableGraphicsScript);
+            didReplace = true;
+        }
 
-</body>
-</html>
+        if (didReplace) {
+            // Also clean up any lingering old XP interval
+            content = content.replace(/\/\/ Randomly award XP[\s\S]*?\}\, 10000\);/, '');
+            fs.writeFileSync(filePath, content);
+            upgradedCount++;
+        }
+    }
+});
+
+console.log(`Upgraded ${upgradedCount} games to be fully playable with scoring mechanics.`);

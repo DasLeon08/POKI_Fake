@@ -776,3 +776,56 @@ header {
     font-family: 'Nunito', sans-serif;
     overflow: hidden;
 }
+
+/* Leaderboard Specific Enhancements */
+.leaderboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid transparent;
+}
+.leaderboard-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.leaderboard-item.highlight {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
+    border: 2px solid #fbc02d;
+    box-shadow: 0 4px 10px rgba(251, 192, 45, 0.2);
+}
+.lb-rank {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: #95a5a6;
+    width: 40px;
+    text-align: center;
+}
+.lb-avatar {
+    font-size: 2rem;
+    margin: 0 15px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.lb-name {
+    flex: 1;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+.lb-level {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-family: 'Fredoka One', cursive;
+    box-shadow: 0 2px 5px rgba(52, 152, 219, 0.4);
+}

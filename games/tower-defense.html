@@ -164,522 +164,200 @@
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
 
-        // Game State
-        let lives = 20;
-        let money = 350;
-        let wave = 1;
-        let waveInProgress = false;
-        let gameOver = false;
+            // Playable Particle Popper Mechanics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        // DOM Elements
-        const elLives = document.getElementById('lives');
-        const elMoney = document.getElementById('money');
-        const elWave = document.getElementById('wave');
-        const elStartBtn = document.getElementById('start-wave');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        // Path Waypoints
-        const waypoints = [
-            {x: 0, y: 100},
-            {x: 300, y: 100},
-            {x: 300, y: 400},
-            {x: 600, y: 400},
-            {x: 600, y: 200},
-            {x: 800, y: 200}
-        ];
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
+            let mouse = { x: -1000, y: -1000 };
+            let score = 0;
+            let combo = 0;
+            let comboTimer = 0;
 
-        // Tower Types
-        const towerTypes = [
-            { name: 'Pfeil', cost: 100, range: 120, damage: 20, fireRate: 30, color: '#3498db', type: 'single' },
-            { name: 'Bombe', cost: 250, range: 100, damage: 40, fireRate: 60, color: '#e74c3c', type: 'splash', splashRadius: 60 },
-            { name: 'Laser', cost: 500, range: 150, damage: 5, fireRate: 5, color: '#9b59b6', type: 'beam' }
-        ];
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        let selectedTowerType = 0;
-        let towers = [];
-        let enemies = [];
-        let projectiles = [];
-        let particles = [];
+            canvas.addEventListener('mouseleave', () => {
+                mouse.x = -1000;
+                mouse.y = -1000;
+            });
 
-        let enemySpawnTimer = 0;
-        let enemiesToSpawn = 0;
-        let enemySpawnDelay = 60;
-        let currentEnemyHp = 30;
-        let frameCount = 0;
-        let hoverCell = null;
+            // Click to pop particles
+            canvas.addEventListener('mousedown', (e) => {
+                const r = canvas.getBoundingClientRect();
+                const mx = e.clientX - r.left;
+                const my = e.clientY - r.top;
 
-        // Path drawing logic
-        function drawPath() {
-            ctx.beginPath();
-            ctx.moveTo(waypoints[0].x, waypoints[0].y);
-            for (let i = 1; i < waypoints.length; i++) {
-                ctx.lineTo(waypoints[i].x, waypoints[i].y);
-            }
-            ctx.strokeStyle = '#e67e22';
-            ctx.lineWidth = 40;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
+                let hit = false;
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
 
-            ctx.strokeStyle = '#d35400';
-            ctx.lineWidth = 36;
-            ctx.stroke();
-        }
+                    if (dist <= p.radius * 2.5) { // generous hit box
+                        // Pop effect
+                        createExplosion(p.x, p.y, p.color);
+                        particles.splice(i, 1);
+                        hit = true;
+                        combo++;
+                        comboTimer = 60; // frames
+                        score += 10 * combo;
 
-        class Enemy {
-            constructor(hp, speed, radius, color) {
-                this.x = waypoints[0].x - 30;
-                this.y = waypoints[0].y;
-                this.targetIndex = 1;
-                this.hp = hp;
-                this.maxHp = hp;
-                this.speed = speed;
-                this.radius = radius;
-                this.color = color;
-                this.value = Math.floor(hp / 10) + 2;
-                this.active = true;
-            }
+                        // Spawn new ones to keep game going
+                        for(let k=0; k<2; k++) particles.push(new Particle());
 
-            update() {
-                if (!this.active) return;
-
-                let target = waypoints[this.targetIndex];
-                let dx = target.x - this.x;
-                let dy = target.y - this.y;
-                let dist = Math.hypot(dx, dy);
-
-                if (dist < this.speed) {
-                    this.x = target.x;
-                    this.y = target.y;
-                    this.targetIndex++;
-
-                    if (this.targetIndex >= waypoints.length) {
-                        this.active = false;
-                        lives--;
-                        updateUI();
-                        if (lives <= 0) endGame();
-                    }
-                } else {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
-                }
-            }
-
-            draw() {
-                if (!this.active) return;
-
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-                ctx.stroke();
-
-                // Health bar
-                if (this.hp < this.maxHp) {
-                    let hpPercent = this.hp / this.maxHp;
-                    ctx.fillStyle = 'red';
-                    ctx.fillRect(this.x - 15, this.y - 20, 30, 4);
-                    ctx.fillStyle = '#2ecc71';
-                    ctx.fillRect(this.x - 15, this.y - 20, 30 * hpPercent, 4);
-                }
-            }
-
-            takeDamage(amount) {
-                this.hp -= amount;
-                if (this.hp <= 0 && this.active) {
-                    this.active = false;
-                    money += this.value;
-                    updateUI();
-                    createExplosion(this.x, this.y, this.color);
-                }
-            }
-        }
-
-        class Tower {
-            constructor(x, y, typeIndex) {
-                this.x = x;
-                this.y = y;
-                this.type = towerTypes[typeIndex];
-                this.cooldown = 0;
-                this.target = null;
-                this.angle = 0;
-                this.activeBeam = null; // For laser
-            }
-
-            update() {
-                this.activeBeam = null;
-                if (this.cooldown > 0) this.cooldown--;
-
-                // Find target
-                let closestEnemy = null;
-                let minDist = this.type.range;
-
-                for (let e of enemies) {
-                    if (!e.active) continue;
-                    let dist = Math.hypot(e.x - this.x, e.y - this.y);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestEnemy = e;
+                        // Sync with global system
+                        if (window.userSystem) {
+                            window.userSystem.addXP(Math.min(combo, 5));
+                        }
                     }
                 }
+                if (!hit) combo = 0;
+            });
 
-                this.target = closestEnemy;
-
-                if (this.target) {
-                    this.angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
-
-                    if (this.cooldown <= 0) {
-                        this.fire();
-                    }
+            let explosions = [];
+            function createExplosion(x, y, color) {
+                for(let i=0; i<8; i++) {
+                    explosions.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        life: 1.0,
+                        color: color
+                    });
                 }
             }
 
-            fire() {
-                this.cooldown = this.type.fireRate;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.radius = Math.random() * 4 + 2;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                if (this.type.type === 'single' || this.type.type === 'splash') {
-                    projectiles.push(new Projectile(this.x, this.y, this.target, this.type));
-                } else if (this.type.type === 'beam') {
-                    this.activeBeam = this.target;
-                    this.target.takeDamage(this.type.damage);
-                    // Add small spark particles at target
-                    if (Math.random() > 0.5) {
-                        particles.push(new Particle(this.target.x, this.target.y, this.type.color, 2));
+                    // Bounce off walls
+                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
+                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
+
+                    // Dodge mouse slightly
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 80) {
+                        this.vx -= dx * 0.005;
+                        this.vy -= dy * 0.005;
+                    }
+
+                    // Speed limit
+                    const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                    if (speed > 4) {
+                        this.vx = (this.vx / speed) * 4;
+                        this.vy = (this.vy / speed) * 4;
                     }
                 }
-            }
-
-            draw() {
-                // Base
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
-                ctx.fillStyle = '#34495e';
-                ctx.fill();
-
-                // Head
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-
-                ctx.fillStyle = this.type.color;
-                ctx.beginPath();
-                if (this.type.type === 'single') {
-                    ctx.moveTo(0, -10); ctx.lineTo(25, 0); ctx.lineTo(0, 10);
-                } else if (this.type.type === 'splash') {
-                    ctx.arc(0, 0, 15, 0, Math.PI * 2);
-                    ctx.fillStyle = '#2c3e50'; ctx.fill();
-                    ctx.fillStyle = this.type.color; ctx.fillRect(0, -5, 20, 10);
-                } else if (this.type.type === 'beam') {
-                    ctx.fillRect(-10, -8, 20, 16);
-                    ctx.fillStyle = '#f1c40f';
-                    ctx.fillRect(0, -4, 25, 8);
-                }
-                ctx.fill();
-                ctx.restore();
-
-                // Draw Beam if active
-                if (this.activeBeam && this.activeBeam.active) {
+                draw() {
                     ctx.beginPath();
-                    ctx.moveTo(this.x, this.y);
-                    ctx.lineTo(this.activeBeam.x, this.activeBeam.y);
-                    ctx.strokeStyle = this.type.color;
-                    ctx.lineWidth = 4;
-                    ctx.stroke();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-            }
-        }
-
-        class Projectile {
-            constructor(x, y, target, towerType) {
-                this.x = x;
-                this.y = y;
-                this.target = target;
-                this.type = towerType;
-                this.speed = 10;
-                this.active = true;
-            }
-
-            update() {
-                if (!this.active) return;
-
-                if (!this.target.active) {
-                    // Try to find a new target or die
-                    this.active = false;
-                    return;
-                }
-
-                let dx = this.target.x - this.x;
-                let dy = this.target.y - this.y;
-                let dist = Math.hypot(dx, dy);
-
-                if (dist < this.speed) {
-                    this.hit();
-                } else {
-                    this.x += (dx / dist) * this.speed;
-                    this.y += (dy / dist) * this.speed;
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0;
                 }
             }
 
-            hit() {
-                this.active = false;
+            // Init particles
+            for (let i = 0; i < 60; i++) particles.push(new Particle());
 
-                if (this.type.type === 'single') {
-                    this.target.takeDamage(this.type.damage);
-                } else if (this.type.type === 'splash') {
-                    createExplosion(this.x, this.y, '#e74c3c');
-                    // Splash damage
-                    for (let e of enemies) {
-                        if (!e.active) continue;
-                        let d = Math.hypot(e.x - this.x, e.y - this.y);
-                        if (d <= this.type.splashRadius) {
-                            e.takeDamage(this.type.damage);
+            function animate() {
+                // Clear with trail
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = dx*dx + dy*dy;
+
+                        if(dist < 7000) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
                         }
                     }
                 }
-            }
 
-            draw() {
-                if (!this.active) return;
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
 
-                ctx.beginPath();
-                if (this.type.type === 'single') {
-                    ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = '#000';
-                } else {
-                    ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
-                    ctx.fillStyle = '#c0392b';
-                }
-                ctx.fill();
-            }
-        }
+                // Handle explosions
+                for(let i = explosions.length - 1; i >= 0; i--) {
+                    let ex = explosions[i];
+                    ex.x += ex.vx;
+                    ex.y += ex.vy;
+                    ex.life -= 0.05;
 
-        class Particle {
-            constructor(x, y, color, size = 3) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 5;
-                this.vy = (Math.random() - 0.5) * 5;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.05 + 0.02;
-                this.color = color;
-                this.size = size;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-            }
-
-            draw() {
-                if (this.life <= 0) return;
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        function createExplosion(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                particles.push(new Particle(x, y, color));
-            }
-        }
-
-        function selectTower(index) {
-            selectedTowerType = index;
-            document.querySelectorAll('.tower-btn').forEach((btn, i) => {
-                if (i === index) btn.classList.add('selected');
-                else btn.classList.remove('selected');
-            });
-        }
-
-        function updateUI() {
-            elLives.innerText = lives;
-            elMoney.innerText = money;
-            elWave.innerText = wave;
-
-            // Check affordability
-            towerTypes.forEach((t, i) => {
-                const btn = document.getElementById(`tbtn-${i}`);
-                if (money < t.cost) btn.style.opacity = '0.5';
-                else btn.style.opacity = '1';
-            });
-        }
-
-        function startWave() {
-            if (waveInProgress || gameOver) return;
-            waveInProgress = true;
-            elStartBtn.disabled = true;
-            elStartBtn.style.opacity = '0.5';
-
-            enemiesToSpawn = 5 + wave * 3;
-            enemySpawnTimer = 0;
-
-            // Calculate hp based on wave (exponential growth roughly)
-            currentEnemyHp = 20 + (wave * 15) * Math.pow(1.1, wave);
-            // Speed up slightly every 5 waves
-            let spd = 1.5 + Math.floor(wave / 5) * 0.2;
-            enemySpawnDelay = Math.max(20, 60 - wave * 2);
-        }
-
-        // Interaction
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            hoverCell = {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
-        });
-
-        canvas.addEventListener('mouseout', () => hoverCell = null);
-
-        function isOnPath(x, y) {
-            // Check distance to all line segments
-            for (let i = 0; i < waypoints.length - 1; i++) {
-                let p1 = waypoints[i];
-                let p2 = waypoints[i+1];
-
-                let A = x - p1.x;
-                let B = y - p1.y;
-                let C = p2.x - p1.x;
-                let D = p2.y - p1.y;
-
-                let dot = A * C + B * D;
-                let len_sq = C * C + D * D;
-                let param = -1;
-                if (len_sq != 0) //in case of 0 length line
-                    param = dot / len_sq;
-
-                let xx, yy;
-
-                if (param < 0) {
-                    xx = p1.x;
-                    yy = p1.y;
-                }
-                else if (param > 1) {
-                    xx = p2.x;
-                    yy = p2.y;
-                }
-                else {
-                    xx = p1.x + param * C;
-                    yy = p1.y + param * D;
-                }
-
-                let dx = x - xx;
-                let dy = y - yy;
-                let dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist < 30) return true; // Path width / 2 + margin
-            }
-            return false;
-        }
-
-        canvas.addEventListener('click', (e) => {
-            if (gameOver) return;
-            const rect = canvas.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            let y = e.clientY - rect.top;
-
-            let tType = towerTypes[selectedTowerType];
-
-            if (money >= tType.cost) {
-                // Check if on path
-                if (isOnPath(x, y)) return;
-
-                // Check collision with other towers
-                for (let t of towers) {
-                    if (Math.hypot(t.x - x, t.y - y) < 40) return;
-                }
-
-                money -= tType.cost;
-                towers.push(new Tower(x, y, selectedTowerType));
-                updateUI();
-                createExplosion(x, y, '#ecf0f1'); // Place effect
-            }
-        });
-
-        function endGame() {
-            gameOver = true;
-            document.getElementById('final-wave').innerText = wave;
-            document.getElementById('game-over').style.display = 'flex';
-        }
-
-        function loop() {
-            if (gameOver) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawPath();
-
-            // Draw hover preview
-            if (hoverCell) {
-                let tType = towerTypes[selectedTowerType];
-                let valid = !isOnPath(hoverCell.x, hoverCell.y);
-                for (let t of towers) {
-                    if (Math.hypot(t.x - hoverCell.x, t.y - hoverCell.y) < 40) valid = false;
-                }
-
-                ctx.beginPath();
-                ctx.arc(hoverCell.x, hoverCell.y, tType.range, 0, Math.PI * 2);
-                ctx.fillStyle = valid ? 'rgba(255, 255, 255, 0.2)' : 'rgba(231, 76, 60, 0.3)';
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(hoverCell.x, hoverCell.y, 20, 0, Math.PI * 2);
-                ctx.fillStyle = valid ? 'rgba(52, 152, 219, 0.5)' : 'rgba(231, 76, 60, 0.5)';
-                ctx.fill();
-            }
-
-            // Spawning logic
-            if (waveInProgress) {
-                if (enemiesToSpawn > 0) {
-                    enemySpawnTimer++;
-                    if (enemySpawnTimer >= enemySpawnDelay) {
-                        enemySpawnTimer = 0;
-                        enemiesToSpawn--;
-
-                        // Vary colors and speed slightly
-                        let colors = ['#f1c40f', '#e67e22', '#e74c3c', '#8e44ad', '#34495e'];
-                        let cIdx = Math.min(Math.floor(wave / 3), colors.length - 1);
-                        let rColor = colors[cIdx];
-                        let rSpeed = 1.5 + Math.floor(wave/5)*0.2 + (Math.random()*0.5);
-
-                        enemies.push(new Enemy(currentEnemyHp, rSpeed, 12 + Math.min(wave, 8), rColor));
+                    if(ex.life <= 0) {
+                        explosions.splice(i, 1);
+                        continue;
                     }
-                } else {
-                    // Check if wave is over
-                    let allDead = true;
-                    for (let e of enemies) {
-                        if (e.active) {
-                            allDead = false;
-                            break;
-                        }
-                    }
-                    if (allDead) {
-                        waveInProgress = false;
-                        wave++;
-                        money += 100 + wave * 10; // Wave bonus
-                        updateUI();
-                        elStartBtn.disabled = false;
-                        elStartBtn.style.opacity = '1';
-                        enemies = []; // Clean up array
-                        projectiles = [];
-                    }
-                }
-            }
 
-            // Update & Draw
-            towers.forEach(t => { t.update(); t.draw(); });
+                    ctx.beginPath();
+                    ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // UI overlays
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px "Fredoka One", cursive';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Punkte: ${score}`, 20, 40);
+
+                if (combo > 1 && comboTimer > 0) {
+                    comboTimer--;
+                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
+                    ctx.font = 'bold 28px "Fredoka One", cursive';
+                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                } else if (comboTimer <= 0) {
+                    combo = 0;
+                }
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+ });
             enemies.forEach(e => { e.update(); e.draw(); });
 
             // Projectiles

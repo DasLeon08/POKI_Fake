@@ -48,10 +48,11 @@
             // Basic Canvas rendering to make it look active
 
             // Advanced Particle System Graphics
+
+            // Playable Particle Popper Mechanics
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
 
-            // Adjust canvas to match device pixel ratio for sharper graphics
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width * dpr;
@@ -61,8 +62,11 @@
             canvas.style.height = `${rect.height}px`;
 
             let particles = [];
-            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
-            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
+            let mouse = { x: -1000, y: -1000 };
+            let score = 0;
+            let combo = 0;
+            let comboTimer = 0;
 
             canvas.addEventListener('mousemove', (e) => {
                 const r = canvas.getBoundingClientRect();
@@ -70,82 +74,177 @@
                 mouse.y = e.clientY - r.top;
             });
 
+            canvas.addEventListener('mouseleave', () => {
+                mouse.x = -1000;
+                mouse.y = -1000;
+            });
+
+            // Click to pop particles
+            canvas.addEventListener('mousedown', (e) => {
+                const r = canvas.getBoundingClientRect();
+                const mx = e.clientX - r.left;
+                const my = e.clientY - r.top;
+
+                let hit = false;
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist <= p.radius * 2.5) { // generous hit box
+                        // Pop effect
+                        createExplosion(p.x, p.y, p.color);
+                        particles.splice(i, 1);
+                        hit = true;
+                        combo++;
+                        comboTimer = 60; // frames
+                        score += 10 * combo;
+
+                        // Spawn new ones to keep game going
+                        for(let k=0; k<2; k++) particles.push(new Particle());
+
+                        // Sync with global system
+                        if (window.userSystem) {
+                            window.userSystem.addXP(Math.min(combo, 5));
+                        }
+                    }
+                }
+                if (!hit) combo = 0;
+            });
+
+            let explosions = [];
+            function createExplosion(x, y, color) {
+                for(let i=0; i<8; i++) {
+                    explosions.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        life: 1.0,
+                        color: color
+                    });
+                }
+            }
+
             class Particle {
                 constructor() {
                     this.x = Math.random() * (canvas.width / dpr);
                     this.y = Math.random() * (canvas.height / dpr);
-                    this.vx = (Math.random() - 0.5) * 2;
-                    this.vy = (Math.random() - 0.5) * 2;
-                    this.radius = Math.random() * 3 + 1;
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.radius = Math.random() * 4 + 2;
                     this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
                 update() {
                     this.x += this.vx;
                     this.y += this.vy;
 
-                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
-                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+                    // Bounce off walls
+                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
+                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
 
-                    // Mouse interaction
+                    // Dodge mouse slightly
                     const dx = mouse.x - this.x;
                     const dy = mouse.y - this.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < 100) {
-                        this.x -= dx * 0.02;
-                        this.y -= dy * 0.02;
+                    if (distance < 80) {
+                        this.vx -= dx * 0.005;
+                        this.vy -= dy * 0.005;
+                    }
+
+                    // Speed limit
+                    const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                    if (speed > 4) {
+                        this.vx = (this.vx / speed) * 4;
+                        this.vy = (this.vy / speed) * 4;
                     }
                 }
                 draw() {
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     ctx.fillStyle = this.color;
-                    ctx.shadowBlur = 15;
+                    ctx.shadowBlur = 10;
                     ctx.shadowColor = this.color;
                     ctx.fill();
                     ctx.closePath();
-                    ctx.shadowBlur = 0; // Reset
+                    ctx.shadowBlur = 0;
                 }
             }
 
-            for (let i = 0; i < 80; i++) particles.push(new Particle());
+            // Init particles
+            for (let i = 0; i < 60; i++) particles.push(new Particle());
 
             function animate() {
-                // Trail effect
-                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                // Clear with trail
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
                 ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-
-                particles.forEach(p => p.update());
 
                 // Draw connecting lines
                 for(let i=0; i<particles.length; i++) {
-                    for(let j=i; j<particles.length; j++) {
+                    for(let j=i+1; j<particles.length; j++) {
                         const dx = particles[i].x - particles[j].x;
                         const dy = particles[i].y - particles[j].y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const dist = dx*dx + dy*dy;
 
-                        if(dist < 80) {
+                        if(dist < 7000) {
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
-                            ctx.lineWidth = 0.5;
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.lineWidth = 1;
                             ctx.stroke();
                         }
                     }
                 }
 
-                particles.forEach(p => p.draw());
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                // Handle explosions
+                for(let i = explosions.length - 1; i >= 0; i--) {
+                    let ex = explosions[i];
+                    ex.x += ex.vx;
+                    ex.y += ex.vy;
+                    ex.life -= 0.05;
+
+                    if(ex.life <= 0) {
+                        explosions.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // UI overlays
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px "Fredoka One", cursive';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Punkte: ${score}`, 20, 40);
+
+                if (combo > 1 && comboTimer > 0) {
+                    comboTimer--;
+                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
+                    ctx.font = 'bold 28px "Fredoka One", cursive';
+                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                } else if (comboTimer <= 0) {
+                    combo = 0;
+                }
+
                 requestAnimationFrame(animate);
             }
             animate();
 
 
-            // Randomly award XP for playing
-            setInterval(() => {
-                if (Math.random() > 0.7) {
-                    userSystem.addXP(10);
-                }
-            }, 10000);
+
+
         });
     </script>
 </body>

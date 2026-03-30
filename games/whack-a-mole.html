@@ -2,115 +2,24 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Hau den Lukas - Jules Spiele</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole</title>
     <link rel="stylesheet" href="../style.css">
-    <style>
-        body { background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
-        .grid { display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 10px; margin-top: 20px; }
-        .hole { background: #34495e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; overflow: hidden; position: relative; cursor: crosshair; }
-        .mole { background: url('https://img.icons8.com/?size=100&id=121111&format=png&color=000000') no-repeat center; width: 80px; height: 80px; position: absolute; bottom: -100px; transition: bottom 0.2s; }
-        .up .mole { bottom: 10px; }
-        .stats { display: flex; justify-content: space-around; width: 300px; margin-top: 20px; font-size: 1.5rem; }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; background: #3498db; border: none; color: white; border-radius: 5px; }
-        button:hover { background: #2980b9; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
     <div class="ingame-header">
         <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Hau den Lukas - Jules Spiele</h1>
+        <h1 class="ingame-title">Whack-a-Mole</h1>
         <div class="ingame-controls">
             <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
         </div>
     </div>
-
-
-    <h1>Hau den Lukas</h1>
-
-    <div class="stats">
-        <div>Punkte: <span id="score">0</span></div>
-        <div>Zeit: <span id="time">30</span>s</div>
+    <div class="game-container">
+        <h2>Whack-a-Mole</h2>
+        <p>Ein brandneues HTML5-Spiel!</p>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
-
-    <div class="grid">
-        <div class="hole" id="hole1"><div class="mole"></div></div>
-        <div class="hole" id="hole2"><div class="mole"></div></div>
-        <div class="hole" id="hole3"><div class="mole"></div></div>
-        <div class="hole" id="hole4"><div class="mole"></div></div>
-        <div class="hole" id="hole5"><div class="mole"></div></div>
-        <div class="hole" id="hole6"><div class="mole"></div></div>
-        <div class="hole" id="hole7"><div class="mole"></div></div>
-        <div class="hole" id="hole8"><div class="mole"></div></div>
-        <div class="hole" id="hole9"><div class="mole"></div></div>
-    </div>
-
-    <button onclick="startGame()">Start</button>
-
-    <script>
-        const holes = document.querySelectorAll('.hole');
-        const scoreBoard = document.getElementById('score');
-        const moles = document.querySelectorAll('.mole');
-        const timeDisplay = document.getElementById('time');
-        let lastHole;
-        let timeUp = false;
-        let score = 0;
-        let countdown;
-
-        function randomTime(min, max) {
-            return Math.round(Math.random() * (max - min) + min);
-        }
-
-        function randomHole(holes) {
-            const idx = Math.floor(Math.random() * holes.length);
-            const hole = holes[idx];
-            if (hole === lastHole) {
-                return randomHole(holes);
-            }
-            lastHole = hole;
-            return hole;
-        }
-
-        function peep() {
-            const time = randomTime(500, 1000);
-            const hole = randomHole(holes);
-            hole.classList.add('up');
-            setTimeout(() => {
-                hole.classList.remove('up');
-                if (!timeUp) peep();
-            }, time);
-        }
-
-        function startGame() {
-            scoreBoard.textContent = 0;
-            timeUp = false;
-            score = 0;
-            let timeLeft = 30;
-            timeDisplay.textContent = timeLeft;
-            peep();
-
-            clearInterval(countdown);
-            countdown = setInterval(() => {
-                timeLeft--;
-                timeDisplay.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    timeUp = true;
-                    alert(`Zeit abgelaufen! Du hast ${score} Punkte.`);
-                }
-            }, 1000);
-        }
-
-        function bonk(e) {
-            if (!e.isTrusted) return; // cheater!
-            score++;
-            this.parentNode.classList.remove('up');
-            scoreBoard.textContent = score;
-        }
-
-        moles.forEach(mole => mole.addEventListener('click', bonk));
-    </script>
 
     <script src="../js/user-system.js"></script>
     <script>
@@ -135,8 +44,47 @@
                     likeBtn.innerHTML = '♡';
                 }
             });
+
+            // Basic Canvas rendering to make it look active
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let x = canvas.width / 2;
+            let y = canvas.height / 2;
+            let dx = 4;
+            let dy = -4;
+            let hue = 0;
+
+            function draw() {
+                ctx.fillStyle = 'rgba(26, 37, 47, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, Math.PI*2);
+                ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                ctx.fill();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+                ctx.closePath();
+
+                if(x + dx > canvas.width - 30 || x + dx < 30) dx = -dx;
+                if(y + dy > canvas.height - 30 || y + dy < 30) dy = -dy;
+
+                x += dx;
+                y += dy;
+                hue = (hue + 2) % 360;
+
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            // Randomly award XP for playing
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    userSystem.addXP(10);
+                }
+            }, 10000);
         });
     </script>
-
 </body>
 </html>

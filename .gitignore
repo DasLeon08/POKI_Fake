@@ -6,3 +6,12 @@ node_modules/
 package-lock.json
 games/*.html
 !games/index.html
+
+# Node
+node_modules/
+package-lock.json
+
+# Test outputs and patch scripts
+patch_*.js
+test_*.js
+*.log

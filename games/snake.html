@@ -42,19 +42,55 @@
         }
 
         function clearCanvas() {
-            ctx.fillStyle = "#34495e";
+            // Create nice grid background
+            ctx.fillStyle = "#1a252f";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.lineWidth = 1;
+            for(let x=0; x<=canvas.width; x+=gridSize) {
+                ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+            }
+            for(let y=0; y<=canvas.height; y+=gridSize) {
+                ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+            }
         }
 
-        function drawSnakePart(snakePart) {
-            ctx.fillStyle = "#2ecc71";
-            ctx.strokeStyle = "#27ae60";
-            ctx.fillRect(snakePart.x, snakePart.y, gridSize, gridSize);
-            ctx.strokeRect(snakePart.x, snakePart.y, gridSize, gridSize);
+        function drawSnakePart(snakePart, index) {
+            // Gradient based on position
+            let gradient = ctx.createLinearGradient(snakePart.x, snakePart.y, snakePart.x + gridSize, snakePart.y + gridSize);
+            if (index === 0) {
+                // Head
+                gradient.addColorStop(0, '#2ecc71');
+                gradient.addColorStop(1, '#27ae60');
+            } else {
+                // Body
+                gradient.addColorStop(0, '#27ae60');
+                gradient.addColorStop(1, '#1e8449');
+            }
+
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = '#145a32';
+            ctx.lineWidth = 1;
+
+            // Draw rounded rect
+            ctx.beginPath();
+            ctx.roundRect(snakePart.x, snakePart.y, gridSize - 1, gridSize - 1, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // Eyes for head
+            if (index === 0) {
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(snakePart.x + gridSize/3, snakePart.y + gridSize/3, 2, 0, Math.PI*2);
+                ctx.arc(snakePart.x + 2*gridSize/3, snakePart.y + gridSize/3, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
         }
 
         function drawSnake() {
-            snake.forEach(drawSnakePart);
+            snake.forEach((part, index) => drawSnakePart(part, index));
         }
 
         function advanceSnake() {
@@ -96,10 +132,15 @@
         }
 
         function drawFood() {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#e74c3c";
             ctx.fillStyle = "#e74c3c";
-            ctx.strokeStyle = "#c0392b";
-            ctx.fillRect(foodX, foodY, gridSize, gridSize);
-            ctx.strokeRect(foodX, foodY, gridSize, gridSize);
+
+            ctx.beginPath();
+            ctx.arc(foodX + gridSize/2, foodY + gridSize/2, gridSize/2 - 2, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0; // reset
         }
 
         document.addEventListener("keydown", changeDirection);

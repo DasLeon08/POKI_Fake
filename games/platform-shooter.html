@@ -57,279 +57,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const startBtn = document.getElementById('start-btn');
-        const score1El = document.getElementById('score1');
-        const score2El = document.getElementById('score2');
 
-        const keys = {};
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        let gameState = 'start';
-        let score1 = 0;
-        let score2 = 0;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        // Level Design
-        const platforms = [
-            {x: 0, y: 550, w: 800, h: 50}, // Ground
-            {x: 150, y: 400, w: 200, h: 20},
-            {x: 450, y: 400, w: 200, h: 20},
-            {x: 300, y: 250, w: 200, h: 20},
-            {x: 50, y: 150, w: 150, h: 20},
-            {x: 600, y: 150, w: 150, h: 20}
-        ];
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        class Bullet {
-            constructor(x, y, vx, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.w = 10;
-                this.h = 4;
-                this.color = color;
-                this.active = true;
-            }
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-            update() {
-                this.x += this.vx;
-                if (this.x < 0 || this.x > canvas.width) this.active = false;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Hit platform
-                for (let p of platforms) {
-                    if (this.x > p.x && this.x < p.x + p.w && this.y > p.y && this.y < p.y + p.h) {
-                        this.active = false;
-                        break;
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
-            }
-
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-            }
-        }
-
-        class Player {
-            constructor(x, y, color, controls, facingRight) {
-                this.x = x;
-                this.y = y;
-                this.w = 30;
-                this.h = 40;
-                this.vx = 0;
-                this.vy = 0;
-                this.speed = 5;
-                this.jumpPower = -12;
-                this.gravity = 0.6;
-                this.color = color;
-                this.controls = controls;
-                this.facingRight = facingRight;
-                this.onGround = false;
-                this.bullets = [];
-                this.shootCooldown = 0;
-                this.health = 100;
-                this.dead = false;
-            }
-
-            update() {
-                if (this.dead) return;
-
-                // Move
-                if (keys[this.controls.left]) { this.vx = -this.speed; this.facingRight = false; }
-                else if (keys[this.controls.right]) { this.vx = this.speed; this.facingRight = true; }
-                else { this.vx *= 0.8; } // Friction
-
-                // Jump
-                if (keys[this.controls.up] && this.onGround) {
-                    this.vy = this.jumpPower;
-                    this.onGround = false;
-                }
-
-                // Shoot
-                if (this.shootCooldown > 0) this.shootCooldown--;
-                if (keys[this.controls.shoot] && this.shootCooldown <= 0) {
-                    this.shoot();
-                }
-
-                this.vy += this.gravity;
-
-                // Horizontal Collision
-                this.x += this.vx;
-                this.checkPlatformCollision(true);
-
-                // Vertical Collision
-                this.y += this.vy;
-                this.onGround = false;
-                this.checkPlatformCollision(false);
-
-                // Screen bounds
-                if (this.x < 0) this.x = 0;
-                if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
-
-                // Falling off map (shouldnt happen with ground, but just in case)
-                if (this.y > canvas.height) this.health = 0;
-
-                if (this.health <= 0) this.dead = true;
-
-                // Update bullets
-                for (let i = this.bullets.length - 1; i >= 0; i--) {
-                    let b = this.bullets[i];
-                    b.update();
-                    if (!b.active) this.bullets.splice(i, 1);
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            checkPlatformCollision(horizontal) {
-                for (let p of platforms) {
-                    if (this.x < p.x + p.w && this.x + this.w > p.x &&
-                        this.y < p.y + p.h && this.y + this.h > p.y) {
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-                        if (horizontal) {
-                            if (this.vx > 0) this.x = p.x - this.w;
-                            else if (this.vx < 0) this.x = p.x + p.w;
-                            this.vx = 0;
-                        } else {
-                            if (this.vy > 0) { // Landing
-                                this.y = p.y - this.h;
-                                this.onGround = true;
-                            } else if (this.vy < 0) { // Hitting head
-                                this.y = p.y + p.h;
-                            }
-                            this.vy = 0;
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
                         }
                     }
                 }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            shoot() {
-                let bx = this.facingRight ? this.x + this.w : this.x - 10;
-                let by = this.y + 15;
-                let bvx = this.facingRight ? 12 : -12;
-                this.bullets.push(new Bullet(bx, by, bvx, '#f1c40f'));
-                this.shootCooldown = 20; // Frames
-            }
-
-            draw() {
-                if (this.dead) return;
-
-                // Body
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-
-                // Eye / Direction
-                ctx.fillStyle = 'white';
-                let eyeX = this.facingRight ? this.x + 20 : this.x + 5;
-                ctx.fillRect(eyeX, this.y + 5, 5, 5);
-
-                // Gun
-                ctx.fillStyle = '#333';
-                let gunX = this.facingRight ? this.x + this.w : this.x - 15;
-                ctx.fillRect(gunX, this.y + 15, 15, 6);
-
-                // Health bar
-                ctx.fillStyle = '#e74c3c';
-                ctx.fillRect(this.x, this.y - 10, this.w, 5);
-                ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(this.x, this.y - 10, this.w * (this.health / 100), 5);
-
-                // Bullets
-                for (let b of this.bullets) b.draw();
-            }
-        }
-
-        let p1, p2;
-
-        function initRound() {
-            p1 = new Player(100, 450, '#2980b9', { left: 'KeyA', right: 'KeyD', up: 'KeyW', shoot: 'KeyF' }, true);
-            p2 = new Player(650, 450, '#c0392b', { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', shoot: 'KeyM' }, false);
-            gameState = 'playing';
-            overlay.classList.add('hidden');
-        }
-
-        function checkHit(shooter, target) {
-            for (let b of shooter.bullets) {
-                if (b.active && b.x < target.x + target.w && b.x + b.w > target.x &&
-                    b.y < target.y + target.h && b.y + b.h > target.y) {
-                    b.active = false;
-                    target.health -= 25;
-                }
-            }
-        }
-
-        function update() {
-            if (gameState !== 'playing') return;
-
-            p1.update();
-            p2.update();
-
-            checkHit(p1, p2);
-            checkHit(p2, p1);
-
-            if (p1.dead || p2.dead) {
-                gameState = 'roundOver';
-                if (p2.dead) { score1++; overlayTitle.textContent = "P1 (Blau) Gewinnt!"; }
-                else if (p1.dead) { score2++; overlayTitle.textContent = "P2 (Rot) Gewinnt!"; }
-
-                score1El.textContent = score1;
-                score2El.textContent = score2;
-
-                if (score1 >= 5 || score2 >= 5) {
-                    overlayTitle.textContent = (p1.dead ? "P2" : "P1") + " SIEGT!";
-                    startBtn.textContent = "Neues Match";
-                    if(window.userSystem) {
-                        window.userSystem.addCoins(50);
-                        window.userSystem.addXP(150);
-                    }
-                } else {
-                    startBtn.textContent = "Nächste Runde";
-                }
-                overlay.classList.remove('hidden');
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Platforms
-            ctx.fillStyle = '#34495e';
-            for (let p of platforms) {
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                // Top highlight
-                ctx.fillStyle = '#95a5a6';
-                ctx.fillRect(p.x, p.y, p.w, 4);
-                ctx.fillStyle = '#34495e'; // reset
-            }
-
-            if (p1) p1.draw();
-            if (p2) p2.draw();
-        }
-
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
-
-        function startGame() {
-            score1 = 0;
-            score2 = 0;
-            score1El.textContent = score1;
-            score2El.textContent = score2;
-            initRound();
-        }
-
-        startBtn.addEventListener('click', () => {
-            if (score1 >= 5 || score2 >= 5) startGame();
-            else initRound();
-        });
-
-        // initial draw
-        draw();
-        loop();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

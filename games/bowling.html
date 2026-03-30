@@ -220,438 +220,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const powerMeter = document.getElementById('power-meter');
-        const powerFill = document.getElementById('power-fill');
-        const instrText = document.getElementById('instruction-text');
 
-        // Game state
-        let frames = [];
-        let currentFrame = 0;
-        let currentRoll = 0;
-        let totalScore = 0;
-        let pins = [];
-        let ball = null;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        let state = 'POSITIONING'; // POSITIONING, POWER, AIM, ROLLING, RESOLVING
-
-        let powerDir = 1;
-        let currentPower = 0;
-        let aimAngle = 0;
-        let aimDir = 1;
-
-        // Physics constants
-        const FRICTION = 0.98;
-        const PIN_RADIUS = 8;
-        const BALL_RADIUS = 15;
-        const PIN_MASS = 1;
-        const BALL_MASS = 5;
-
-        class Pin {
-            constructor(x, y, id) {
-                this.x = x;
-                this.y = y;
-                this.startX = x;
-                this.startY = y;
-                this.vx = 0;
-                this.vy = 0;
-                this.radius = PIN_RADIUS;
-                this.active = true;
-                this.id = id;
-            }
-
-            update() {
-                if (!this.active) return;
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= 0.95; // Friction
-                this.vy *= 0.95;
-
-                // Wall collisions (gutter)
-                if (this.x < 50 || this.x > canvas.width - 50) {
-                    this.active = false; // Fell in gutter
-                }
-                if (this.y < 0 || this.y > canvas.height) {
-                    this.active = false;
-                }
-
-                // Stop moving if slow
-                if (Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
-                    this.vx = 0;
-                    this.vy = 0;
-                }
-            }
-
-            draw() {
-                if (!this.active) return;
-                // Pin shadow
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x + 2, this.y + 2, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Pin body
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Pin stripe
-                ctx.strokeStyle = '#e74c3c';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius - 2, 0, Math.PI);
-                ctx.stroke();
-            }
-        }
-
-        class Ball {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.vx = 0;
-                this.vy = 0;
-                this.radius = BALL_RADIUS;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= FRICTION;
-                this.vy *= FRICTION;
-
-                // Gutter logic
-                if (this.x < 50) { this.x = 49; this.vx = 0; }
-                if (this.x > canvas.width - 50) { this.x = canvas.width - 49; this.vx = 0; }
-            }
-
-            draw() {
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x + 3, this.y + 3, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.fillStyle = '#8e44ad'; // Purple ball
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Finger holes
-                ctx.fillStyle = '#2c3e50';
-                ctx.beginPath();
-                ctx.arc(this.x - 4, this.y - 4, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(this.x + 4, this.y - 4, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(this.x, this.y + 5, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function setupPins() {
-            pins = [];
-            const startX = canvas.width / 2;
-            const startY = 100;
-            const spacing = 25;
-
-            let id = 0;
-            for (let row = 0; row < 4; row++) {
-                for (let col = 0; col <= row; col++) {
-                    let x = startX - (row * spacing / 2) + (col * spacing);
-                    let y = startY - (row * spacing * 0.866);
-                    pins.push(new Pin(x, y, id++));
-                }
-            }
-        }
-
-        function initGame() {
-            document.getElementById('end-modal').style.display = 'none';
-            frames = Array(10).fill(null).map(() => ({ rolls: [], score: 0 }));
-            currentFrame = 0;
-            currentRoll = 0;
-            totalScore = 0;
-            updateScoreBoard();
-
-            setupPins();
-            resetBall();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        function resetBall() {
-            ball = new Ball(canvas.width / 2, canvas.height - 100);
-            state = 'POSITIONING';
-            powerMeter.style.display = 'none';
-            instrText.innerText = "Klicke und ziehe (links/rechts), um Position zu wählen.";
-
-            // Check if we need to reset pins (new frame or strike)
-            let activeCount = pins.filter(p => p.active).length;
-            if (currentRoll === 0 || activeCount === 0) {
-                setupPins();
-            } else {
-                // Stop remaining pins
-                pins.forEach(p => { p.vx = 0; p.vy = 0; });
-            }
-        }
-
-        function updateScoreBoard() {
-            const sb = document.getElementById('score-board');
-            sb.innerHTML = '';
-            for (let i = 0; i < 10; i++) {
-                const el = document.createElement('div');
-                el.className = 'frame';
-                let txt = '';
-                if (frames[i].rolls.length > 0) {
-                    txt = frames[i].rolls.join(',');
-                    if (txt === '10') txt = 'X';
-                    else if (frames[i].rolls.length === 2 && frames[i].rolls[0] + frames[i].rolls[1] === 10) {
-                        txt = frames[i].rolls[0] + ',/';
-                    }
-                } else {
-                    txt = '-';
-                }
-                el.innerText = txt;
-                if (i === currentFrame) el.style.borderColor = '#f1c40f';
-                sb.appendChild(el);
-            }
-            document.getElementById('total-score').innerText = totalScore;
-        }
-
-        function resolvePhysics() {
-            // Ball - Pin collision
-            for (let pin of pins) {
-                if (!pin.active) continue;
-                let dx = pin.x - ball.x;
-                let dy = pin.y - ball.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-
-                if (dist < ball.radius + pin.radius) {
-                    // Simple elastic collision
-                    let nx = dx / dist;
-                    let ny = dy / dist;
-
-                    let p = 2 * (ball.vx * nx + ball.vy * ny - pin.vx * nx - pin.vy * ny) / (BALL_MASS + PIN_MASS);
-
-                    ball.vx -= p * PIN_MASS * nx;
-                    ball.vy -= p * PIN_MASS * ny;
-                    pin.vx += p * BALL_MASS * nx;
-                    pin.vy += p * BALL_MASS * ny;
-
-                    // Separate to avoid sticking
-                    let overlap = (ball.radius + pin.radius) - dist;
-                    pin.x += nx * overlap;
-                    pin.y += ny * overlap;
-                }
-            }
-
-            // Pin - Pin collision
-            for (let i=0; i<pins.length; i++) {
-                if (!pins[i].active) continue;
-                for (let j=i+1; j<pins.length; j++) {
-                    if (!pins[j].active) continue;
-
-                    let dx = pins[j].x - pins[i].x;
-                    let dy = pins[j].y - pins[i].y;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-
-                    if (dist < PIN_RADIUS * 2) {
-                        let nx = dx / dist;
-                        let ny = dy / dist;
-
-                        let p = 2 * (pins[i].vx * nx + pins[i].vy * ny - pins[j].vx * nx - pins[j].vy * ny) / (PIN_MASS + PIN_MASS);
-
-                        pins[i].vx -= p * PIN_MASS * nx;
-                        pins[i].vy -= p * PIN_MASS * ny;
-                        pins[j].vx += p * PIN_MASS * nx;
-                        pins[j].vy += p * PIN_MASS * ny;
-
-                        let overlap = (PIN_RADIUS * 2) - dist;
-                        pins[i].x -= nx * overlap / 2;
-                        pins[i].y -= ny * overlap / 2;
-                        pins[j].x += nx * overlap / 2;
-                        pins[j].y += ny * overlap / 2;
-                    }
-                }
-            }
-
-            // Pin knockdown logic
-            pins.forEach(pin => {
-                if (pin.active) {
-                    // If moved significantly from start, it's knocked down
-                    let distFromStart = Math.hypot(pin.x - pin.startX, pin.y - pin.startY);
-                    if (distFromStart > PIN_RADIUS * 3) {
-                        pin.active = false; // Mark as down
-                    }
-                }
-            });
-        }
-
-        function endRoll() {
-            let standingBefore = currentRoll === 0 ? 10 : pins.filter(p => p.active).length;
-
-            // Re-evaluate what's standing
-            let standingAfter = pins.filter(p => p.active).length;
-            let knocked = standingBefore - standingAfter;
-
-            // Basic scoring
-            if (currentRoll === 0 && knocked === 10) {
-                // Strike
-                frames[currentFrame].rolls.push(10);
-                totalScore += 10; // Simplify, no spare/strike bonus for now to keep code short
-                nextFrame();
-            } else {
-                frames[currentFrame].rolls.push(knocked);
-                totalScore += knocked;
-                if (currentRoll === 0) {
-                    currentRoll = 1;
-                    resetBall();
-                } else {
-                    nextFrame();
-                }
-            }
-            updateScoreBoard();
-        }
-
-        function nextFrame() {
-            currentFrame++;
-            currentRoll = 0;
-            if (currentFrame >= 10) {
-                // Game Over
-                if (window.userSystem) {
-                    window.userSystem.addXP(totalScore);
-                    window.userSystem.addCoins(Math.floor(totalScore / 2));
-                    document.getElementById('end-desc').innerText = `Endstand: ${totalScore}\n\n+${totalScore} XP\n+${Math.floor(totalScore/2)} Coins`;
-                } else {
-                    document.getElementById('end-desc').innerText = `Endstand: ${totalScore}`;
-                }
-                document.getElementById('end-modal').style.display = 'flex';
-                state = 'GAME_OVER';
-            } else {
-                resetBall();
-            }
-        }
-
-        function drawLane() {
-            // Wood floor
-            ctx.fillStyle = '#d3a567';
-            ctx.fillRect(50, 0, canvas.width - 100, canvas.height);
-
-            // Wood lines
-            ctx.strokeStyle = '#c08f51';
-            ctx.lineWidth = 1;
-            for (let i = 60; i < canvas.width - 50; i += 10) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height);
-                ctx.stroke();
-            }
-
-            // Gutters
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, 50, canvas.height);
-            ctx.fillRect(canvas.width - 50, 0, 50, canvas.height);
-
-            // Aim line if aiming
-            if (state === 'AIM') {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(ball.x, ball.y);
-                let endX = ball.x + Math.sin(aimAngle) * 500;
-                let endY = ball.y - Math.cos(aimAngle) * 500;
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
-        }
-
-        function gameLoop() {
-            if (state === 'GAME_OVER') return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawLane();
-
-            if (state === 'POWER') {
-                currentPower += powerDir * 2;
-                if (currentPower >= 100 || currentPower <= 0) powerDir *= -1;
-                powerFill.style.width = currentPower + '%';
-            } else if (state === 'AIM') {
-                aimAngle += aimDir * 0.05;
-                if (aimAngle > 0.5 || aimAngle < -0.5) aimDir *= -1;
-            } else if (state === 'ROLLING') {
-                ball.update();
-                pins.forEach(p => p.update());
-                resolvePhysics();
-
-                // Check if ball stopped or went out
-                if (ball.y < -50 || (Math.abs(ball.vx) < 0.1 && Math.abs(ball.vy) < 0.1 && ball.y < canvas.height - 150)) {
-                    state = 'RESOLVING';
-                    setTimeout(endRoll, 1500); // Wait for pins to settle
-                }
-            } else if (state === 'RESOLVING') {
-                pins.forEach(p => p.update());
-                resolvePhysics();
-            }
-
-            pins.forEach(p => p.draw());
-            if (ball) ball.draw();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Input
-        let isDragging = false;
-        canvas.addEventListener('mousedown', (e) => {
-            if (state === 'POSITIONING') {
-                isDragging = true;
-                updateBallPos(e);
-            }
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDragging && state === 'POSITIONING') {
-                updateBallPos(e);
-            }
-        });
-
-        function updateBallPos(e) {
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            // Constrain
-            if (x < 65) x = 65;
-            if (x > canvas.width - 65) x = canvas.width - 65;
-            ball.x = x;
-        }
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        window.addEventListener('mouseup', () => {
-            if (state === 'POSITIONING') {
-                isDragging = false;
-                state = 'POWER';
-                powerMeter.style.display = 'block';
-                instrText.innerText = "Klicke um die Kraft zu bestimmen!";
-            } else if (state === 'POWER') {
-                state = 'AIM';
-                instrText.innerText = "Klicke um die Richtung zu bestimmen!";
-            } else if (state === 'AIM') {
-                state = 'ROLLING';
-                powerMeter.style.display = 'none';
-                instrText.innerText = "Viel Glück!";
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-                // Launch ball
-                let force = (currentPower / 100) * 15 + 5; // Min 5, max 20
-                ball.vx = Math.sin(aimAngle) * force;
-                ball.vy = -Math.cos(aimAngle) * force;
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
-        });
 
-        // Start
-        initGame();
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-    </script>
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
+            }
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

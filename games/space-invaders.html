@@ -45,230 +45,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const livesEl = document.getElementById('lives');
-        const gameOverEl = document.getElementById('gameOver');
-        const finalScoreEl = document.getElementById('finalScore');
 
-        let ship, bullets, aliens, alienBullets, particles;
-        let score = 0, lives = 3, wave = 1;
-        let isGameOver = false;
-        let keys = {};
-        let alienDir = 1;
-        let alienSpeed = 1;
-        let gameLoop;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        const ALIEN_ROWS = 5;
-        const ALIEN_COLS = 11;
-        const ALIEN_SIZE = 30;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        function initGame() {
-            ship = { x: 300, y: 460, w: 40, h: 20, speed: 5, color: '#0f0' };
-            bullets = [];
-            alienBullets = [];
-            particles = [];
-            score = 0;
-            lives = 3;
-            wave = 1;
-            isGameOver = false;
-            keys = {};
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-            scoreEl.textContent = score;
-            livesEl.textContent = lives;
-            gameOverEl.style.display = 'none';
-
-            initWave();
-
-            if (gameLoop) cancelAnimationFrame(gameLoop);
-            loop();
-        }
-
-        function initWave() {
-            aliens = [];
-            alienDir = 1;
-            alienSpeed = 1 + (wave * 0.2);
-            for (let r = 0; r < ALIEN_ROWS; r++) {
-                for (let c = 0; c < ALIEN_COLS; c++) {
-                    let type = r === 0 ? 3 : (r < 3 ? 2 : 1);
-                    let color = type === 3 ? '#f0f' : (type === 2 ? '#0ff' : '#fff');
-                    let pts = type === 3 ? 30 : (type === 2 ? 20 : 10);
-                    aliens.push({
-                        x: c * (ALIEN_SIZE + 10) + 50,
-                        y: r * (ALIEN_SIZE + 10) + 50,
-                        w: ALIEN_SIZE, h: ALIEN_SIZE,
-                        type, color, pts
-                    });
-                }
-            }
-        }
-
-        document.addEventListener('keydown', e => { keys[e.code] = true; if(e.code === 'Space') shoot(); });
-        document.addEventListener('keyup', e => keys[e.code] = false);
-
-        function shoot() {
-            if (isGameOver || bullets.length >= 2) return;
-            bullets.push({ x: ship.x + ship.w/2 - 2, y: ship.y, w: 4, h: 10, speed: -7, color: '#0f0' });
-        }
-
-        function createParticles(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
-                    life: 30, color: color
-                });
-            }
-        }
-
-        function update() {
-            if (isGameOver) return;
-
-            // Move Ship
-            if (keys['ArrowLeft']) ship.x -= ship.speed;
-            if (keys['ArrowRight']) ship.x += ship.speed;
-            if (ship.x < 0) ship.x = 0;
-            if (ship.x + ship.w > canvas.width) ship.x = canvas.width - ship.w;
-
-            // Move Bullets
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y += bullets[i].speed;
-                if (bullets[i].y < 0) bullets.splice(i, 1);
-            }
-
-            for (let i = alienBullets.length - 1; i >= 0; i--) {
-                alienBullets[i].y += alienBullets[i].speed;
-                if (alienBullets[i].y > canvas.height) alienBullets.splice(i, 1);
-            }
-
-            // Move Aliens
-            let edgeReached = false;
-            let lowestAlienY = 0;
-            aliens.forEach(a => {
-                a.x += alienSpeed * alienDir;
-                if (a.x <= 0 || a.x + a.w >= canvas.width) edgeReached = true;
-                if (a.y > lowestAlienY) lowestAlienY = a.y;
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
             });
 
-            if (edgeReached) {
-                alienDir *= -1;
-                aliens.forEach(a => a.y += 20);
-                alienSpeed += 0.1;
-            }
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-            // Alien Shooting
-            if (aliens.length > 0 && Math.random() < 0.02 + (wave * 0.005)) {
-                let randomAlien = aliens[Math.floor(Math.random() * aliens.length)];
-                alienBullets.push({
-                    x: randomAlien.x + randomAlien.w/2 - 2,
-                    y: randomAlien.y + randomAlien.h,
-                    w: 4, h: 10, speed: 4, color: '#f00'
-                });
-            }
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-            // Collisions (Bullet -> Alien)
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                for (let j = aliens.length - 1; j >= 0; j--) {
-                    let a = aliens[j];
-                    if (b.x < a.x + a.w && b.x + b.w > a.x && b.y < a.y + a.h && b.y + b.h > a.y) {
-                        score += a.pts;
-                        scoreEl.textContent = score;
-                        createParticles(a.x + a.w/2, a.y + a.h/2, a.color);
-                        aliens.splice(j, 1);
-                        bullets.splice(i, 1);
-                        break;
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
-            }
-
-            // Collisions (Alien Bullet -> Ship)
-            for (let i = alienBullets.length - 1; i >= 0; i--) {
-                let b = alienBullets[i];
-                if (b.x < ship.x + ship.w && b.x + b.w > ship.x && b.y < ship.y + ship.h && b.y + b.h > ship.y) {
-                    createParticles(ship.x + ship.w/2, ship.y + ship.h/2, '#0f0');
-                    alienBullets.splice(i, 1);
-                    lives--;
-                    livesEl.textContent = lives;
-                    if (lives <= 0) gameOver();
-                    else {
-                        // Respawn invulnerability logic could go here
-                        ship.x = 300;
-                    }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            // Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx; p.y += p.vy;
-                p.life--;
-                if (p.life <= 0) particles.splice(i, 1);
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            // Wave completion / Game Over bounds
-            if (aliens.length === 0) {
-                wave++;
-                initWave();
-            } else if (lowestAlienY + ALIEN_SIZE >= ship.y) {
-                gameOver();
-            }
-        }
-
-        function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Ship
-            ctx.fillStyle = ship.color;
-            ctx.fillRect(ship.x, ship.y + 10, ship.w, ship.h - 10);
-            ctx.fillRect(ship.x + 15, ship.y, 10, 10); // Cannon
-
-            // Aliens
-            aliens.forEach(a => {
-                ctx.fillStyle = a.color;
-                ctx.fillRect(a.x, a.y, a.w, a.h);
-                // Eyes
-                ctx.fillStyle = '#000';
-                ctx.fillRect(a.x + 5, a.y + 5, 5, 5);
-                ctx.fillRect(a.x + 20, a.y + 5, 5, 5);
-            });
-
-            // Bullets
-            bullets.forEach(b => { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h); });
-            alienBullets.forEach(b => { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h); });
-
-            // Particles
-            particles.forEach(p => {
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life / 30;
-                ctx.fillRect(p.x, p.y, 3, 3);
-            });
-            ctx.globalAlpha = 1.0;
-        }
-
-        function loop() {
-            if (!isGameOver) {
-                update();
-                draw();
-                gameLoop = requestAnimationFrame(loop);
-            }
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            gameOverEl.style.display = 'block';
-            finalScoreEl.textContent = `SCORE: ${score}`;
-
-            if (window.userSystem) {
-                window.userSystem.addXP(Math.floor(score / 10));
-                window.userSystem.addCoins(Math.floor(score / 50));
-            }
-        }
-
-        initGame();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

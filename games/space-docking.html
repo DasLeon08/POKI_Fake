@@ -65,274 +65,99 @@
     </div>
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const hud = document.getElementById('hud');
-        const distDisplay = document.getElementById('distDisplay');
-        const velDisplay = document.getElementById('velDisplay');
-        const fuelDisplay = document.getElementById('fuelDisplay');
-        const endTitle = document.getElementById('end-title');
-        const endMessage = document.getElementById('end-message');
 
-        let gameState = 'start';
-        let lastTime = 0;
-        let score = 0;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        // Input
-        const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
-        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
-        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        // Physics Constants
-        const thrust = 5; // pixels/s^2
-        const rotThrust = 1.5; // rad/s^2
-        const maxSafeVel = 15; // pixels/s (scaled for display as 1.0)
-        const fuelDrain = 1;
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        const ship = {
-            x: 100, y: 300,
-            vx: 0, vy: 0,
-            angle: 0, vAngle: 0,
-            width: 30, height: 40,
-            fuel: 100,
-            dockPoint: { x: 15, y: 0 } // Relative to center
-        };
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        const station = {
-            x: 700, y: 300,
-            angle: Math.PI, // Facing left
-            width: 100, height: 200,
-            dockPoint: { x: -50, y: 0 },
-            dockRadius: 20
-        };
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-        let particles = [];
-        let stars = [];
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-        function initLevel() {
-            ship.x = 100; ship.y = 100 + Math.random()*400;
-            ship.vx = (Math.random() - 0.5) * 20;
-            ship.vy = (Math.random() - 0.5) * 20;
-            ship.angle = (Math.random() - 0.5) * Math.PI;
-            ship.vAngle = (Math.random() - 0.5) * 0.5;
-            ship.fuel = 100;
-
-            station.y = 300 + (Math.random() - 0.5) * 100;
-
-            stars = [];
-            for(let i=0; i<100; i++) stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2 });
-            particles = [];
-        }
-
-        function createThrustParticle(x, y, vx, vy) {
-            particles.push({ x: x, y: y, vx: vx, vy: vy, life: 1, maxLife: 1 });
-        }
-
-        function update(dt) {
-            if(gameState !== 'playing') return;
-
-            let usingRCS = false;
-
-            // RCS Controls
-            if(ship.fuel > 0) {
-                let ax = 0, ay = 0;
-                let c = Math.cos(ship.angle);
-                let s = Math.sin(ship.angle);
-
-                if(keys.w) { ax += c * thrust; ay += s * thrust; usingRCS = true; createThrustParticle(ship.x - c*ship.width/2, ship.y - s*ship.height/2, -c*20, -s*20); }
-                if(keys.s) { ax -= c * thrust; ay -= s * thrust; usingRCS = true; createThrustParticle(ship.x + c*ship.width/2, ship.y + s*ship.height/2, c*20, s*20); }
-                if(keys.a) { ax += s * thrust; ay -= c * thrust; usingRCS = true; createThrustParticle(ship.x + s*ship.width/2, ship.y - c*ship.height/2, s*20, -c*20); }
-                if(keys.d) { ax -= s * thrust; ay += c * thrust; usingRCS = true; createThrustParticle(ship.x - s*ship.width/2, ship.y + c*ship.height/2, -s*20, c*20); }
-
-                if(keys.q) { ship.vAngle -= rotThrust * dt; usingRCS = true; } // Roll left
-                if(keys.e) { ship.vAngle += rotThrust * dt; usingRCS = true; } // Roll right
-
-                ship.vx += ax * dt;
-                ship.vy += ay * dt;
-
-                if(usingRCS) ship.fuel -= fuelDrain * dt;
-            }
-
-            // Apply velocity
-            ship.x += ship.vx * dt;
-            ship.y += ship.vy * dt;
-            ship.angle += ship.vAngle * dt;
-
-            // Screen wrap logic (optional, or hard walls)
-            if(ship.x < 0) ship.x = canvas.width; else if(ship.x > canvas.width) ship.x = 0;
-            if(ship.y < 0) ship.y = canvas.height; else if(ship.y > canvas.height) ship.y = 0;
-
-            // Update particles
-            for(let i=particles.length-1; i>=0; i--) {
-                let p = particles[i];
-                p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 2;
-                if(p.life <= 0) particles.splice(i, 1);
-            }
-
-            // Docking Logic
-            let shipDockWorldX = ship.x + Math.cos(ship.angle) * ship.dockPoint.x;
-            let shipDockWorldY = ship.y + Math.sin(ship.angle) * ship.dockPoint.x; // Simplified, assuming dock point is on x-axis of ship
-
-            let stationDockWorldX = station.x + station.dockPoint.x;
-            let stationDockWorldY = station.y + station.dockPoint.y;
-
-            let dx = stationDockWorldX - shipDockWorldX;
-            let dy = stationDockWorldY - shipDockWorldY;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-
-            let relVel = Math.sqrt(ship.vx*ship.vx + ship.vy*ship.vy);
-
-            // Angular alignment check
-            // Ship angle should be 0 (pointing right) to match station pointing left
-            let angleDiff = Math.abs(ship.angle % (Math.PI*2));
-            if(angleDiff > Math.PI) angleDiff = Math.PI*2 - angleDiff;
-
-            // Collision check with station body (simplified AABB vs Point for now)
-            if(ship.x > station.x - station.width/2 && ship.x < station.x + station.width/2 &&
-               ship.y > station.y - station.height/2 && ship.y < station.y + station.height/2) {
-                endGame(false, "Hull integrity lost. Collision detected.");
-                return;
-            }
-
-            if(dist < station.dockRadius) {
-                if(relVel < maxSafeVel && angleDiff < 0.1) {
-                    // Success!
-                    endGame(true, "Docking sequence complete. Welcome aboard.");
-                } else if(dist < station.dockRadius/2) {
-                    endGame(false, `Docking failed! Vel: ${(relVel/15).toFixed(2)} m/s, Align: ${(angleDiff*180/Math.PI).toFixed(1)}°`);
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            // Fuel check
-            if(ship.fuel <= 0 && relVel < 1 && dist > 50) {
-                endGame(false, "Stranded. Out of RCS fuel.");
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            // Update HUD
-            distDisplay.innerText = `DIST: ${(dist/10).toFixed(1)}m`;
-            let vStr = (relVel/15).toFixed(2);
-            velDisplay.innerText = `VEL: ${vStr} m/s`;
-            if(relVel > maxSafeVel) velDisplay.classList.add('warning');
-            else velDisplay.classList.remove('warning');
-
-            fuelDisplay.innerText = `RCS FUEL: ${Math.floor(ship.fuel)}%`;
-            if(ship.fuel < 20) fuelDisplay.classList.add('warning');
-        }
-
-        function draw() {
-            ctx.fillStyle = '#0b0c10';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Stars
-            ctx.fillStyle = 'white';
-            stars.forEach(s => { ctx.fillRect(s.x, s.y, s.s, s.s); });
-
-            // Station
-            ctx.save();
-            ctx.translate(station.x, station.y);
-            ctx.fillStyle = '#1f2833';
-            ctx.fillRect(-station.width/2, -station.height/2, station.width, station.height);
-            ctx.strokeStyle = '#45a29e'; ctx.lineWidth = 2;
-            ctx.strokeRect(-station.width/2, -station.height/2, station.width, station.height);
-
-            // Solar panels
-            ctx.fillStyle = '#1e3d59';
-            ctx.fillRect(-station.width/2 + 10, -station.height/2 - 60, station.width-20, 60);
-            ctx.fillRect(-station.width/2 + 10, station.height/2, station.width-20, 60);
-            ctx.strokeRect(-station.width/2 + 10, -station.height/2 - 60, station.width-20, 60);
-            ctx.strokeRect(-station.width/2 + 10, station.height/2, station.width-20, 60);
-
-            // Docking Port
-            ctx.fillStyle = '#66fcf1';
-            ctx.fillRect(station.dockPoint.x - 5, station.dockPoint.y - 15, 10, 30);
-
-            // Alignment Guide lines (Local)
-            ctx.strokeStyle = 'rgba(102, 252, 241, 0.3)';
-            ctx.setLineDash([5, 5]);
-            ctx.beginPath(); ctx.moveTo(-200, 0); ctx.lineTo(-10, 0); ctx.stroke();
-            ctx.setLineDash([]);
-
-            ctx.restore();
-
-            // Particles
-            particles.forEach(p => {
-                ctx.fillStyle = `rgba(102, 252, 241, ${p.life})`;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-            });
-
-            // Ship
-            ctx.save();
-            ctx.translate(ship.x, ship.y);
-            ctx.rotate(ship.angle);
-
-            // Body
-            ctx.fillStyle = '#c5c6c7';
-            ctx.beginPath();
-            ctx.moveTo(15, 0);
-            ctx.lineTo(-10, -10);
-            ctx.lineTo(-15, -5);
-            ctx.lineTo(-15, 5);
-            ctx.lineTo(-10, 10);
-            ctx.closePath();
-            ctx.fill();
-
-            // Window
-            ctx.fillStyle = '#66fcf1';
-            ctx.beginPath(); ctx.arc(5, 0, 3, 0, Math.PI*2); ctx.fill();
-
-            // Docking Probe
-            ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(25, 0); ctx.stroke();
-
-            ctx.restore();
-
-            // Visual Vectors (Velocity)
-            ctx.strokeStyle = 'rgba(255, 71, 87, 0.5)';
-            ctx.beginPath();
-            ctx.moveTo(ship.x, ship.y);
-            ctx.lineTo(ship.x + ship.vx*2, ship.y + ship.vy*2);
-            ctx.stroke();
-        }
-
-        function startGame() {
-            initLevel();
-            gameState = 'playing';
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame(won, msg) {
-            gameState = 'gameover';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            endTitle.innerText = won ? "Docking Successful" : "Mission Failed";
-            endTitle.style.color = won ? "#66fcf1" : "#ff4757";
-            endMessage.innerText = msg;
-
-            if(won && window.ProgressSystem) {
-                let fuelBonus = Math.floor(ship.fuel);
-                window.userSystem.addXP(100 + fuelBonus);
-                window.userSystem.addCoins(50);
-            }
-        }
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-            if(dt < 0.1) update(dt);
-            draw();
-            if(gameState === 'playing') requestAnimationFrame(gameLoop);
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-        draw();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

@@ -27,85 +27,99 @@
     <a href="../index.html" class="btn-back">Zurück zum Portal</a>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const timeEl = document.getElementById('time');
 
-        let player = { x: 200, y: 200, radius: 15, color: '#3498db' };
-        let enemies = [];
-        let score = 0;
-        let gameOver = false;
-        let lastTime = 0;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        function addEnemy() {
-            let side = Math.floor(Math.random() * 4);
-            let ex, ey, evx, evy;
-            let speed = 2 + Math.random() * 3 + (score / 10);
-            if (side === 0) { ex = Math.random() * 400; ey = -20; evx = (Math.random() - 0.5) * 2; evy = speed; }
-            else if (side === 1) { ex = 420; ey = Math.random() * 400; evx = -speed; evy = (Math.random() - 0.5) * 2; }
-            else if (side === 2) { ex = Math.random() * 400; ey = 420; evx = (Math.random() - 0.5) * 2; evy = -speed; }
-            else { ex = -20; ey = Math.random() * 400; evx = speed; evy = (Math.random() - 0.5) * 2; }
-
-            enemies.push({ x: ex, y: ey, vx: evx, vy: evy, radius: 10 + Math.random() * 10, color: '#e74c3c' });
-        }
-
-        canvas.addEventListener('mousemove', (e) => {
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            player.x = e.clientX - rect.left;
-            player.y = e.clientY - rect.top;
-        });
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        function update(time) {
-            if (gameOver) return;
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-            if (time - lastTime > 1000) {
-                score++;
-                timeEl.innerText = score;
-                lastTime = time;
-                if (score % 3 === 0) addEnemy();
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
 
-            if (Math.random() < 0.05 + (score * 0.001)) {
-                addEnemy();
-            }
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-            // Draw player
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fillStyle = player.color;
-            ctx.fill();
+                particles.forEach(p => p.update());
 
-            // Update & Draw enemies
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i];
-                e.x += e.vx;
-                e.y += e.vy;
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
-                ctx.fillStyle = e.color;
-                ctx.fill();
-
-                // Check collision
-                let dist = Math.hypot(player.x - e.x, player.y - e.y);
-                if (dist - player.radius - e.radius < 1) {
-                    gameOver = true;
-                    alert("Game Over! Zeit: " + score + " Sekunden");
-                    location.reload();
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
                 }
 
-                if (e.x < -50 || e.x > 450 || e.y < -50 || e.y > 450) {
-                    enemies.splice(i, 1);
-                }
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            requestAnimationFrame(update);
-        }
-
-        requestAnimationFrame(update);
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

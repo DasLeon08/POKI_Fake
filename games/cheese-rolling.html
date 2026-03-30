@@ -140,289 +140,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const hud = document.getElementById('hud');
-        const distanceDisplay = document.getElementById('distanceDisplay');
-        const speedDisplay = document.getElementById('speedDisplay');
 
-        let gameState = 'start'; // start, buildup, rolling, gameover
-        let distance = 0;
-        let speed = 0;
-        let lastTime = 0;
-        let hillSlope = 0.5; // Steeper = faster
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        // Entity
-        const cheese = {
-            x: canvas.width / 2,
-            y: 100, // Fixed vertically, background moves
-            radius: 30,
-            rotation: 0,
-            steer: 0,
-            maxSpeed: 30,
-            acceleration: 0.1,
-            friction: 0.98
-        };
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        let obstacles = [];
-        let grassLines = [];
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        // Input
-        const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
-
-        window.addEventListener('keydown', e => {
-            if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
-        });
-        window.addEventListener('keyup', e => {
-            if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
-        });
-
-        // Click for buildup
-        canvas.addEventListener('mousedown', () => {
-            if(gameState === 'buildup') {
-                speed += 2; // Tap to speed up
-                if(speed > cheese.maxSpeed * 0.8) gameState = 'rolling'; // Transition
-            }
-        });
-
-        function spawnObstacle(y) {
-            const types = ['rock', 'log', 'pothole'];
-            const type = types[Math.floor(Math.random() * types.length)];
-
-            obstacles.push({
-                x: Math.random() * (canvas.width - 60) + 30,
-                y: y,
-                type: type,
-                width: type === 'log' ? 80 : 40,
-                height: type === 'log' ? 20 : 40
-            });
-        }
-
-        function initLevel() {
-            obstacles = [];
-            grassLines = [];
-            for(let i=0; i<10; i++) {
-                spawnObstacle(canvas.height + i * 200);
-            }
-            for(let i=0; i<20; i++) {
-                grassLines.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    length: Math.random() * 20 + 10
-                });
-            }
-        }
-
-        function update(dt) {
-            if(gameState !== 'rolling' && gameState !== 'buildup') return;
-
-            // Buildup logic
-            if(gameState === 'buildup') {
-                speed *= 0.95; // Decay if not tapping
-                distanceDisplay.innerText = "Tap rapidly to start!";
-                if(speed < 0.1) speed = 0;
-
-                // Visual rotation
-                cheese.rotation += speed * 0.1;
-                return; // Wait for transition
-            }
-
-            // Gravity/Slope acceleration
-            speed += hillSlope * dt * 10;
-            speed *= cheese.friction; // Air resistance/ground friction
-
-            // Limit speed
-            if(speed > cheese.maxSpeed) speed = cheese.maxSpeed;
-
-            distance += speed * dt * 2;
-
-            // Steering
-            if(keys.ArrowLeft || keys.a) cheese.steer -= 15 * dt;
-            if(keys.ArrowRight || keys.d) cheese.steer += 15 * dt;
-
-            cheese.steer *= 0.9; // Return to center
-            cheese.x += cheese.steer * speed * 0.2;
-
-            // Boundaries
-            if(cheese.x < cheese.radius) cheese.x = cheese.radius;
-            if(cheese.x > canvas.width - cheese.radius) cheese.x = canvas.width - cheese.radius;
-
-            // Rotation based on speed
-            cheese.rotation += speed * 0.1;
-
-            // Move world (obstacles & grass) up
-            const moveY = speed * dt * 60; // Pixels per frame approx
-
-            for(let i=obstacles.length-1; i>=0; i--) {
-                let obs = obstacles[i];
-                obs.y -= moveY;
-
-                // Collision Detection (AABB vs Circle approx)
-                const closestX = Math.max(obs.x - obs.width/2, Math.min(cheese.x, obs.x + obs.width/2));
-                const closestY = Math.max(obs.y - obs.height/2, Math.min(cheese.y, obs.y + obs.height/2));
-
-                const distanceX = cheese.x - closestX;
-                const distanceY = cheese.y - closestY;
-                const distSquared = (distanceX * distanceX) + (distanceY * distanceY);
-
-                if(distSquared < (cheese.radius * cheese.radius)) {
-                    // CRASH!
-                    endGame();
-                    return;
-                }
-
-                // Remove off screen and spawn new
-                if(obs.y + obs.height < 0) {
-                    obstacles.splice(i, 1);
-                    spawnObstacle(canvas.height + 200 + Math.random() * 200); // Spawn ahead
-                }
-            }
-
-            for(let i=grassLines.length-1; i>=0; i--) {
-                grassLines[i].y -= moveY;
-                if(grassLines[i].y < 0) {
-                    grassLines[i].y = canvas.height;
-                    grassLines[i].x = Math.random() * canvas.width;
-                }
-            }
-
-            // HUD
-            distanceDisplay.innerText = `Distance: ${Math.floor(distance)}m`;
-            speedDisplay.innerText = `Speed: ${Math.floor(speed * 3.6)} km/h`; // arbitrary scale
-        }
-
-        function draw() {
-            // Background (Hill)
-            ctx.fillStyle = '#2ecc71'; // Grass green
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Grass details
-            ctx.strokeStyle = '#27ae60';
-            ctx.lineWidth = 2;
-            grassLines.forEach(g => {
-                ctx.beginPath();
-                ctx.moveTo(g.x, g.y);
-                ctx.lineTo(g.x, g.y + g.length);
-                ctx.stroke();
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
             });
 
-            if(gameState === 'rolling' || gameState === 'buildup') {
-                // Obstacles
-                obstacles.forEach(obs => {
-                    ctx.save();
-                    ctx.translate(obs.x, obs.y);
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                    if(obs.type === 'rock') {
-                        ctx.fillStyle = '#7f8c8d';
-                        ctx.beginPath();
-                        ctx.arc(0, 0, obs.width/2, 0, Math.PI*2);
-                        ctx.fill();
-                        // Highlight
-                        ctx.fillStyle = '#95a5a6';
-                        ctx.beginPath();
-                        ctx.arc(-5, -5, obs.width/4, 0, Math.PI*2);
-                        ctx.fill();
-                    } else if(obs.type === 'log') {
-                        ctx.fillStyle = '#8e44ad'; // brown approx
-                        ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
-                        ctx.strokeStyle = '#2c3e50';
-                        ctx.strokeRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
-                    } else { // pothole
-                        ctx.fillStyle = '#2c3e50';
-                        ctx.beginPath();
-                        ctx.ellipse(0, 0, obs.width/2, obs.height/2, 0, 0, Math.PI*2);
-                        ctx.fill();
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
-                    ctx.restore();
-                });
-
-                // Cheese
-                ctx.save();
-                ctx.translate(cheese.x, cheese.y);
-                ctx.rotate(cheese.rotation);
-
-                // Shadow
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                ctx.beginPath();
-                ctx.arc(0, 10, cheese.radius, 0, Math.PI*2);
-                ctx.fill();
-
-                // Base Wheel
-                ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.arc(0, 0, cheese.radius, 0, Math.PI*2);
-                ctx.fill();
-
-                // Rind/Border
-                ctx.strokeStyle = '#e67e22';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-
-                // Holes (Swiss cheese style)
-                ctx.fillStyle = '#f39c12';
-                ctx.beginPath(); ctx.arc(-10, -10, 6, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(15, -5, 8, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(5, 15, 5, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(-12, 12, 7, 0, Math.PI*2); ctx.fill();
-
-                ctx.restore();
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
-        }
 
-        function startGame() {
-            gameState = 'buildup';
-            distance = 0;
-            speed = 0;
-            cheese.x = canvas.width/2;
-            cheese.steer = 0;
-            cheese.rotation = 0;
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            initLevel();
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
+                particles.forEach(p => p.update());
 
-            distanceDisplay.innerText = "Distance: 0m";
-            speedDisplay.innerText = "Speed: 0 km/h";
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
 
-        function endGame() {
-            gameState = 'gameover';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('final-distance').innerText = Math.floor(distance);
-
-            if (window.userSystem) {
-                window.userSystem.addXP(Math.floor(distance / 50));
-                window.userSystem.addCoins(Math.floor(distance / 200));
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        }
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-
-            if(dt < 0.1) {
-                update(dt);
-            }
-            draw();
-
-            if(gameState === 'rolling' || gameState === 'buildup') {
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-
-        draw();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

@@ -45,208 +45,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const speedEl = document.getElementById('speed');
-        const gameOverEl = document.getElementById('gameOver');
-        const finalScoreEl = document.getElementById('finalScore');
 
-        let player, obstacles, lines, score, speed, isGameOver, gameLoop, keys;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        const ROAD_WIDTH = 300;
-        const CAR_WIDTH = 40;
-        const CAR_HEIGHT = 70;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        function initGame() {
-            player = { x: 200, y: 500, w: CAR_WIDTH, h: CAR_HEIGHT, color: '#e74c3c' };
-            obstacles = [];
-            lines = [0, 150, 300, 450, 600]; // Y positions for road lines
-            score = 0;
-            speed = 5;
-            isGameOver = false;
-            keys = { left: false, right: false, up: false, down: false };
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-            scoreEl.textContent = score;
-            speedEl.textContent = speed;
-            gameOverEl.style.display = 'none';
-
-            spawnObstacle();
-
-            if (gameLoop) cancelAnimationFrame(gameLoop);
-            loop();
-        }
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') keys.left = true;
-            if (e.key === 'ArrowRight') keys.right = true;
-            if (e.key === 'ArrowUp') keys.up = true;
-            if (e.key === 'ArrowDown') keys.down = true;
-        });
-        document.addEventListener('keyup', e => {
-            if (e.key === 'ArrowLeft') keys.left = false;
-            if (e.key === 'ArrowRight') keys.right = false;
-            if (e.key === 'ArrowUp') keys.up = false;
-            if (e.key === 'ArrowDown') keys.down = false;
-        });
-
-        function spawnObstacle() {
-            const laneWidth = ROAD_WIDTH / 3;
-            const lane = Math.floor(Math.random() * 3);
-            const x = (canvas.width - ROAD_WIDTH) / 2 + lane * laneWidth + (laneWidth - CAR_WIDTH) / 2;
-
-            obstacles.push({
-                x: x, y: -CAR_HEIGHT,
-                w: CAR_WIDTH, h: CAR_HEIGHT,
-                color: ['#3498db', '#2ecc71', '#9b59b6', '#f1c40f'][Math.floor(Math.random() * 4)],
-                passed: false
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
             });
-        }
 
-        function update() {
-            if (isGameOver) return;
-
-            // Speed Control
-            if (keys.up && speed < 15) speed += 0.1;
-            else if (keys.down && speed > 3) speed -= 0.2;
-            else if (speed > 5) speed -= 0.05; // Friction
-
-            speedEl.textContent = Math.floor(speed * 10);
-
-            // Player Movement
-            if (keys.left) player.x -= 5 + speed/3;
-            if (keys.right) player.x += 5 + speed/3;
-
-            // Bounds
-            const leftBound = (canvas.width - ROAD_WIDTH) / 2;
-            const rightBound = leftBound + ROAD_WIDTH;
-            if (player.x < leftBound) player.x = leftBound;
-            if (player.x + player.w > rightBound) player.x = rightBound - player.w;
-
-            // Road Lines
-            for (let i = 0; i < lines.length; i++) {
-                lines[i] += speed;
-                if (lines[i] > 600) lines[i] = -150;
-            }
-
-            // Obstacles
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.y += speed - 2; // Obstacles move slightly slower than player max speed
-
-                // Collision
-                if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
-                    player.y < obs.y + obs.h && player.y + player.h > obs.y) {
-                    gameOver();
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Score
-                if (obs.y > player.y + player.h && !obs.passed) {
-                    obs.passed = true;
-                    score += 10;
-                    scoreEl.textContent = score;
-                    if (score % 50 === 0) speed += 1; // Difficulty increase
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
                 }
-
-                if (obs.y > canvas.height) {
-                    obstacles.splice(i, 1);
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            // Spawning
-            if (obstacles.length === 0 || obstacles[obstacles.length - 1].y > 200 + Math.random() * 200) {
-                spawnObstacle();
-                // Double spawn chance
-                if (Math.random() < 0.2 + (speed/100)) {
-                    spawnObstacle();
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
                 }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        }
-
-        function drawCar(x, y, color) {
-            // Body
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y + 10, CAR_WIDTH, CAR_HEIGHT - 20);
-            ctx.fillRect(x + 5, y, CAR_WIDTH - 10, CAR_HEIGHT);
-
-            // Windows
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x + 5, y + 15, CAR_WIDTH - 10, 15); // Windshield
-            ctx.fillRect(x + 5, y + CAR_HEIGHT - 25, CAR_WIDTH - 10, 10); // Rear window
-
-            // Wheels
-            ctx.fillStyle = '#111';
-            ctx.fillRect(x - 2, y + 15, 4, 15);
-            ctx.fillRect(x + CAR_WIDTH - 2, y + 15, 4, 15);
-            ctx.fillRect(x - 2, y + CAR_HEIGHT - 30, 4, 15);
-            ctx.fillRect(x + CAR_WIDTH - 2, y + CAR_HEIGHT - 30, 4, 15);
-        }
-
-        function draw() {
-            // Grass
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Road
-            const roadX = (canvas.width - ROAD_WIDTH) / 2;
-            ctx.fillStyle = '#7f8c8d';
-            ctx.fillRect(roadX, 0, ROAD_WIDTH, canvas.height);
-
-            // Shoulders (Rumble strips)
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(roadX - 10, 0, 10, canvas.height);
-            ctx.fillRect(roadX + ROAD_WIDTH, 0, 10, canvas.height);
-
-            ctx.fillStyle = '#ecf0f1';
-            for (let i = -100; i < canvas.height; i += 40) {
-                let offset = (lines[0] % 40) + i;
-                ctx.fillRect(roadX - 10, offset, 10, 20);
-                ctx.fillRect(roadX + ROAD_WIDTH, offset, 10, 20);
-            }
-
-            // Lane markers
-            ctx.fillStyle = '#ecf0f1';
-            for (let l = 1; l < 3; l++) {
-                let laneX = roadX + l * (ROAD_WIDTH / 3) - 2;
-                for (let i = 0; i < lines.length; i++) {
-                    ctx.fillRect(laneX, lines[i], 4, 50);
-                }
-            }
-
-            // Obstacles
-            obstacles.forEach(o => drawCar(o.x, o.y, o.color));
-
-            // Player
-            drawCar(player.x, player.y, player.color);
-        }
-
-        function loop() {
-            if (!isGameOver) {
-                update();
-                draw();
-                gameLoop = requestAnimationFrame(loop);
-            }
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            gameOverEl.style.display = 'block';
-            finalScoreEl.textContent = `Score: ${score}`;
-
-            // Explosion effect
-            ctx.fillStyle = '#e67e22';
-            ctx.beginPath(); ctx.arc(player.x + CAR_WIDTH/2, player.y + CAR_HEIGHT/2, 40, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath(); ctx.arc(player.x + CAR_WIDTH/2, player.y + CAR_HEIGHT/2, 20, 0, Math.PI*2); ctx.fill();
-
-            if (window.userSystem) {
-                window.userSystem.addXP(Math.floor(score / 5));
-                window.userSystem.addCoins(Math.floor(score / 20));
-            }
-        }
-
-        initGame();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

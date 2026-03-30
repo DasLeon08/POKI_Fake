@@ -147,309 +147,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const hud = document.getElementById('hud');
 
-        const altDisplay = document.getElementById('altitudeDisplay');
-        const spdDisplay = document.getElementById('speedDisplay');
-        const pitchDisplay = document.getElementById('pitchDisplay');
-        const endTitle = document.getElementById('end-title');
-        const endMessage = document.getElementById('end-message');
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        let gameState = 'start';
-        let lastTime = 0;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        let worldX = 0; // camera scroll
-        let score = 0;
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        // Input
-        const keys = { ArrowUp: false, ArrowDown: false, w: false, s: false, g: false };
-        let gearToggled = false;
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        window.addEventListener('keydown', e => {
-            if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
-            if(e.key.toLowerCase() === 'g' && !gearToggled) {
-                plane.gearDown = !plane.gearDown;
-                gearToggled = true;
-            }
-        });
-        window.addEventListener('keyup', e => {
-            if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
-            if(e.key.toLowerCase() === 'g') gearToggled = false;
-        });
-
-        const plane = {
-            x: 150, // Screen X is fixed, world scrolls
-            y: 350,
-            width: 40, height: 15,
-            pitch: 0, // radians
-            speed: 0, // horizontal
-            vSpeed: 0, // vertical
-            throttle: 0, // 0 to 100
-            gearDown: true,
-            crashed: false
-        };
-
-        const runway = { x: 50, w: 1000 };
-        const landingRunway = { x: 5000, w: 1000 };
-        let rings = [];
-        let groundHeight = 30; // height from bottom
-
-        function initLevel() {
-            plane.y = canvas.height - groundHeight - 10;
-            plane.pitch = 0;
-            plane.speed = 0;
-            plane.vSpeed = 0;
-            plane.throttle = 0;
-            plane.gearDown = true;
-            plane.crashed = false;
-            worldX = 0;
-            score = 0;
-
-            rings = [];
-            for(let i=0; i<5; i++) {
-                rings.push({
-                    x: 1500 + i * 800,
-                    y: canvas.height - 100 - Math.random() * 200,
-                    radius: 40,
-                    passed: false
-                });
-            }
-        }
-
-        function update(dt) {
-            if(gameState !== 'playing') return;
-
-            // Throttle Control
-            if(keys.w) plane.throttle += 20 * dt;
-            if(keys.s) plane.throttle -= 20 * dt;
-            plane.throttle = Math.max(0, Math.min(100, plane.throttle));
-
-            // Pitch Control (inverted like real plane: pull up = down arrow)
-            let pitchSpeed = 1.5 * dt;
-            if(plane.speed > 20) { // Need speed to pitch effectively
-                if(keys.ArrowDown) plane.pitch -= pitchSpeed; // Nose up
-                if(keys.ArrowUp) plane.pitch += pitchSpeed; // Nose down
-            }
-            // Clamp pitch (-45 to +45 deg approx)
-            plane.pitch = Math.max(-Math.PI/4, Math.min(Math.PI/4, plane.pitch));
-
-            // Aerodynamics (Simplified)
-            // Thrust
-            let thrust = plane.throttle * 0.5 * dt;
-
-            // Drag (increases with speed and gear down)
-            let drag = plane.speed * 0.005 + (plane.gearDown ? 0.05 : 0.01);
-
-            // Lift (increases with speed and slight nose up)
-            let lift = (plane.speed * 0.05) * Math.max(0.5, -plane.pitch * 2);
-
-            // Gravity
-            let gravity = 10 * dt;
-
-            // Horizontal Speed
-            plane.speed += thrust - drag;
-            if(plane.speed < 0) plane.speed = 0;
-
-            // Vertical Speed (Lift vs Gravity)
-            // Only lift off if speed > 50 and nose up
-            if(plane.y < canvas.height - groundHeight - 10 || (plane.speed > 50 && plane.pitch < -0.1)) {
-                plane.vSpeed += gravity - lift;
-            } else {
-                plane.vSpeed = 0;
-                plane.pitch = 0; // level out on ground
-            }
-
-            // Apply Velocity
-            plane.y += plane.vSpeed;
-            worldX += plane.speed * dt; // Scroll world instead of plane X
-
-            // Ground Collision
-            let onRunway = (worldX + plane.x > runway.x && worldX + plane.x < runway.x + runway.w) ||
-                           (worldX + plane.x > landingRunway.x && worldX + plane.x < landingRunway.x + landingRunway.w);
-
-            if(plane.y >= canvas.height - groundHeight - 10) {
-                plane.y = canvas.height - groundHeight - 10;
-                plane.vSpeed = 0;
-
-                // Crash checks
-                if(plane.vSpeed > 5 || plane.speed > 150 || plane.pitch > 0.2 || plane.pitch < -0.3 || !plane.gearDown || !onRunway) {
-                    endGame(false, "CRASH! " + (!plane.gearDown ? "Gear was UP!" : !onRunway ? "Landed off runway!" : "Too hard/fast!"));
-                    return;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Successful landing stop
-                if(worldX > 4000 && plane.speed < 5) { // Rough check for landing area
-                    endGame(true, "Landed safely! Rings collected: " + score);
-                    return;
-                }
-            }
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-            // Sky ceiling
-            if(plane.y < 20) plane.y = 20;
-
-            // Rings Collision
-            rings.forEach(r => {
-                if(!r.passed) {
-                    let rx = r.x - worldX; // relative x
-                    if(Math.abs(plane.x - rx) < plane.width/2 && Math.abs(plane.y - r.y) < r.radius) {
-                        r.passed = true;
-                        score++;
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
-            });
-
-            updateHUD();
-        }
-
-        function draw() {
-            // Sky
-            let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#3498db');
-            grad.addColorStop(1, '#87CEEB');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // World Elements (translated by worldX)
-            ctx.save();
-            ctx.translate(-worldX % 800, 0); // Modulo for infinite background illusion
-
-            // Clouds
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.beginPath(); ctx.arc(100, 100, 30, 0, Math.PI*2); ctx.arc(130, 90, 40, 0, Math.PI*2); ctx.arc(160, 100, 30, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(500, 150, 40, 0, Math.PI*2); ctx.arc(550, 140, 50, 0, Math.PI*2); ctx.arc(600, 150, 40, 0, Math.PI*2); ctx.fill();
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(-worldX, 0); // Actual world translation for ground objects
-
-            // Ground
-            ctx.fillStyle = '#27ae60'; // Grass
-            ctx.fillRect(0, canvas.height - groundHeight, 10000, groundHeight);
-
-            // Runways
-            ctx.fillStyle = '#7f8c8d';
-            ctx.fillRect(runway.x, canvas.height - groundHeight, runway.w, groundHeight);
-            ctx.fillRect(landingRunway.x, canvas.height - groundHeight, landingRunway.w, groundHeight);
-
-            // Runway markers
-            ctx.fillStyle = 'white';
-            for(let i=0; i<10; i++) {
-                ctx.fillRect(runway.x + 100 + i*80, canvas.height - groundHeight + 10, 40, 5);
-                ctx.fillRect(landingRunway.x + 100 + i*80, canvas.height - groundHeight + 10, 40, 5);
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
 
-            // Rings
-            rings.forEach(r => {
-                ctx.strokeStyle = r.passed ? 'rgba(46, 204, 113, 0.5)' : '#f1c40f';
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.ellipse(r.x, r.y, 10, r.radius, 0, 0, Math.PI*2);
-                ctx.stroke();
-            });
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            ctx.restore(); // End world translation
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-            // Draw Plane (Fixed X on screen, rotates with pitch)
-            ctx.save();
-            ctx.translate(plane.x, plane.y);
-            ctx.rotate(plane.pitch);
+                particles.forEach(p => p.update());
 
-            // Fuselage
-            ctx.fillStyle = '#ecf0f1';
-            ctx.beginPath();
-            ctx.moveTo(-20, 0);
-            ctx.lineTo(15, -5);
-            ctx.lineTo(20, 0);
-            ctx.lineTo(15, 5);
-            ctx.lineTo(-20, 5);
-            ctx.fill();
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-            // Wing
-            ctx.fillStyle = '#bdc3c7';
-            ctx.beginPath();
-            ctx.moveTo(-5, 0);
-            ctx.lineTo(5, -15);
-            ctx.lineTo(10, 0);
-            ctx.fill();
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
 
-            // Tail
-            ctx.beginPath();
-            ctx.moveTo(-20, 0);
-            ctx.lineTo(-25, -12);
-            ctx.lineTo(-15, 0);
-            ctx.fill();
-
-            // Landing Gear
-            if(plane.gearDown) {
-                ctx.strokeStyle = '#34495e';
-                ctx.lineWidth = 2;
-                // Front
-                ctx.beginPath(); ctx.moveTo(10, 5); ctx.lineTo(10, 15); ctx.stroke();
-                ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(10, 15, 3, 0, Math.PI*2); ctx.fill();
-                // Back
-                ctx.beginPath(); ctx.moveTo(-10, 5); ctx.lineTo(-10, 15); ctx.stroke();
-                ctx.beginPath(); ctx.arc(-10, 15, 3, 0, Math.PI*2); ctx.fill();
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            ctx.restore();
-        }
-
-        function updateHUD() {
-            let alt = Math.max(0, Math.floor((canvas.height - groundHeight - 10 - plane.y) * 10)); // pseudo feet
-            altDisplay.innerText = `ALT: ${alt} ft`;
-            spdDisplay.innerText = `SPD: ${Math.floor(plane.speed * 2)} kts`;
-
-            let pDeg = Math.floor(-plane.pitch * (180/Math.PI));
-            pitchDisplay.innerText = `PTCH: ${pDeg}°`;
-
-            if(plane.speed < 40 && alt > 10) spdDisplay.style.color = 'red'; // stall warning
-            else spdDisplay.style.color = '#2c3e50';
-        }
-
-        function startGame() {
-            initLevel();
-            gameState = 'playing';
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame(won, message) {
-            gameState = 'gameover';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            endTitle.innerText = won ? "Landed Successfully!" : "Crash!";
-            endTitle.style.color = won ? "#2ecc71" : "#e74c3c";
-            endMessage.innerText = message;
-
-            if (won && window.ProgressSystem) {
-                window.userSystem.addXP(50 + score * 10);
-                window.userSystem.addCoins(20 + score * 5);
-            }
-        }
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-
-            if(dt < 0.1) update(dt);
-            draw();
-
-            if(gameState === 'playing') requestAnimationFrame(gameLoop);
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-
-        initLevel();
-        draw();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

@@ -27,100 +27,99 @@
     <a href="../index.html" class="btn-back">Zurück zum Portal</a>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
 
-        let player = { x: 200, y: 450, width: 30, height: 30, color: '#0f0' };
-        let bullets = [];
-        let enemies = [];
-        let score = 0;
-        let isGameOver = false;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        document.addEventListener('mousemove', (e) => {
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            player.x = e.clientX - rect.left - player.width / 2;
-            if(player.x < 0) player.x = 0;
-            if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
-        });
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        document.addEventListener('mousedown', () => {
-            bullets.push({ x: player.x + player.width / 2 - 2, y: player.y, width: 4, height: 10, color: '#ff0', speed: 5 });
-        });
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        function spawnEnemy() {
-            let x = Math.random() * (canvas.width - 30);
-            let speed = 1 + Math.random() * 2 + (score * 0.05);
-            enemies.push({ x: x, y: -30, width: 30, height: 30, color: '#f00', speed: speed });
-        }
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        setInterval(spawnEnemy, 1000 - (score * 5 > 800 ? 800 : score * 5));
-
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.beginPath();
-            ctx.moveTo(player.x + player.width/2, player.y - 15);
-            ctx.lineTo(player.x, player.y);
-            ctx.lineTo(player.x + player.width, player.y);
-            ctx.fill();
-        }
-
-        function gameLoop() {
-            if(isGameOver) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            drawPlayer();
-
-            // Bullets
-            for(let i = 0; i < bullets.length; i++) {
-                let b = bullets[i];
-                b.y -= b.speed;
-                ctx.fillStyle = b.color;
-                ctx.fillRect(b.x, b.y, b.width, b.height);
-                if(b.y < 0) { bullets.splice(i, 1); i--; }
-            }
-
-            // Enemies
-            for(let i = 0; i < enemies.length; i++) {
-                let e = enemies[i];
-                e.y += e.speed;
-                ctx.fillStyle = e.color;
-                ctx.fillRect(e.x, e.y, e.width, e.height);
-
-                if(e.y > canvas.height) {
-                    isGameOver = true;
-                    alert("Game Over! Score: " + score);
-                    location.reload();
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Collision
-                if(player.x < e.x + e.width && player.x + player.width > e.x &&
-                   player.y < e.y + e.height && player.y + player.height > e.y) {
-                    isGameOver = true;
-                    alert("Kollision! Game Over! Score: " + score);
-                    location.reload();
-                }
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-                for(let j = 0; j < bullets.length; j++) {
-                    let b = bullets[j];
-                    if(b.x < e.x + e.width && b.x + b.width > e.x &&
-                       b.y < e.y + e.height && b.y + b.height > e.y) {
-                        enemies.splice(i, 1);
-                        bullets.splice(j, 1);
-                        score += 10;
-                        scoreEl.innerText = score;
-                        i--;
-                        break;
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
 
-            requestAnimationFrame(gameLoop);
-        }
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-        requestAnimationFrame(gameLoop);
-    </script>
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
+            }
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

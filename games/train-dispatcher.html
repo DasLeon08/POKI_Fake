@@ -131,156 +131,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const gameOverScreen = document.getElementById('game-over');
-        const finalScoreElement = document.getElementById('final-score');
 
-        let score = 0;
-        let isGameOver = false;
-        let entities = [];
-        let time = 0;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        function init() {
-            score = 0;
-            isGameOver = false;
-            entities = [];
-            time = 0;
-            scoreElement.innerText = score;
-            gameOverScreen.style.display = 'none';
-
-            // Spawn initial entities
-            for(let i=0; i<5; i++) {
-                spawnEntity();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        function spawnEntity() {
-            entities.push({
-                x: Math.random() * (canvas.width - 40) + 20,
-                y: Math.random() * (canvas.height - 40) + 20,
-                radius: 20 + Math.random() * 20,
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                active: true
-            });
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (isGameOver) return;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-            let clicked = false;
-            for(let i = entities.length - 1; i >= 0; i--) {
-                const ent = entities[i];
-                const dx = mouseX - ent.x;
-                const dy = mouseY - ent.y;
-                if(Math.sqrt(dx*dx + dy*dy) < ent.radius) {
-                    entities.splice(i, 1);
-                    score += 10;
-                    scoreElement.innerText = score;
-                    clicked = true;
-                    spawnEntity();
-                    spawnEntity(); // gets harder
-                    break;
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
+
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            if (!clicked) {
-                endGame();
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        });
-
-        function update() {
-            if (isGameOver) return;
-            time++;
-
-            entities.forEach(ent => {
-                ent.x += ent.vx;
-                ent.y += ent.vy;
-
-                // Bounce
-                if(ent.x - ent.radius < 0 || ent.x + ent.radius > canvas.width) ent.vx *= -1;
-                if(ent.y - ent.radius < 0 || ent.y + ent.radius > canvas.height) ent.vy *= -1;
-            });
-
-            if (entities.length > 30) {
-                endGame();
-            }
-        }
-
-        function draw() {
-            ctx.fillStyle = '#0f3460';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Background grid pattern
-            ctx.strokeStyle = '#16213e';
-            ctx.lineWidth = 1;
-            for(let i=0; i<canvas.width; i+=40) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, canvas.height);
-                ctx.stroke();
-            }
-            for(let i=0; i<canvas.height; i+=40) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width, i);
-                ctx.stroke();
-            }
-
-            entities.forEach(ent => {
-                ctx.beginPath();
-                ctx.arc(ent.x, ent.y, ent.radius, 0, Math.PI * 2);
-                ctx.fillStyle = ent.color;
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // Draw title in background
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            ctx.font = '80px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Zug-Dispatcher', canvas.width/2, canvas.height/2);
-            ctx.textAlign = 'left';
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            if (!isGameOver) {
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        function endGame() {
-            isGameOver = true;
-            finalScoreElement.innerText = score;
-            gameOverScreen.style.display = 'block';
-
-            if (window.userSystem) {
-                let xpEarned = Math.floor(score / 5);
-                let coinsEarned = Math.floor(score / 10);
-                if (xpEarned > 0) window.userSystem.addXP(xpEarned);
-                if (coinsEarned > 0) window.userSystem.addCoins(coinsEarned);
-            }
-        }
-
-        function resetGame() {
-            init();
-        }
-
-        // Start
-        init();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

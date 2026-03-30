@@ -57,217 +57,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const startBtn = document.getElementById('start-btn');
-        const dist1El = document.getElementById('dist1');
-        const dist2El = document.getElementById('dist2');
 
-        const keys = {};
-        window.addEventListener('keydown', e => { keys[e.code] = true; });
-        window.addEventListener('keyup', e => { keys[e.code] = false; });
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        let gameState = 'start';
-        let distance = 0;
-        let speed = 5;
-        let obstacles = [];
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        class Racer {
-            constructor(y, color, controls) {
-                this.x = 100;
-                this.y = y;
-                this.w = 30;
-                this.h = 30;
-                this.vy = 0;
-                this.gravity = 0.8;
-                this.isFlipped = false;
-                this.color = color;
-                this.controls = controls;
-                this.alive = true;
-                this.score = 0;
-                this.lastFlip = false;
-            }
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-            update() {
-                if (!this.alive) return;
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-                // Handle flip input (on keydown edge)
-                if (keys[this.controls.flip] && !this.lastFlip) {
-                    this.isFlipped = !this.isFlipped;
-                    this.gravity *= -1;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
-                this.lastFlip = keys[this.controls.flip];
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                this.vy += this.gravity;
-                this.y += this.vy;
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-                // Ceiling/Floor collision
-                if (this.y < 50) { // Top floor
-                    this.y = 50;
-                    this.vy = 0;
-                } else if (this.y > canvas.height - 50 - this.h) { // Bottom floor
-                    this.y = canvas.height - 50 - this.h;
-                    this.vy = 0;
-                }
-
-                this.score += speed * 0.1;
-
-                // Obstacle Collision
-                for (let obs of obstacles) {
-                    if (this.x < obs.x + obs.w && this.x + this.w > obs.x &&
-                        this.y < obs.y + obs.h && this.y + this.h > obs.y) {
-                        this.alive = false;
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
-            }
-
-            draw() {
-                if (!this.alive) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.5)'; // Ghostly if dead
-                } else {
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     ctx.fillStyle = this.color;
-                    ctx.shadowBlur = 10;
+                    ctx.shadowBlur = 15;
                     ctx.shadowColor = this.color;
-                }
-
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-
-                // Draw trail/exhaust
-                if (this.alive) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                    ctx.fillRect(this.x - 15, this.y + (this.isFlipped ? 5 : 20), 10, 5);
-                }
-
-                ctx.shadowBlur = 0;
-            }
-        }
-
-        let p1, p2;
-
-        function spawnObstacle() {
-            // Top or Bottom obstacle
-            let isTop = Math.random() > 0.5;
-            let h = 30 + Math.random() * 150;
-            let y = isTop ? 50 : canvas.height - 50 - h;
-
-            obstacles.push({
-                x: canvas.width,
-                y: y,
-                w: 40,
-                h: h
-            });
-        }
-
-        function initRound() {
-            p1 = new Racer(canvas.height - 80, '#00ffff', { flip: 'KeyW' });
-            p2 = new Racer(50, '#ff00ff', { flip: 'ArrowUp' });
-            p2.isFlipped = true; p2.gravity = -0.8; // P2 starts top
-
-            obstacles = [];
-            distance = 0;
-            speed = 5;
-
-            dist1El.textContent = 0;
-            dist2El.textContent = 0;
-
-            gameState = 'playing';
-            overlay.classList.add('hidden');
-        }
-
-        let frames = 0;
-
-        function update() {
-            if (gameState !== 'playing') return;
-
-            p1.update();
-            p2.update();
-
-            if (p1.alive) dist1El.textContent = Math.floor(p1.score);
-            if (p2.alive) dist2El.textContent = Math.floor(p2.score);
-
-            // Obstacles
-            frames++;
-            let spawnRate = Math.max(30, 80 - Math.floor(speed * 2)); // gets faster
-
-            if (frames % spawnRate === 0) spawnObstacle();
-
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= speed;
-                if (obstacles[i].x + obstacles[i].w < 0) {
-                    obstacles.splice(i, 1);
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            // Speed up
-            speed += 0.002;
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            // Check game over
-            if (!p1.alive && !p2.alive) {
-                gameState = 'gameover';
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-                let winnerText = "Unentschieden!";
-                if (p1.score > p2.score + 1) winnerText = "P1 Gewinnt!";
-                else if (p2.score > p1.score + 1) winnerText = "P2 Gewinnt!";
+                particles.forEach(p => p.update());
 
-                overlayTitle.textContent = winnerText;
-                startBtn.textContent = "Neues Rennen";
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-                if(window.userSystem) {
-                    window.userSystem.addCoins(30);
-                    window.userSystem.addXP(80);
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
                 }
 
-                overlay.classList.remove('hidden');
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Floors
-            ctx.fillStyle = '#333';
-            ctx.fillRect(0, 0, canvas.width, 50); // Top
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50); // Bottom
-
-            // Neon Line
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(0, 48, canvas.width, 2);
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 2);
-
-            // Grid background effect
-            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-            ctx.beginPath();
-            let offset = (frames * speed) % 40;
-            for(let x = -offset; x < canvas.width; x += 40) {
-                ctx.moveTo(x, 50);
-                ctx.lineTo(x, canvas.height - 50);
-            }
-            ctx.stroke();
-
-            // Draw Obstacles
-            ctx.fillStyle = '#ff0000';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ff0000';
-            for (let obs of obstacles) {
-                ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            }
-            ctx.shadowBlur = 0;
-
-            if (p1) p1.draw();
-            if (p2) p2.draw();
-        }
-
-        function loop() {
-            update();
-            draw();
-            requestAnimationFrame(loop);
-        }
-
-        startBtn.addEventListener('click', initRound);
-        loop();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

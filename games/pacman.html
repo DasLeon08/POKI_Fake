@@ -41,150 +41,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const gameOverScreen = document.getElementById('gameOver');
-        const finalScoreText = document.getElementById('finalScore');
 
-        let pacman, ghosts, pellets, score, gameLoop, isGameOver;
-        const TILE = 20;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        function initGame() {
-            pacman = { x: 200, y: 300, vx: 0, vy: 0, size: 8, angle: 0.2, mouthDir: 1 };
-            ghosts = [
-                { x: 180, y: 180, vx: 2, vy: 0, color: 'red' },
-                { x: 200, y: 180, vx: -2, vy: 0, color: 'pink' },
-                { x: 220, y: 180, vx: 0, vy: -2, color: 'cyan' }
-            ];
-            pellets = [];
-            score = 0;
-            isGameOver = false;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-            // Generate pellets
-            for(let i=1; i<19; i++) {
-                for(let j=1; j<19; j++) {
-                    if (i % 2 === 0 || j % 2 === 0) {
-                        pellets.push({x: i*20+10, y: j*20+10});
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
+
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
                 }
-            }
-
-            scoreDisplay.textContent = `Punkte: ${score}`;
-            gameOverScreen.style.display = 'none';
-            if(gameLoop) clearInterval(gameLoop);
-            gameLoop = setInterval(update, 1000/30);
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (isGameOver) return;
-            const speed = 4;
-            if(e.key === 'ArrowUp') { pacman.vx = 0; pacman.vy = -speed; }
-            if(e.key === 'ArrowDown') { pacman.vx = 0; pacman.vy = speed; }
-            if(e.key === 'ArrowLeft') { pacman.vx = -speed; pacman.vy = 0; }
-            if(e.key === 'ArrowRight') { pacman.vx = speed; pacman.vy = 0; }
-        });
-
-        function update() {
-            // Move Pacman
-            pacman.x += pacman.vx;
-            pacman.y += pacman.vy;
-
-            // Screen wrap
-            if(pacman.x < 0) pacman.x = 400;
-            if(pacman.x > 400) pacman.x = 0;
-            if(pacman.y < 0) pacman.y = 400;
-            if(pacman.y > 400) pacman.y = 0;
-
-            pacman.mouthDir = pacman.angle > 0.8 ? -1 : (pacman.angle < 0.2 ? 1 : pacman.mouthDir);
-            pacman.angle += 0.1 * pacman.mouthDir;
-
-            // Move Ghosts
-            ghosts.forEach(g => {
-                g.x += g.vx;
-                g.y += g.vy;
-                if(g.x <= 0 || g.x >= 400 || Math.random() < 0.05) { g.vx *= -1; }
-                if(g.y <= 0 || g.y >= 400 || Math.random() < 0.05) { g.vy *= -1; }
-
-                // Collision
-                const dx = pacman.x - g.x;
-                const dy = pacman.y - g.y;
-                if(Math.sqrt(dx*dx + dy*dy) < 15) {
-                    gameOver();
-                }
-            });
-
-            // Eat Pellets
-            for(let i = pellets.length-1; i >= 0; i--) {
-                const p = pellets[i];
-                const dx = pacman.x - p.x;
-                const dy = pacman.y - p.y;
-                if(Math.sqrt(dx*dx + dy*dy) < 10) {
-                    pellets.splice(i, 1);
-                    score += 10;
-                    scoreDisplay.textContent = `Punkte: ${score}`;
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            if(pellets.length === 0) gameOver(); // Win
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            draw();
-        }
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-        function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, 400, 400);
+                particles.forEach(p => p.update());
 
-            // Pellets
-            ctx.fillStyle = '#fff';
-            pellets.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
-                ctx.fill();
-            });
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-            // Pacman
-            ctx.save();
-            ctx.translate(pacman.x, pacman.y);
-            if(pacman.vx > 0) ctx.rotate(0);
-            else if(pacman.vx < 0) ctx.rotate(Math.PI);
-            else if(pacman.vy > 0) ctx.rotate(Math.PI/2);
-            else if(pacman.vy < 0) ctx.rotate(-Math.PI/2);
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
 
-            ctx.fillStyle = 'yellow';
-            ctx.beginPath();
-            ctx.arc(0, 0, pacman.size*1.5, pacman.angle, Math.PI*2 - pacman.angle);
-            ctx.lineTo(0, 0);
-            ctx.fill();
-            ctx.restore();
-
-            // Ghosts
-            ghosts.forEach(g => {
-                ctx.fillStyle = g.color;
-                ctx.beginPath();
-                ctx.arc(g.x, g.y, 10, Math.PI, 0);
-                ctx.lineTo(g.x+10, g.y+10);
-                ctx.lineTo(g.x-10, g.y+10);
-                ctx.fill();
-            });
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            clearInterval(gameLoop);
-            gameOverScreen.style.display = 'block';
-            finalScoreText.textContent = `Punkte: ${score}`;
-
-            if (window.userSystem) {
-                const xp = Math.floor(score / 20);
-                const coins = Math.floor(score / 50);
-                window.userSystem.addXP(xp);
-                window.userSystem.addCoins(coins);
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        }
-
-        initGame();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

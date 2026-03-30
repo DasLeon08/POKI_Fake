@@ -139,287 +139,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const hud = document.getElementById('hud');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const colorDisplay = document.getElementById('colorDisplay');
 
-        let gameState = 'start';
-        let score = 0;
-        let lastTime = 0;
-        let speed = 5;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        const colors = ['#e74c3c', '#3498db']; // Red, Blue
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        const player = {
-            x: 100,
-            y: 0,
-            width: 30,
-            height: 30,
-            vy: 0,
-            gravity: 0.6,
-            jumpPower: -12,
-            isGrounded: false,
-            colorIndex: 0 // 0 = red, 1 = blue
-        };
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        let platforms = [];
-        let particles = [];
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        // Input
-        window.addEventListener('keydown', (e) => {
-            if(gameState !== 'playing') return;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-            if(e.code === 'Space' || e.key === 'ArrowUp') {
-                if(player.isGrounded) {
-                    player.vy = player.jumpPower;
-                    player.isGrounded = false;
-                    createDust(player.x, player.y + player.height, player.colorIndex);
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
-            if(e.key === 'Shift' || e.key === 'ArrowDown') {
-                player.colorIndex = 1 - player.colorIndex; // toggle 0/1
-                updateHUD();
-                createDust(player.x + player.width/2, player.y + player.height/2, player.colorIndex, true);
-            }
-        });
 
-        function spawnPlatform() {
-            let lastPlatform = platforms[platforms.length - 1];
-            let x = lastPlatform ? lastPlatform.x + lastPlatform.width + (Math.random() * 100 + 50) : canvas.width;
-            let y = canvas.height - 100 + (Math.random() * 60 - 30);
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            // Random length
-            let width = Math.random() * 200 + 100;
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-            // Random color
-            let colorIndex = Math.random() > 0.5 ? 0 : 1;
+                particles.forEach(p => p.update());
 
-            platforms.push({ x, y, width, height: 20, colorIndex });
-        }
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-        function createDust(x, y, colorIndex, burst = false) {
-            let count = burst ? 15 : 5;
-            for(let i=0; i<count; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: burst ? (Math.random() - 0.5) * 4 : Math.random() * -2,
-                    life: 1,
-                    color: colors[colorIndex]
-                });
-            }
-        }
-
-        function initPlatforms() {
-            platforms = [];
-            // Initial long platform
-            platforms.push({ x: 0, y: canvas.height - 50, width: canvas.width, height: 50, colorIndex: 0 });
-            for(let i=0; i<3; i++) spawnPlatform();
-        }
-
-        function update(dt) {
-            if(gameState !== 'playing') return;
-
-            // Difficulty increase
-            speed += dt * 0.1;
-            score += dt * 10;
-            scoreDisplay.innerText = `Score: ${Math.floor(score)}`;
-
-            // Physics
-            player.vy += player.gravity;
-            player.y += player.vy;
-            player.isGrounded = false;
-
-            // Platforms
-            for(let i=platforms.length-1; i>=0; i--) {
-                let p = platforms[i];
-                p.x -= speed;
-
-                // Collision
-                if (player.x < p.x + p.width &&
-                    player.x + player.width > p.x &&
-                    player.y + player.height > p.y &&
-                    player.y + player.height - player.vy <= p.y + 10) { // +10 for wiggle room
-
-                    player.y = p.y - player.height;
-                    player.vy = 0;
-                    player.isGrounded = true;
-
-                    // Color Match Check
-                    if (player.colorIndex !== p.colorIndex) {
-                        endGame();
-                        return; // Stop update
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
                     }
                 }
 
-                // Remove off screen
-                if(p.x + p.width < 0) {
-                    platforms.splice(i, 1);
-                    spawnPlatform();
-                }
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            // Fall off screen check
-            if (player.y > canvas.height) {
-                endGame();
-            }
-
-            // Particles
-            for(let i=particles.length-1; i>=0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= dt * 2;
-                if(p.life <= 0) particles.splice(i, 1);
-            }
-        }
-
-        function draw() {
-            // Background
-            ctx.fillStyle = '#ecf0f1';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Speed lines (Background)
-            ctx.strokeStyle = '#bdc3c7';
-            ctx.lineWidth = 1;
-            for(let i=0; i<5; i++) {
-                ctx.beginPath();
-                let y = (i * 80 + performance.now() * 0.1) % canvas.height;
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-
-            if(gameState === 'playing') {
-                // Platforms
-                platforms.forEach(p => {
-                    ctx.fillStyle = colors[p.colorIndex];
-                    // Glow
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = colors[p.colorIndex];
-                    ctx.fillRect(p.x, p.y, p.width, p.height);
-
-                    // Top highlight
-                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                    ctx.shadowBlur = 0;
-                    ctx.fillRect(p.x, p.y, p.width, 4);
-                });
-
-                // Particles
-                particles.forEach(p => {
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = p.life;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
-                    ctx.fill();
-                });
-                ctx.globalAlpha = 1;
-
-                // Player (Chameleon abstraction)
-                ctx.save();
-                ctx.translate(player.x, player.y);
-
-                // Rotation based on velocity
-                let rot = Math.min(Math.max(player.vy * 0.05, -0.5), 0.5);
-                ctx.translate(player.width/2, player.height/2);
-                ctx.rotate(rot);
-                ctx.translate(-player.width/2, -player.height/2);
-
-                ctx.fillStyle = colors[player.colorIndex];
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = colors[player.colorIndex];
-
-                // Body
-                ctx.beginPath();
-                ctx.arc(player.width/2, player.height/2, player.width/2, 0, Math.PI*2);
-                ctx.fill();
-
-                // Tail
-                ctx.beginPath();
-                ctx.moveTo(0, player.height/2);
-                ctx.quadraticCurveTo(-15, player.height, -10, player.height/2 - 10);
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = colors[player.colorIndex];
-                ctx.stroke();
-
-                // Eye
-                ctx.fillStyle = 'white';
-                ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.arc(player.width - 8, player.height/2 - 5, 5, 0, Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(player.width - 6, player.height/2 - 5, 2, 0, Math.PI*2);
-                ctx.fill();
-
-                ctx.restore();
-            }
-        }
-
-        function updateHUD() {
-            colorDisplay.innerText = player.colorIndex === 0 ? 'Color: Red' : 'Color: Blue';
-            colorDisplay.style.color = colors[player.colorIndex];
-        }
-
-        function startGame() {
-            gameState = 'playing';
-            score = 0;
-            speed = 5;
-            player.y = 100;
-            player.vy = 0;
-            player.colorIndex = 0;
-            particles = [];
-
-            initPlatforms();
-            updateHUD();
-
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame() {
-            gameState = 'gameover';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('final-score').innerText = Math.floor(score);
-
-            // Explode player
-            createDust(player.x + player.width/2, player.y + player.height/2, player.colorIndex, true);
-
-            if (window.userSystem) {
-                window.userSystem.addXP(Math.floor(score / 10));
-                window.userSystem.addCoins(Math.floor(score / 50));
-            }
-        }
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-
-            if(dt < 0.1) {
-                update(dt);
-            }
-            draw();
-
-            if(gameState === 'playing') {
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-
-        draw();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

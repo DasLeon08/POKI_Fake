@@ -57,266 +57,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const startBtn = document.getElementById('start-btn');
-        const score1El = document.getElementById('score1');
-        const score2El = document.getElementById('score2');
 
-        const keys = {};
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        // Physics constants
-        const gravity = 0.4;
-        const groundY = 350;
-        const netX = canvas.width / 2;
-        const netHeight = 80;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        let gameState = 'start';
-        let score1 = 0;
-        let score2 = 0;
-        let serveTurn = 1;
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        class Slime {
-            constructor(x, color, controls, isLeft) {
-                this.x = x;
-                this.y = groundY;
-                this.radius = 40;
-                this.vx = 0;
-                this.vy = 0;
-                this.color = color;
-                this.controls = controls;
-                this.isLeft = isLeft;
-                this.speed = 6;
-                this.jumpStrength = -10;
-            }
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-            update() {
-                // Horizontal
-                if (keys[this.controls.left]) this.vx = -this.speed;
-                else if (keys[this.controls.right]) this.vx = this.speed;
-                else this.vx = 0;
-
-                // Jump
-                if (keys[this.controls.up] && this.y >= groundY) {
-                    this.vy = this.jumpStrength;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Apply physics
-                this.vy += gravity;
-                this.x += this.vx;
-                this.y += this.vy;
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-                // Floor collision
-                if (this.y > groundY) {
-                    this.y = groundY;
-                    this.vy = 0;
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
                 }
-
-                // Wall & Net collisions
-                if (this.isLeft) {
-                    if (this.x - this.radius < 0) this.x = this.radius;
-                    if (this.x + this.radius > netX - 5) this.x = netX - 5 - this.radius; // Net limit
-                } else {
-                    if (this.x + this.radius > canvas.width) this.x = canvas.width - this.radius;
-                    if (this.x - this.radius < netX + 5) this.x = netX + 5 + this.radius; // Net limit
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
 
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, Math.PI, 0); // Halbkreis
-                ctx.fill();
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-                // Eye
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                let eyeX = this.isLeft ? this.x + 15 : this.x - 15;
-                ctx.arc(eyeX, this.y - 15, 8, 0, Math.PI * 2);
-                ctx.fill();
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-                // Pupil
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(eyeX + (ball.x > this.x ? 2 : -2), this.y - 15, 4, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+                particles.forEach(p => p.update());
 
-        class Ball {
-            constructor() {
-                this.radius = 12;
-                this.reset(1);
-            }
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-            reset(server) {
-                this.x = server === 1 ? canvas.width / 4 : canvas.width * 3 / 4;
-                this.y = 100;
-                this.vx = 0;
-                this.vy = 0;
-            }
-
-            update(p1, p2) {
-                this.vy += gravity * 0.8; // Ball falls slightly slower than slime
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Wall collisions
-                if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
-                if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -1; }
-                if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
-
-                // Net collision
-                if (this.y > groundY - netHeight && Math.abs(this.x - netX) < this.radius + 5) {
-                    if (this.y < groundY - netHeight + this.radius) {
-                        // Top of net bounce
-                        this.vy *= -1;
-                        this.y = groundY - netHeight - this.radius;
-                    } else {
-                        // Side of net bounce
-                        this.vx *= -1;
-                        if(this.x < netX) this.x = netX - 5 - this.radius;
-                        else this.x = netX + 5 + this.radius;
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
                     }
                 }
 
-                // Player collisions (Circle to Circle approx)
-                this.checkPlayerCollision(p1);
-                this.checkPlayerCollision(p2);
-
-                // Floor collision / Scoring
-                if (this.y + this.radius > groundY) {
-                    if (this.x < netX) score(2); // P2 scores
-                    else score(1); // P1 scores
-                }
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            checkPlayerCollision(p) {
-                const dx = this.x - p.x;
-                const dy = this.y - p.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-
-                // Slime is semi-circle, so only collide if ball is above ground level relative to slime center
-                if (dist < this.radius + p.radius && this.y <= p.y + this.radius/2) {
-                    // Calculate bounce vector based on angle
-                    const angle = Math.atan2(dy, dx);
-
-                    // Add player velocity to ball
-                    const bounceSpeed = 10;
-                    this.vx = Math.cos(angle) * bounceSpeed + (p.vx * 0.5);
-                    this.vy = Math.sin(angle) * bounceSpeed - 3; // Extra upward push
-
-                    // Prevent ball getting stuck inside slime
-                    this.x = p.x + Math.cos(angle) * (this.radius + p.radius);
-                    this.y = p.y + Math.sin(angle) * (this.radius + p.radius);
-                }
-            }
-
-            draw() {
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-        }
-
-        let p1 = new Slime(canvas.width/4, '#32CD32', { left: 'KeyA', right: 'KeyD', up: 'KeyW' }, true);
-        let p2 = new Slime(canvas.width*3/4, '#FF69B4', { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp' }, false);
-        let ball = new Ball();
-
-        function drawBackground() {
-            // Sky
-            ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(0, 0, canvas.width, groundY);
-
-            // Ground
-            ctx.fillStyle = '#F4A460'; // Sand
-            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-
-            // Net
-            ctx.fillStyle = '#FFF';
-            ctx.fillRect(netX - 5, groundY - netHeight, 10, netHeight);
-        }
-
-        function score(playerNum) {
-            gameState = 'scored';
-            if (playerNum === 1) score1++;
-            else score2++;
-
-            score1El.textContent = score1;
-            score2El.textContent = score2;
-
-            serveTurn = playerNum; // Winner serves
-
-            if (score1 >= 7 || score2 >= 7) {
-                gameState = 'gameover';
-                overlayTitle.textContent = `P${playerNum} WIN!`;
-                startBtn.textContent = "Play Again";
-                overlay.classList.remove('hidden');
-
-                if(window.userSystem) {
-                    window.userSystem.addCoins(25);
-                    window.userSystem.addXP(60);
-                }
-            } else {
-                overlayTitle.textContent = `P${playerNum} Point!`;
-                startBtn.textContent = "Serve";
-                overlay.classList.remove('hidden');
-            }
-        }
-
-        function startRound() {
-            p1.x = canvas.width/4; p1.y = groundY; p1.vx = 0; p1.vy = 0;
-            p2.x = canvas.width*3/4; p2.y = groundY; p2.vx = 0; p2.vy = 0;
-            ball.reset(serveTurn);
-            gameState = 'playing';
-            overlay.classList.add('hidden');
-        }
-
-        function startGame() {
-            score1 = 0;
-            score2 = 0;
-            score1El.textContent = score1;
-            score2El.textContent = score2;
-            serveTurn = 1;
-            startRound();
-        }
-
-        function loop() {
-            if (gameState === 'playing') {
-                p1.update();
-                p2.update();
-                ball.update(p1, p2);
-            }
-
-            drawBackground();
-            p1.draw();
-            p2.draw();
-            ball.draw();
-
-            requestAnimationFrame(loop);
-        }
-
-        startBtn.addEventListener('click', () => {
-            if (gameState === 'gameover' || gameState === 'start') startGame();
-            else startRound();
-        });
-
-        // Init draw
-        drawBackground();
-        p1.draw();
-        p2.draw();
-        ball.draw();
-
-        loop();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

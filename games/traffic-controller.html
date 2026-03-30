@@ -60,245 +60,99 @@
     </div>
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const hud = document.getElementById('hud');
 
-        let gameState = 'start';
-        let lastTime = 0;
-        let score = 0;
-        let crashes = 0;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        // Roads
-        const roadW = 100;
-        const intersection = { x: canvas.width/2 - roadW/2, y: canvas.height/2 - roadW/2, w: roadW, h: roadW };
-
-        // Lanes (center paths)
-        // N/S road: N->S is x=380, S->N is x=420
-        // E/W road: W->E is y=320, E->W is y=280
-
-        let cars = [];
-        let spawnTimer = 0;
-        let gameTime = 0;
-
-        const colors = ['#e74c3c', '#3498db', '#f1c40f', '#9b59b6'];
-
-        canvas.addEventListener('mousedown', (e) => {
-            if(gameState !== 'playing') return;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-            // Check if clicked on a car
-            for(let i=cars.length-1; i>=0; i--) {
-                let c = cars[i];
-                if(mouseX > c.x - c.w/2 && mouseX < c.x + c.w/2 &&
-                   mouseY > c.y - c.h/2 && mouseY < c.y + c.h/2) {
-                    c.stopped = !c.stopped;
-                    return; // Only toggle one car
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
+
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
+
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
                 }
             }
-        });
 
-        function spawnCar() {
-            let directions = ['N', 'S', 'E', 'W'];
-            let dir = directions[Math.floor(Math.random()*directions.length)];
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-            let car = { w: 20, h: 40, color: colors[Math.floor(Math.random()*colors.length)], stopped: false, speed: 100, passed: false };
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-            if(dir === 'N') { car.x = 380; car.y = -20; car.vx = 0; car.vy = 1; }
-            if(dir === 'S') { car.x = 420; car.y = canvas.height+20; car.vx = 0; car.vy = -1; }
-            if(dir === 'E') { car.x = canvas.width+20; car.y = 280; car.vx = -1; car.vy = 0; car.w = 40; car.h = 20; }
-            if(dir === 'W') { car.x = -20; car.y = 320; car.vx = 1; car.vy = 0; car.w = 40; car.h = 20; }
+                particles.forEach(p => p.update());
 
-            cars.push(car);
-        }
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
 
-        function isIntersecting(c1, c2) {
-            return !(c2.x - c2.w/2 > c1.x + c1.w/2 ||
-                     c2.x + c2.w/2 < c1.x - c1.w/2 ||
-                     c2.y - c2.h/2 > c1.y + c1.h/2 ||
-                     c2.y + c2.h/2 < c1.y - c1.h/2);
-        }
-
-        function update(dt) {
-            if(gameState !== 'playing') return;
-            gameTime += dt;
-
-            spawnTimer -= dt;
-            if(spawnTimer <= 0) {
-                spawnCar();
-                spawnTimer = Math.max(0.5, 2 - gameTime/60); // Spawns faster over time
-            }
-
-            // Move cars
-            for(let i=0; i<cars.length; i++) {
-                let c = cars[i];
-                if(!c.stopped) {
-                    // Check rear-end collision
-                    let safeToMove = true;
-                    for(let j=0; j<cars.length; j++) {
-                        if(i === j) continue;
-                        let other = cars[j];
-                        // If same direction, check distance ahead
-                        if(c.vx === other.vx && c.vy === other.vy) {
-                            let dist = (other.x - c.x)*c.vx + (other.y - c.y)*c.vy; // Distance along motion vector
-                            if(dist > 0 && dist < 50) safeToMove = false; // Too close
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
                         }
                     }
-
-                    if(safeToMove) {
-                        c.x += c.vx * c.speed * dt;
-                        c.y += c.vy * c.speed * dt;
-                    }
                 }
 
-                // Check scoring (leaving intersection)
-                if(!c.passed) {
-                    if( (c.vx > 0 && c.x > intersection.x + intersection.w) ||
-                        (c.vx < 0 && c.x < intersection.x) ||
-                        (c.vy > 0 && c.y > intersection.y + intersection.h) ||
-                        (c.vy < 0 && c.y < intersection.y) ) {
-                        c.passed = true;
-                        score++;
-                    }
-                }
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-
-            // Check crashes
-            for(let i=0; i<cars.length; i++) {
-                for(let j=i+1; j<cars.length; j++) {
-                    if(isIntersecting(cars[i], cars[j])) {
-                        // Mark crashed, remove them, increment crash counter
-                        createExplosion(cars[i].x, cars[i].y);
-                        cars.splice(j, 1);
-                        cars.splice(i, 1);
-                        crashes++;
-
-                        // Flash screen red?
-                        if(crashes >= 3) endGame();
-                        return; // Break out to avoid index errors after splice
-                    }
-                }
-            }
-
-            // Clean up off-screen cars
-            for(let i=cars.length-1; i>=0; i--) {
-                let c = cars[i];
-                if(c.x < -100 || c.x > canvas.width+100 || c.y < -100 || c.y > canvas.height+100) {
-                    cars.splice(i, 1);
-                }
-            }
-
-            // HUD
-            document.getElementById('scoreDisplay').innerText = `Safe Cars: ${score}`;
-            document.getElementById('crashDisplay').innerText = `Crashes: ${crashes}/3`;
-        }
-
-        let particles = [];
-        function createExplosion(x,y) {
-            for(let i=0; i<30; i++) {
-                particles.push({ x: x, y: y, vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100, life: 1, c: Math.random()>0.5?'#e74c3c':'#f1c40f' });
-            }
-        }
-
-        function draw() {
-            // Background
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Roads
-            ctx.fillStyle = '#7f8c8d';
-            ctx.fillRect(canvas.width/2 - roadW/2, 0, roadW, canvas.height); // N/S
-            ctx.fillRect(0, canvas.height/2 - roadW/2, canvas.width, roadW); // E/W
-
-            // Center markings
-            ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 4; ctx.setLineDash([20, 20]);
-            // N/S lines
-            ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, intersection.y); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(canvas.width/2, intersection.y + intersection.h); ctx.lineTo(canvas.width/2, canvas.height); ctx.stroke();
-            // E/W lines
-            ctx.beginPath(); ctx.moveTo(0, canvas.height/2); ctx.lineTo(intersection.x, canvas.height/2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(intersection.x + intersection.w, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2); ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Crosswalks
-            ctx.fillStyle = 'white';
-            for(let i=0; i<5; i++) {
-                ctx.fillRect(intersection.x + 5 + i*20, intersection.y - 15, 10, 15); // N
-                ctx.fillRect(intersection.x + 5 + i*20, intersection.y + intersection.h, 10, 15); // S
-                ctx.fillRect(intersection.x - 15, intersection.y + 5 + i*20, 15, 10); // W
-                ctx.fillRect(intersection.x + intersection.w, intersection.y + 5 + i*20, 15, 10); // E
-            }
-
-            // Particles
-            for(let i=particles.length-1; i>=0; i--) {
-                let p = particles[i];
-                ctx.fillStyle = p.c; ctx.globalAlpha = p.life;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
-                ctx.globalAlpha = 1;
-
-                // update here for simplicity
-                if(gameState === 'playing') { p.x += p.vx*0.016; p.y += p.vy*0.016; p.life -= 0.03; if(p.life<=0) particles.splice(i,1); }
-            }
-
-            // Cars
-            cars.forEach(c => {
-                ctx.fillStyle = c.color;
-                ctx.fillRect(c.x - c.w/2, c.y - c.h/2, c.w, c.h);
-                // Windows (simulated direction)
-                ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                if(c.vy !== 0) { // vertical
-                    ctx.fillRect(c.x - c.w/2 + 2, c.y - c.h/2 + 5, c.w - 4, 10); // windshield
-                } else { // horizontal
-                    ctx.fillRect(c.x - c.w/2 + 5, c.y - c.h/2 + 2, 10, c.h - 4);
-                }
-
-                // Stopped indicator (brake lights)
-                if(c.stopped) {
-                    ctx.fillStyle = '#ff4757';
-                    ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(c.w,c.h)/2 + 5, 0, Math.PI*2);
-                    ctx.globalAlpha = 0.5; ctx.fill(); ctx.globalAlpha = 1;
-                }
-            });
-        }
-
-        function startGame() {
-            gameState = 'playing';
-            score = 0; crashes = 0; gameTime = 0; spawnTimer = 1;
-            cars = []; particles = [];
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame() {
-            gameState = 'gameover';
-            hud.classList.add('hidden');
-            gameOverScreen.classList.remove('hidden');
-            document.getElementById('final-score').innerText = score;
-            if(window.ProgressSystem) {
-                window.userSystem.addXP(score * 5);
-                window.userSystem.addCoins(score);
-            }
-        }
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-            if(dt < 0.1) update(dt);
-            draw();
-            if(gameState === 'playing') requestAnimationFrame(gameLoop);
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-        draw();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

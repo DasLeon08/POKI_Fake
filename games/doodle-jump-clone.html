@@ -42,182 +42,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const gameOverScreen = document.getElementById('gameOver');
-        const finalScoreText = document.getElementById('finalScore');
 
-        let doodler, platforms, score, isGameOver, loop, keys;
-        const platformWidth = 60;
-        const platformHeight = 15;
-        const gravity = 0.3;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        function initGame() {
-            doodler = { x: 200, y: 500, vx: 0, vy: -10, radius: 15, color: '#ffeb3b' };
-            platforms = [];
-            score = 0;
-            isGameOver = false;
-            keys = { left: false, right: false };
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-            // Initial platforms
-            platforms.push({ x: 200, y: 580, type: 'normal' }); // Base
-            for (let i = 0; i < 7; i++) {
-                platforms.push(createPlatform(600 - (i * 85)));
-            }
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-            scoreDisplay.textContent = '0';
-            gameOverScreen.style.display = 'none';
-            if (loop) cancelAnimationFrame(loop);
-            gameLoop();
-        }
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-        function createPlatform(y) {
-            let type = 'normal';
-            let r = Math.random();
-            if (r < 0.2) type = 'moving';
-            else if (r < 0.3) type = 'breakable';
-            return {
-                x: Math.random() * (400 - platformWidth),
-                y: y,
-                type: type,
-                vx: type === 'moving' ? (Math.random() > 0.5 ? 2 : -2) : 0,
-                broken: false
-            };
-        }
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') keys.left = true;
-            if (e.key === 'ArrowRight') keys.right = true;
-        });
-        document.addEventListener('keyup', e => {
-            if (e.key === 'ArrowLeft') keys.left = false;
-            if (e.key === 'ArrowRight') keys.right = false;
-        });
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-        function update() {
-            if (isGameOver) return;
-
-            // Move doodler
-            if (keys.left) doodler.x -= 5;
-            if (keys.right) doodler.x += 5;
-
-            // Screen wrap
-            if (doodler.x < -doodler.radius) doodler.x = 400 + doodler.radius;
-            if (doodler.x > 400 + doodler.radius) doodler.x = -doodler.radius;
-
-            doodler.vy += gravity;
-            doodler.y += doodler.vy;
-
-            // Camera follow / Score
-            if (doodler.y < 300) {
-                let diff = 300 - doodler.y;
-                doodler.y = 300;
-                score += Math.floor(diff);
-                scoreDisplay.textContent = score;
-
-                platforms.forEach(p => {
-                    p.y += diff;
-                    if (p.y > 600) {
-                        let newY = Math.min(...platforms.map(pl => pl.y)) - (Math.random() * 50 + 50);
-                        Object.assign(p, createPlatform(newY));
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
-                });
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
 
-            // Platform collision (only when falling)
-            if (doodler.vy > 0) {
-                platforms.forEach(p => {
-                    if (!p.broken && doodler.x + doodler.radius > p.x && doodler.x - doodler.radius < p.x + platformWidth &&
-                        doodler.y + doodler.radius > p.y && doodler.y + doodler.radius < p.y + platformHeight + doodler.vy) {
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-                        if (p.type === 'breakable') {
-                            p.broken = true;
-                        } else {
-                            doodler.vy = -10; // Jump
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-                            // Bounce effect
-                            ctx.fillStyle = '#ff9800';
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
                             ctx.beginPath();
-                            ctx.arc(doodler.x, doodler.y + doodler.radius, 20, 0, Math.PI * 2);
-                            ctx.fill();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
                         }
                     }
-                });
-            }
-
-            // Move platforms
-            platforms.forEach(p => {
-                if (p.type === 'moving' && !p.broken) {
-                    p.x += p.vx;
-                    if (p.x < 0 || p.x > 400 - platformWidth) p.vx *= -1;
                 }
-            });
 
-            // Game over
-            if (doodler.y > 600 + doodler.radius) {
-                gameOver();
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
             }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, 400, 600);
-
-            // Platforms
-            platforms.forEach(p => {
-                if (p.broken) return;
-
-                ctx.fillStyle = p.type === 'normal' ? '#8bc34a' : (p.type === 'moving' ? '#2196f3' : '#795548');
-                ctx.fillRect(p.x, p.y, platformWidth, platformHeight);
-                ctx.strokeStyle = '#555';
-                ctx.strokeRect(p.x, p.y, platformWidth, platformHeight);
-            });
-
-            // Doodler
-            ctx.fillStyle = doodler.color;
-            ctx.beginPath();
-            ctx.arc(doodler.x, doodler.y, doodler.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Eyes
-            ctx.fillStyle = '#333';
-            ctx.beginPath();
-            let eyeDir = keys.left ? -5 : (keys.right ? 5 : 0);
-            ctx.arc(doodler.x - 5 + eyeDir, doodler.y - 5, 3, 0, Math.PI * 2);
-            ctx.arc(doodler.x + 5 + eyeDir, doodler.y - 5, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Snout
-            ctx.fillStyle = '#ff9800';
-            ctx.beginPath();
-            ctx.arc(doodler.x + eyeDir * 1.5, doodler.y + 5, 8, 0, Math.PI, false);
-            ctx.fill();
-        }
-
-        function gameLoop() {
-            if (!isGameOver) {
-                update();
-                draw();
-                loop = requestAnimationFrame(gameLoop);
-            }
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            gameOverScreen.style.display = 'block';
-            finalScoreText.textContent = `Punkte: ${score}`;
-
-            if (window.userSystem) {
-                window.userSystem.addXP(Math.floor(score / 50));
-                window.userSystem.addCoins(Math.floor(score / 200));
-            }
-        }
-
-        initGame();
-    </script>
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

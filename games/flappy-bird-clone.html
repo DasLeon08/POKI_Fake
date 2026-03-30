@@ -41,105 +41,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const gameOverScreen = document.getElementById('gameOver');
-        const finalScoreText = document.getElementById('finalScore');
 
-        let bird, pipes, score, gameLoop, frames, isGameOver;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        function initGame() {
-            bird = { x: 50, y: 150, velocity: 0, gravity: 0.25, jump: -4.6, radius: 12 };
-            pipes = [];
-            score = 0;
-            frames = 0;
-            isGameOver = false;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-            scoreDisplay.textContent = score;
-            gameOverScreen.style.display = 'none';
-            if(gameLoop) cancelAnimationFrame(gameLoop);
-            loop();
-        }
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        canvas.addEventListener('mousedown', () => flap());
-        document.addEventListener('keydown', (e) => { if (e.code === 'Space') flap(); });
-
-        function flap() {
-            if (isGameOver) return;
-            bird.velocity = bird.jump;
-        }
-
-        function update() {
-            frames++;
-            bird.velocity += bird.gravity;
-            bird.y += bird.velocity;
-
-            if (bird.y + bird.radius >= canvas.height || bird.y - bird.radius <= 0) {
-                gameOver();
-            }
-
-            if (frames % 100 === 0) {
-                let topH = Math.random() * (canvas.height/2) + 50;
-                pipes.push({ x: canvas.width, top: topH, bottom: canvas.height - (topH + 120), w: 50 });
-            }
-
-            pipes.forEach(p => {
-                p.x -= 2;
-                if (
-                    bird.x + bird.radius > p.x && bird.x - bird.radius < p.x + p.w &&
-                    (bird.y - bird.radius < p.top || bird.y + bird.radius > canvas.height - p.bottom)
-                ) {
-                    gameOver();
-                }
-
-                if (p.x === bird.x) {
-                    score++;
-                    scoreDisplay.textContent = score;
-                }
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
             });
 
-            pipes = pipes.filter(p => p.x + p.w > 0);
-        }
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-        function draw() {
-            ctx.fillStyle = '#4ec0ca';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-            // Bird
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath();
-            ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Pipes
-            ctx.fillStyle = '#2ecc71';
-            pipes.forEach(p => {
-                ctx.fillRect(p.x, 0, p.w, p.top);
-                ctx.fillRect(p.x, canvas.height - p.bottom, p.w, p.bottom);
-            });
-        }
-
-        function loop() {
-            if (isGameOver) return;
-            update();
-            draw();
-            gameLoop = requestAnimationFrame(loop);
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            gameOverScreen.style.display = 'block';
-            finalScoreText.textContent = `Score: ${score}`;
-
-            if (window.userSystem) {
-                window.userSystem.addXP(score * 10);
-                window.userSystem.addCoins(Math.floor(score / 2));
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
-        }
 
-        initGame();
-    </script>
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
+            }
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

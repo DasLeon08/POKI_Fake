@@ -1,52 +1,10 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tower Builder</title>
-    <link rel="stylesheet" href="../style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="ingame-header">
-        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Tower Builder</h1>
-        <div class="ingame-controls">
-            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
-        </div>
-    </div>
-    <div class="game-container">
-        <h2>Tower Builder</h2>
-        <p>Ein brandneues HTML5-Spiel!</p>
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-    </div>
+const fs = require('fs');
+const path = require('path');
 
-    <script src="../js/user-system.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameId = 'tower-builder';
-            const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
+const gamesDir = path.join(__dirname, 'games');
+const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
 
-            if (userSystem.isLiked(gameId)) {
-                likeBtn.classList.add('liked');
-                likeBtn.innerHTML = '♥';
-            }
-
-            likeBtn.addEventListener('click', () => {
-                const isLiked = userSystem.toggleLike(gameId);
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.innerHTML = '♥';
-                    userSystem.showToast('Spiel geliked! +5 XP');
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.innerHTML = '♡';
-                }
-            });
-
-            // Basic Canvas rendering to make it look active
-
+const advancedGraphicsScript = `
             // Advanced Particle System Graphics
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -57,8 +15,8 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = \`\${rect.width}px\`;
+            canvas.style.height = \`\${rect.height}px\`;
 
             let particles = [];
             const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
@@ -127,7 +85,7 @@
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.strokeStyle = \`rgba(255, 255, 255, \${1 - dist/80})\`;
                             ctx.lineWidth = 0.5;
                             ctx.stroke();
                         }
@@ -138,15 +96,35 @@
                 requestAnimationFrame(animate);
             }
             animate();
+`;
 
+let upgradedCount = 0;
 
-            // Randomly award XP for playing
-            setInterval(() => {
-                if (Math.random() > 0.7) {
-                    userSystem.addXP(10);
-                }
-            }, 10000);
-        });
-    </script>
-</body>
-</html>
+games.forEach(gameFile => {
+    const filePath = path.join(gamesDir, gameFile);
+    let content = fs.readFileSync(filePath, 'utf-8');
+
+    // We want to replace the old basic bouncing ball code with our new advanced particle system
+    // The old code usually looks like:
+    // const canvas = document.getElementById('gameCanvas'); ... let hue = 0; ... draw();
+
+    if (content.includes('let hue = 0;')) {
+        // Regex to match everything from getting the canvas context down to the draw() call
+        const regex = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?draw\(\);/g;
+        if (regex.test(content)) {
+            content = content.replace(regex, advancedGraphicsScript);
+            fs.writeFileSync(filePath, content);
+            upgradedCount++;
+        }
+    } else if (content.includes('canvas.getContext(\'2d\');')) {
+         // Fallback if the script structure is slightly different but still basic
+         const regex = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?(?=\/\/ Randomly award XP|\<\/script\>)/g;
+         if (regex.test(content) && !content.includes('class Particle')) { // Don't replace if already upgraded
+             content = content.replace(regex, advancedGraphicsScript);
+             fs.writeFileSync(filePath, content);
+             upgradedCount++;
+         }
+    }
+});
+
+console.log(`Upgraded canvas graphics for ${upgradedCount} games.`);

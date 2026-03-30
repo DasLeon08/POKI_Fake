@@ -57,190 +57,99 @@
 
     <script src="../js/user-system.js"></script>
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const startBtn = document.getElementById('start-btn');
-        const score1El = document.getElementById('score1');
-        const score2El = document.getElementById('score2');
 
-        const TILE_SIZE = 5;
-        const cols = canvas.width / TILE_SIZE;
-        const rows = canvas.height / TILE_SIZE;
+            // Advanced Particle System Graphics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-        let grid = [];
-        let gameState = 'start';
-        let score1 = 0;
-        let score2 = 0;
+            // Adjust canvas to match device pixel ratio for sharper graphics
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
 
-        const keys = {};
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348'];
+            let mouse = { x: canvas.width / (2 * dpr), y: canvas.height / (2 * dpr) };
 
-        class Bike {
-            constructor(x, y, dx, dy, color, id, controls) {
-                this.x = x;
-                this.y = y;
-                this.dx = dx; // 1, 0, -1
-                this.dy = dy; // 1, 0, -1
-                this.color = color;
-                this.id = id;
-                this.controls = controls;
-                this.alive = true;
-                this.trail = [];
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
 
-                // Setze Startposition im Grid
-                grid[this.x][this.y] = this.id;
-            }
-
-            update() {
-                if (!this.alive) return;
-
-                // Steuerung
-                if (keys[this.controls.up] && this.dy === 0) { this.dx = 0; this.dy = -1; }
-                else if (keys[this.controls.down] && this.dy === 0) { this.dx = 0; this.dy = 1; }
-                else if (keys[this.controls.left] && this.dx === 0) { this.dx = -1; this.dy = 0; }
-                else if (keys[this.controls.right] && this.dx === 0) { this.dx = 1; this.dy = 0; }
-
-                this.trail.push({x: this.x, y: this.y});
-
-                this.x += this.dx;
-                this.y += this.dy;
-
-                // Kollision Wand
-                if (this.x < 0 || this.x >= cols || this.y < 0 || this.y >= rows) {
-                    this.die();
-                    return;
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                    this.radius = Math.random() * 3 + 1;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
                 }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
 
-                // Kollision Trail
-                if (grid[this.x][this.y] !== 0) {
-                    this.die();
-                    return;
-                }
+                    if (this.x < 0 || this.x > canvas.width / dpr) this.vx = -this.vx;
+                    if (this.y < 0 || this.y > canvas.height / dpr) this.vy = -this.vy;
 
-                grid[this.x][this.y] = this.id;
-            }
-
-            die() {
-                this.alive = false;
-            }
-
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-
-                // Draw head
-                ctx.fillRect(this.x * TILE_SIZE, this.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-
-                // Draw trail (optimiert: nur letztes Element)
-                if(this.trail.length > 0) {
-                     const last = this.trail[this.trail.length-1];
-                     ctx.fillRect(last.x * TILE_SIZE, last.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-
-                ctx.shadowBlur = 0; // Reset
-            }
-        }
-
-        let p1, p2;
-
-        function initGrid() {
-            grid = new Array(cols).fill(0).map(() => new Array(rows).fill(0));
-            ctx.clearRect(0,0, canvas.width, canvas.height);
-
-            // Draw Grid lines
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            for (let x = 0; x <= canvas.width; x += TILE_SIZE * 4) {
-                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
-            }
-            for (let y = 0; y <= canvas.height; y += TILE_SIZE * 4) {
-                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
-            }
-            ctx.stroke();
-        }
-
-        function initRound() {
-            initGrid();
-            p1 = new Bike(Math.floor(cols/4), Math.floor(rows/2), 1, 0, '#0ff', 1, {up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD'});
-            p2 = new Bike(Math.floor(cols*3/4), Math.floor(rows/2), -1, 0, '#f0f', 2, {up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight'});
-
-            gameState = 'playing';
-            overlay.classList.add('hidden');
-        }
-
-        function startGame() {
-            score1 = 0;
-            score2 = 0;
-            updateScoreUI();
-            initRound();
-        }
-
-        function updateScoreUI() {
-            score1El.textContent = score1;
-            score2El.textContent = score2;
-        }
-
-        let lastTime = 0;
-        const tickRate = 1000 / 30; // 30 FPS logic
-
-        function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            const delta = timestamp - lastTime;
-
-            if (gameState === 'playing' && delta >= tickRate) {
-                p1.update();
-                p2.update();
-
-                // Draw only changes
-                if(p1.alive) p1.draw();
-                if(p2.alive) p2.draw();
-
-                // Head to head collision tie break
-                if (p1.x === p2.x && p1.y === p2.y) {
-                    p1.die();
-                    p2.die();
-                }
-
-                if (!p1.alive || !p2.alive) {
-                    gameState = 'roundOver';
-
-                    if (!p1.alive && p2.alive) { score2++; overlayTitle.textContent = "P2 Gewinnt!"; }
-                    else if (!p2.alive && p1.alive) { score1++; overlayTitle.textContent = "P1 Gewinnt!"; }
-                    else { overlayTitle.textContent = "Unentschieden!"; }
-
-                    updateScoreUI();
-
-                    if (score1 >= 5 || score2 >= 5) {
-                        overlayTitle.textContent = (score1 >= 5 ? "P1" : "P2") + " SIEGT!";
-                        startBtn.textContent = "Neues Spiel";
-                        if(window.userSystem) {
-                            window.userSystem.addCoins(30);
-                            window.userSystem.addXP(80);
-                        }
-                    } else {
-                        startBtn.textContent = "Nächste Runde";
+                    // Mouse interaction
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.x -= dx * 0.02;
+                        this.y -= dy * 0.02;
                     }
-
-                    setTimeout(() => overlay.classList.remove('hidden'), 500);
                 }
-                lastTime = timestamp;
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0; // Reset
+                }
             }
 
-            requestAnimationFrame(gameLoop);
-        }
+            for (let i = 0; i < 80; i++) particles.push(new Particle());
 
-        startBtn.addEventListener('click', () => {
-            if (score1 >= 5 || score2 >= 5) startGame();
-            else initRound();
-        });
+            function animate() {
+                // Trail effect
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.3)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-        requestAnimationFrame(gameLoop);
-    </script>
+                particles.forEach(p => p.update());
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+
+                        if(dist < 80) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist/80})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => p.draw());
+                requestAnimationFrame(animate);
+            }
+            animate();
+</script>
 
     <script src="../js/user-system.js"></script>
     <script>

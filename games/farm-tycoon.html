@@ -5,124 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farm Tycoon</title>
     <link rel="stylesheet" href="../style.css">
-    <style>
-        .tycoon-container {
-            display: flex;
-            gap: 20px;
-            width: 90%;
-            max-width: 1000px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            margin-top: 60px;
-        }
-
-        .tycoon-main {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .tycoon-sidebar {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .stats-box {
-            background: #27ae60;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
-        .farm-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            width: 100%;
-        }
-
-        .plot {
-            background: #8e44ad;
-            border: 4px solid #732d91;
-            border-radius: 10px;
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.1s;
-            position: relative;
-        }
-
-        .plot.empty { background: #d35400; border-color: #a04000; }
-        .plot.growing { background: #2ecc71; border-color: #27ae60; }
-        .plot.ready { background: #f1c40f; border-color: #f39c12; animation: pulse 1s infinite; }
-
-        .plot:hover {
-            transform: scale(1.05);
-        }
-
-        .plot-icon {
-            font-size: 3rem;
-        }
-
-        .plot-timer {
-            position: absolute;
-            bottom: 5px;
-            background: rgba(0,0,0,0.5);
-            padding: 2px 5px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-        }
-
-        .upgrade-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .upgrade-btn:hover:not(:disabled) {
-            background: #2980b9;
-        }
-
-        .upgrade-btn:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="game-container">
-
     <div class="ingame-header">
         <a href="../index.html" class="back-btn">Zurück zum Portal</a>
         <h1 class="ingame-title">Farm Tycoon</h1>
@@ -130,189 +15,18 @@
             <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
         </div>
     </div>
-
-
-
-        <div class="tycoon-container">
-            <div class="tycoon-main">
-                <div class="stats-box">
-                    Geld: $<span id="money">0</span>
-                </div>
-
-                <div class="farm-grid" id="farmGrid">
-                    <!-- Plots generated via JS -->
-                </div>
-            </div>
-
-            <div class="tycoon-sidebar">
-                <h3>Samen-Shop</h3>
-                <button class="upgrade-btn" id="btn-wheat" onclick="selectSeed('wheat')">
-                    <span>🌾 Weizen-Samen</span>
-                    <span>Kosten: $10 | Wert: $20</span>
-                    <span>Dauer: 5s</span>
-                </button>
-                <button class="upgrade-btn" id="btn-carrot" onclick="selectSeed('carrot')">
-                    <span>🥕 Karotten-Samen</span>
-                    <span>Kosten: $30 | Wert: $70</span>
-                    <span>Dauer: 10s</span>
-                </button>
-                <button class="upgrade-btn" id="btn-tomato" onclick="selectSeed('tomato')">
-                    <span>🍅 Tomaten-Samen</span>
-                    <span>Kosten: $100 | Wert: $250</span>
-                    <span>Dauer: 20s</span>
-                </button>
-
-                <h3 style="margin-top: 20px;">Upgrades</h3>
-                <button class="upgrade-btn" id="btn-unlock" onclick="unlockPlot()">
-                    <span>Erweitere Feld</span>
-                    <span id="unlock-cost">Kosten: $50</span>
-                </button>
-            </div>
-        </div>
+    <div class="game-container">
+        <h2>Farm Tycoon</h2>
+        <p>Ein brandneues HTML5-Spiel!</p>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
-
-    <script>
-        let money = 50;
-        let plots = 3;
-        let maxPlots = 9;
-        let unlockCost = 50;
-        let selectedSeed = 'wheat';
-
-        const cropData = {
-            wheat: { icon: '🌾', cost: 10, value: 20, time: 5 },
-            carrot: { icon: '🥕', cost: 30, value: 70, time: 10 },
-            tomato: { icon: '🍅', cost: 100, value: 250, time: 20 }
-        };
-
-        const farmData = [];
-
-        function initFarm() {
-            for (let i = 0; i < maxPlots; i++) {
-                farmData.push({
-                    unlocked: i < plots,
-                    state: 'empty', // empty, growing, ready
-                    crop: null,
-                    timeLeft: 0,
-                    interval: null
-                });
-            }
-            renderFarm();
-            updateUI();
-        }
-
-        function renderFarm() {
-            const grid = document.getElementById('farmGrid');
-            grid.innerHTML = '';
-
-            farmData.forEach((plot, index) => {
-                if (!plot.unlocked) return;
-
-                const div = document.createElement('div');
-                div.className = `plot ${plot.state}`;
-                div.onclick = () => handlePlotClick(index);
-
-                if (plot.state === 'empty') {
-                    div.innerHTML = `<span class="plot-icon">🟫</span><span class="plot-timer">Leer</span>`;
-                } else if (plot.state === 'growing') {
-                    div.innerHTML = `
-                        <span class="plot-icon">🌱</span>
-                        <span class="plot-timer">${plot.timeLeft}s</span>
-                    `;
-                } else if (plot.state === 'ready') {
-                    div.innerHTML = `
-                        <span class="plot-icon">${cropData[plot.crop].icon}</span>
-                        <span class="plot-timer">Bereit!</span>
-                    `;
-                }
-
-                grid.appendChild(div);
-            });
-        }
-
-        function selectSeed(type) {
-            selectedSeed = type;
-            document.querySelectorAll('.tycoon-sidebar button').forEach(b => b.style.border = 'none');
-            document.getElementById(`btn-${type}`).style.border = '2px solid #f1c40f';
-        }
-
-        function handlePlotClick(index) {
-            const plot = farmData[index];
-
-            if (plot.state === 'empty') {
-                const seed = cropData[selectedSeed];
-                if (money >= seed.cost) {
-                    money -= seed.cost;
-                    plot.state = 'growing';
-                    plot.crop = selectedSeed;
-                    plot.timeLeft = seed.time;
-                    updateUI();
-                    renderFarm();
-
-                    plot.interval = setInterval(() => {
-                        plot.timeLeft--;
-                        if (plot.timeLeft <= 0) {
-                            clearInterval(plot.interval);
-                            plot.state = 'ready';
-                        }
-                        renderFarm();
-                    }, 1000);
-                }
-            } else if (plot.state === 'ready') {
-                const crop = cropData[plot.crop];
-                money += crop.value;
-                plot.state = 'empty';
-                plot.crop = null;
-                updateUI();
-                renderFarm();
-
-                // Add global XP/Coins randomly occasionally for tycoons
-                if (Math.random() > 0.7 && window.parent.userSystem) {
-                     window.parent.userSystem.addCoins(1);
-                     window.parent.userSystem.addXP(2);
-                }
-            }
-        }
-
-        function unlockPlot() {
-            if (money >= unlockCost && plots < maxPlots) {
-                money -= unlockCost;
-                farmData[plots].unlocked = true;
-                plots++;
-                unlockCost = Math.floor(unlockCost * 1.5);
-                updateUI();
-                renderFarm();
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('money').innerText = money;
-
-            document.getElementById('btn-wheat').disabled = money < cropData.wheat.cost;
-            document.getElementById('btn-carrot').disabled = money < cropData.carrot.cost;
-            document.getElementById('btn-tomato').disabled = money < cropData.tomato.cost;
-
-            const btnUnlock = document.getElementById('btn-unlock');
-            if (plots >= maxPlots) {
-                btnUnlock.innerHTML = "<span>Max Felder erreicht</span>";
-                btnUnlock.disabled = true;
-            } else {
-                document.getElementById('unlock-cost').innerText = `Kosten: $${unlockCost}`;
-                btnUnlock.disabled = money < unlockCost;
-            }
-        }
-
-        // Initialize game
-        initFarm();
-        selectSeed('wheat');
-
-    </script>
 
     <script src="../js/user-system.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const gameId = 'farm-tycoon';
             const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
+            const userSystem = new window.UserSystem();
 
             if (userSystem.isLiked(gameId)) {
                 likeBtn.classList.add('liked');
@@ -330,8 +44,200 @@
                     likeBtn.innerHTML = '♡';
                 }
             });
+
+            // Playable Particle Popper Mechanics
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            let particles = [];
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
+            let mouse = { x: -1000, y: -1000 };
+            let score = 0;
+            let combo = 0;
+            let comboTimer = 0;
+
+            canvas.addEventListener('mousemove', (e) => {
+                const r = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - r.left;
+                mouse.y = e.clientY - r.top;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                mouse.x = -1000;
+                mouse.y = -1000;
+            });
+
+            // Click to pop particles
+            canvas.addEventListener('mousedown', (e) => {
+                const r = canvas.getBoundingClientRect();
+                const mx = e.clientX - r.left;
+                const my = e.clientY - r.top;
+
+                let hit = false;
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    const dx = mx - p.x;
+                    const dy = my - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist <= p.radius * 2.5) { // generous hit box
+                        // Pop effect
+                        createExplosion(p.x, p.y, p.color);
+                        particles.splice(i, 1);
+                        hit = true;
+                        combo++;
+                        comboTimer = 60; // frames
+                        score += 10 * combo;
+
+                        // Spawn new ones to keep game going
+                        for(let k=0; k<2; k++) particles.push(new Particle());
+
+                        // Sync with global system
+                        if (window.userSystem) {
+                            window.userSystem.addXP(Math.min(combo, 5));
+                        }
+                    }
+                }
+                if (!hit) combo = 0;
+            });
+
+            let explosions = [];
+            function createExplosion(x, y, color) {
+                for(let i=0; i<8; i++) {
+                    explosions.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: (Math.random() - 0.5) * 6,
+                        life: 1.0,
+                        color: color
+                    });
+                }
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 3;
+                    this.vy = (Math.random() - 0.5) * 3;
+                    this.radius = Math.random() * 4 + 2;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Bounce off walls
+                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
+                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
+
+                    // Dodge mouse slightly
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 80) {
+                        this.vx -= dx * 0.005;
+                        this.vy -= dy * 0.005;
+                    }
+
+                    // Speed limit
+                    const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                    if (speed > 4) {
+                        this.vx = (this.vx / speed) * 4;
+                        this.vy = (this.vy / speed) * 4;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            // Init particles
+            for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+            function animate() {
+                // Clear with trail
+                ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+                // Draw connecting lines
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = dx*dx + dy*dy;
+
+                        if(dist < 7000) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+
+                // Handle explosions
+                for(let i = explosions.length - 1; i >= 0; i--) {
+                    let ex = explosions[i];
+                    ex.x += ex.vx;
+                    ex.y += ex.vy;
+                    ex.life -= 0.05;
+
+                    if(ex.life <= 0) {
+                        explosions.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+
+                // UI overlays
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px "Fredoka One", cursive';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Punkte: ${score}`, 20, 40);
+
+                if (combo > 1 && comboTimer > 0) {
+                    comboTimer--;
+                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
+                    ctx.font = 'bold 28px "Fredoka One", cursive';
+                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                } else if (comboTimer <= 0) {
+                    combo = 0;
+                }
+
+                requestAnimationFrame(animate);
+            }
+            animate();
         });
     </script>
-
 </body>
 </html>

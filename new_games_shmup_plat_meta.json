@@ -1,0 +1,3102 @@
+[
+    {
+        "id": "star-shooter-788",
+        "title": "Star Shooter 788",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 6.392221172437019,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2986310178943479,
+            "enemySpawnRate": 61
+        }
+    },
+    {
+        "id": "meteor-shooter-271",
+        "title": "Meteor Shooter 271",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.830828229332291,
+            "fireRate": 9,
+            "enemySpeedMult": 1.1943935012229154,
+            "enemySpawnRate": 52
+        }
+    },
+    {
+        "id": "astro-shooter-938",
+        "title": "Astro Shooter 938",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 6.6972035681903925,
+            "fireRate": 8,
+            "enemySpeedMult": 0.9564414907992144,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "pulsar-shooter-159",
+        "title": "Pulsar Shooter 159",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.949487985911619,
+            "fireRate": 8,
+            "enemySpeedMult": 1.2272812812101317,
+            "enemySpawnRate": 50
+        }
+    },
+    {
+        "id": "void-shooter-751",
+        "title": "Void Shooter 751",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 6.3358852463144215,
+            "fireRate": 6,
+            "enemySpeedMult": 1.1504988426948435,
+            "enemySpawnRate": 74
+        }
+    },
+    {
+        "id": "meteor-shooter-258",
+        "title": "Meteor Shooter 258",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.089925336787841,
+            "fireRate": 8,
+            "enemySpeedMult": 1.08479056950495,
+            "enemySpawnRate": 75
+        }
+    },
+    {
+        "id": "nebula-shooter-514",
+        "title": "Nebula Shooter 514",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.924791100814923,
+            "fireRate": 10,
+            "enemySpeedMult": 1.1727374662860082,
+            "enemySpawnRate": 79
+        }
+    },
+    {
+        "id": "nebula-shooter-939",
+        "title": "Nebula Shooter 939",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.9897277940961136,
+            "fireRate": 7,
+            "enemySpeedMult": 1.212817601126186,
+            "enemySpawnRate": 71
+        }
+    },
+    {
+        "id": "quasar-shooter-721",
+        "title": "Quasar Shooter 721",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.253785029344101,
+            "fireRate": 9,
+            "enemySpeedMult": 1.2467606852651023,
+            "enemySpawnRate": 79
+        }
+    },
+    {
+        "id": "astro-shooter-560",
+        "title": "Astro Shooter 560",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 5.060656358789865,
+            "fireRate": 6,
+            "enemySpeedMult": 0.9208903291003815,
+            "enemySpawnRate": 67
+        }
+    },
+    {
+        "id": "pulsar-shooter-45",
+        "title": "Pulsar Shooter 45",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 5.24149511363325,
+            "fireRate": 10,
+            "enemySpeedMult": 0.8419243419523891,
+            "enemySpawnRate": 54
+        }
+    },
+    {
+        "id": "nova-shooter-521",
+        "title": "Nova Shooter 521",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.45639585087379,
+            "fireRate": 11,
+            "enemySpeedMult": 0.9477143117060836,
+            "enemySpawnRate": 69
+        }
+    },
+    {
+        "id": "pulsar-shooter-631",
+        "title": "Pulsar Shooter 631",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.5747673110037965,
+            "fireRate": 9,
+            "enemySpeedMult": 1.0350951941863247,
+            "enemySpawnRate": 67
+        }
+    },
+    {
+        "id": "nebula-shooter-777",
+        "title": "Nebula Shooter 777",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 6.786968910316531,
+            "fireRate": 8,
+            "enemySpeedMult": 1.2421780743276583,
+            "enemySpawnRate": 72
+        }
+    },
+    {
+        "id": "galaxy-shooter-144",
+        "title": "Galaxy Shooter 144",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 6.149034552281016,
+            "fireRate": 7,
+            "enemySpeedMult": 0.9893459155689263,
+            "enemySpawnRate": 57
+        }
+    },
+    {
+        "id": "cosmic-shooter-187",
+        "title": "Cosmic Shooter 187",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.194205237188051,
+            "fireRate": 6,
+            "enemySpeedMult": 1.2850578271035373,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "pulsar-shooter-563",
+        "title": "Pulsar Shooter 563",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.927901005968026,
+            "fireRate": 11,
+            "enemySpeedMult": 1.1798741590309565,
+            "enemySpawnRate": 56
+        }
+    },
+    {
+        "id": "astro-shooter-648",
+        "title": "Astro Shooter 648",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.956156750729896,
+            "fireRate": 11,
+            "enemySpeedMult": 1.1373317108426326,
+            "enemySpawnRate": 61
+        }
+    },
+    {
+        "id": "pulsar-shooter-147",
+        "title": "Pulsar Shooter 147",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.8196048240266895,
+            "fireRate": 8,
+            "enemySpeedMult": 1.1677161706963033,
+            "enemySpawnRate": 54
+        }
+    },
+    {
+        "id": "nebula-shooter-985",
+        "title": "Nebula Shooter 985",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 5.632388887165377,
+            "fireRate": 7,
+            "enemySpeedMult": 1.064164917343839,
+            "enemySpawnRate": 65
+        }
+    },
+    {
+        "id": "nova-shooter-840",
+        "title": "Nova Shooter 840",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.422269717948779,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8504724738317079,
+            "enemySpawnRate": 54
+        }
+    },
+    {
+        "id": "pulsar-shooter-355",
+        "title": "Pulsar Shooter 355",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.852934933440755,
+            "fireRate": 11,
+            "enemySpeedMult": 0.8458216730560657,
+            "enemySpawnRate": 64
+        }
+    },
+    {
+        "id": "galaxy-shooter-620",
+        "title": "Galaxy Shooter 620",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 6.532297712048224,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8240387351226329,
+            "enemySpawnRate": 66
+        }
+    },
+    {
+        "id": "pulsar-shooter-753",
+        "title": "Pulsar Shooter 753",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.608997679736024,
+            "fireRate": 9,
+            "enemySpeedMult": 1.291370993344655,
+            "enemySpawnRate": 56
+        }
+    },
+    {
+        "id": "quasar-shooter-8",
+        "title": "Quasar Shooter 8",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 7.273241506896831,
+            "fireRate": 6,
+            "enemySpeedMult": 1.029727427713176,
+            "enemySpawnRate": 50
+        }
+    },
+    {
+        "id": "void-shooter-122",
+        "title": "Void Shooter 122",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.957113862487715,
+            "fireRate": 11,
+            "enemySpeedMult": 0.8490918546723093,
+            "enemySpawnRate": 54
+        }
+    },
+    {
+        "id": "void-shooter-11",
+        "title": "Void Shooter 11",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 7.349799153390417,
+            "fireRate": 10,
+            "enemySpeedMult": 0.8498424411689774,
+            "enemySpawnRate": 63
+        }
+    },
+    {
+        "id": "nebula-shooter-824",
+        "title": "Nebula Shooter 824",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 7.989121195867231,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2245654069185523,
+            "enemySpawnRate": 53
+        }
+    },
+    {
+        "id": "galaxy-shooter-219",
+        "title": "Galaxy Shooter 219",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.832112042500686,
+            "fireRate": 11,
+            "enemySpeedMult": 1.2829869797545812,
+            "enemySpawnRate": 61
+        }
+    },
+    {
+        "id": "meteor-shooter-7",
+        "title": "Meteor Shooter 7",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.34360956806925,
+            "fireRate": 6,
+            "enemySpeedMult": 1.2671376179413942,
+            "enemySpawnRate": 57
+        }
+    },
+    {
+        "id": "astro-shooter-145",
+        "title": "Astro Shooter 145",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 5.2845429254547245,
+            "fireRate": 6,
+            "enemySpeedMult": 1.1762639053012518,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "void-shooter-932",
+        "title": "Void Shooter 932",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.123584942372392,
+            "fireRate": 6,
+            "enemySpeedMult": 1.245238288816431,
+            "enemySpawnRate": 74
+        }
+    },
+    {
+        "id": "meteor-shooter-817",
+        "title": "Meteor Shooter 817",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.203255201099598,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8034598674062814,
+            "enemySpawnRate": 79
+        }
+    },
+    {
+        "id": "galaxy-shooter-544",
+        "title": "Galaxy Shooter 544",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 5.682692097402683,
+            "fireRate": 11,
+            "enemySpeedMult": 1.017715481769109,
+            "enemySpawnRate": 69
+        }
+    },
+    {
+        "id": "pulsar-shooter-814",
+        "title": "Pulsar Shooter 814",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 6.944821425819572,
+            "fireRate": 7,
+            "enemySpeedMult": 1.2516940990891499,
+            "enemySpawnRate": 54
+        }
+    },
+    {
+        "id": "pulsar-shooter-696",
+        "title": "Pulsar Shooter 696",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 7.022878919877979,
+            "fireRate": 10,
+            "enemySpeedMult": 1.100920280561314,
+            "enemySpawnRate": 65
+        }
+    },
+    {
+        "id": "cosmic-shooter-855",
+        "title": "Cosmic Shooter 855",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.955489211972542,
+            "fireRate": 9,
+            "enemySpeedMult": 1.2829989251899523,
+            "enemySpawnRate": 61
+        }
+    },
+    {
+        "id": "nebula-shooter-706",
+        "title": "Nebula Shooter 706",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.051211087496489,
+            "fireRate": 10,
+            "enemySpeedMult": 0.9589913517101277,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "star-shooter-120",
+        "title": "Star Shooter 120",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.141160099117588,
+            "fireRate": 9,
+            "enemySpeedMult": 1.0283310846228235,
+            "enemySpawnRate": 62
+        }
+    },
+    {
+        "id": "quasar-shooter-271",
+        "title": "Quasar Shooter 271",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.66753603505395,
+            "fireRate": 7,
+            "enemySpeedMult": 1.164673059840186,
+            "enemySpawnRate": 67
+        }
+    },
+    {
+        "id": "quasar-shooter-614",
+        "title": "Quasar Shooter 614",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.21455535346048,
+            "fireRate": 11,
+            "enemySpeedMult": 0.9610658083649593,
+            "enemySpawnRate": 57
+        }
+    },
+    {
+        "id": "meteor-shooter-776",
+        "title": "Meteor Shooter 776",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.692537315608548,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8946111092654746,
+            "enemySpawnRate": 56
+        }
+    },
+    {
+        "id": "nova-shooter-986",
+        "title": "Nova Shooter 986",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 6.090847542582769,
+            "fireRate": 10,
+            "enemySpeedMult": 1.1475053515791689,
+            "enemySpawnRate": 68
+        }
+    },
+    {
+        "id": "meteor-shooter-89",
+        "title": "Meteor Shooter 89",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 5.1924741168061015,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8864976278516743,
+            "enemySpawnRate": 51
+        }
+    },
+    {
+        "id": "cosmic-shooter-385",
+        "title": "Cosmic Shooter 385",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.28682045798315,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8862925467601273,
+            "enemySpawnRate": 76
+        }
+    },
+    {
+        "id": "astro-shooter-755",
+        "title": "Astro Shooter 755",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 7.563315835604763,
+            "fireRate": 9,
+            "enemySpeedMult": 0.828804509341984,
+            "enemySpawnRate": 56
+        }
+    },
+    {
+        "id": "astro-shooter-4",
+        "title": "Astro Shooter 4",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 6.531171797308436,
+            "fireRate": 11,
+            "enemySpeedMult": 1.066948873058161,
+            "enemySpawnRate": 62
+        }
+    },
+    {
+        "id": "astro-shooter-11",
+        "title": "Astro Shooter 11",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.761795934265544,
+            "fireRate": 7,
+            "enemySpeedMult": 0.8837972732203092,
+            "enemySpawnRate": 51
+        }
+    },
+    {
+        "id": "pulsar-shooter-297",
+        "title": "Pulsar Shooter 297",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 7.929297657714519,
+            "fireRate": 11,
+            "enemySpeedMult": 1.232928918188568,
+            "enemySpawnRate": 58
+        }
+    },
+    {
+        "id": "star-shooter-673",
+        "title": "Star Shooter 673",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 7.728059420478809,
+            "fireRate": 11,
+            "enemySpeedMult": 1.1957526062176802,
+            "enemySpawnRate": 55
+        }
+    },
+    {
+        "id": "cosmic-shooter-584",
+        "title": "Cosmic Shooter 584",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 6.8805030733729176,
+            "fireRate": 9,
+            "enemySpeedMult": 1.2756638314488256,
+            "enemySpawnRate": 69
+        }
+    },
+    {
+        "id": "nova-shooter-887",
+        "title": "Nova Shooter 887",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.724423516211316,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2468962022890853,
+            "enemySpawnRate": 64
+        }
+    },
+    {
+        "id": "meteor-shooter-195",
+        "title": "Meteor Shooter 195",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.717635585325921,
+            "fireRate": 6,
+            "enemySpeedMult": 1.2769972476017468,
+            "enemySpawnRate": 64
+        }
+    },
+    {
+        "id": "pulsar-shooter-682",
+        "title": "Pulsar Shooter 682",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.629075620558676,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8993047644346416,
+            "enemySpawnRate": 64
+        }
+    },
+    {
+        "id": "pulsar-shooter-761",
+        "title": "Pulsar Shooter 761",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 5.298790024058312,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8501397456551468,
+            "enemySpawnRate": 51
+        }
+    },
+    {
+        "id": "galaxy-shooter-272",
+        "title": "Galaxy Shooter 272",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.94883407786867,
+            "fireRate": 7,
+            "enemySpeedMult": 1.0087147260407918,
+            "enemySpawnRate": 60
+        }
+    },
+    {
+        "id": "star-shooter-926",
+        "title": "Star Shooter 926",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.279709781981197,
+            "fireRate": 11,
+            "enemySpeedMult": 0.8537703743351877,
+            "enemySpawnRate": 75
+        }
+    },
+    {
+        "id": "quasar-shooter-8",
+        "title": "Quasar Shooter 8",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.544720580458925,
+            "fireRate": 7,
+            "enemySpeedMult": 0.8064185328231891,
+            "enemySpawnRate": 67
+        }
+    },
+    {
+        "id": "pulsar-shooter-582",
+        "title": "Pulsar Shooter 582",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.234894805216956,
+            "fireRate": 11,
+            "enemySpeedMult": 1.0575139886869214,
+            "enemySpawnRate": 52
+        }
+    },
+    {
+        "id": "nebula-shooter-358",
+        "title": "Nebula Shooter 358",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 7.421828796404093,
+            "fireRate": 7,
+            "enemySpeedMult": 0.9256452042848727,
+            "enemySpawnRate": 52
+        }
+    },
+    {
+        "id": "galaxy-shooter-301",
+        "title": "Galaxy Shooter 301",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.720394846474191,
+            "fireRate": 7,
+            "enemySpeedMult": 1.1847200113322998,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "void-shooter-391",
+        "title": "Void Shooter 391",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.432726644601094,
+            "fireRate": 8,
+            "enemySpeedMult": 1.0063739444145283,
+            "enemySpawnRate": 58
+        }
+    },
+    {
+        "id": "nova-shooter-395",
+        "title": "Nova Shooter 395",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 5.407763384506183,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8369440108755681,
+            "enemySpawnRate": 53
+        }
+    },
+    {
+        "id": "nebula-shooter-83",
+        "title": "Nebula Shooter 83",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 6.217810194814553,
+            "fireRate": 7,
+            "enemySpeedMult": 1.232786582052044,
+            "enemySpawnRate": 70
+        }
+    },
+    {
+        "id": "cosmic-shooter-208",
+        "title": "Cosmic Shooter 208",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.876045336593873,
+            "fireRate": 9,
+            "enemySpeedMult": 0.8651202669275945,
+            "enemySpawnRate": 55
+        }
+    },
+    {
+        "id": "astro-shooter-554",
+        "title": "Astro Shooter 554",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 5.17206769085732,
+            "fireRate": 8,
+            "enemySpeedMult": 1.030001033354658,
+            "enemySpawnRate": 64
+        }
+    },
+    {
+        "id": "meteor-shooter-52",
+        "title": "Meteor Shooter 52",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 6.2578782533635025,
+            "fireRate": 6,
+            "enemySpeedMult": 0.8077343762251987,
+            "enemySpawnRate": 74
+        }
+    },
+    {
+        "id": "cosmic-shooter-209",
+        "title": "Cosmic Shooter 209",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.4078777485812335,
+            "fireRate": 8,
+            "enemySpeedMult": 1.2767574004743727,
+            "enemySpawnRate": 57
+        }
+    },
+    {
+        "id": "galaxy-shooter-891",
+        "title": "Galaxy Shooter 891",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 7.827953769603886,
+            "fireRate": 9,
+            "enemySpeedMult": 1.1316469700991312,
+            "enemySpawnRate": 69
+        }
+    },
+    {
+        "id": "meteor-shooter-193",
+        "title": "Meteor Shooter 193",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 6.214718416430744,
+            "fireRate": 11,
+            "enemySpeedMult": 0.8938848643935228,
+            "enemySpawnRate": 57
+        }
+    },
+    {
+        "id": "astro-shooter-525",
+        "title": "Astro Shooter 525",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.279040702343532,
+            "fireRate": 10,
+            "enemySpeedMult": 1.0895526870688381,
+            "enemySpawnRate": 75
+        }
+    },
+    {
+        "id": "galaxy-shooter-917",
+        "title": "Galaxy Shooter 917",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 6.832308483982624,
+            "fireRate": 9,
+            "enemySpeedMult": 1.1098335572948417,
+            "enemySpawnRate": 53
+        }
+    },
+    {
+        "id": "astro-shooter-116",
+        "title": "Astro Shooter 116",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.552578248010299,
+            "fireRate": 6,
+            "enemySpeedMult": 1.0522204138117994,
+            "enemySpawnRate": 75
+        }
+    },
+    {
+        "id": "cosmic-shooter-139",
+        "title": "Cosmic Shooter 139",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.474370395861341,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8769332442567362,
+            "enemySpawnRate": 68
+        }
+    },
+    {
+        "id": "galaxy-shooter-300",
+        "title": "Galaxy Shooter 300",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.294623871890397,
+            "fireRate": 9,
+            "enemySpeedMult": 1.2361215077216494,
+            "enemySpawnRate": 72
+        }
+    },
+    {
+        "id": "astro-shooter-836",
+        "title": "Astro Shooter 836",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 6.965656558055635,
+            "fireRate": 10,
+            "enemySpeedMult": 1.0328820267533656,
+            "enemySpawnRate": 79
+        }
+    },
+    {
+        "id": "meteor-shooter-477",
+        "title": "Meteor Shooter 477",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.658311426594902,
+            "fireRate": 6,
+            "enemySpeedMult": 0.8827597754765183,
+            "enemySpawnRate": 53
+        }
+    },
+    {
+        "id": "pulsar-shooter-725",
+        "title": "Pulsar Shooter 725",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 5.226267550344979,
+            "fireRate": 9,
+            "enemySpeedMult": 0.9792041535316623,
+            "enemySpawnRate": 79
+        }
+    },
+    {
+        "id": "void-shooter-568",
+        "title": "Void Shooter 568",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 5.989764313192964,
+            "fireRate": 11,
+            "enemySpeedMult": 1.0559443712902374,
+            "enemySpawnRate": 72
+        }
+    },
+    {
+        "id": "quasar-shooter-334",
+        "title": "Quasar Shooter 334",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 6.731154280301054,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2997236032002157,
+            "enemySpawnRate": 55
+        }
+    },
+    {
+        "id": "astro-shooter-110",
+        "title": "Astro Shooter 110",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.694690944476345,
+            "fireRate": 7,
+            "enemySpeedMult": 1.0336820760670231,
+            "enemySpawnRate": 65
+        }
+    },
+    {
+        "id": "pulsar-shooter-897",
+        "title": "Pulsar Shooter 897",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.201789379043422,
+            "fireRate": 10,
+            "enemySpeedMult": 1.1945691248278278,
+            "enemySpawnRate": 56
+        }
+    },
+    {
+        "id": "nebula-shooter-634",
+        "title": "Nebula Shooter 634",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 7.766994100125956,
+            "fireRate": 6,
+            "enemySpeedMult": 1.2668032530012105,
+            "enemySpawnRate": 74
+        }
+    },
+    {
+        "id": "nova-shooter-293",
+        "title": "Nova Shooter 293",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 6.590353131216699,
+            "fireRate": 7,
+            "enemySpeedMult": 1.2867007881577441,
+            "enemySpawnRate": 71
+        }
+    },
+    {
+        "id": "nova-shooter-699",
+        "title": "Nova Shooter 699",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 7.20143105738423,
+            "fireRate": 11,
+            "enemySpeedMult": 0.9581860251834279,
+            "enemySpawnRate": 62
+        }
+    },
+    {
+        "id": "nebula-shooter-83",
+        "title": "Nebula Shooter 83",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 6.0426819378891246,
+            "fireRate": 7,
+            "enemySpeedMult": 0.847926511715889,
+            "enemySpawnRate": 60
+        }
+    },
+    {
+        "id": "nebula-shooter-765",
+        "title": "Nebula Shooter 765",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 5.157100957633033,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2711297326819937,
+            "enemySpawnRate": 59
+        }
+    },
+    {
+        "id": "void-shooter-514",
+        "title": "Void Shooter 514",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 5.98588376138982,
+            "fireRate": 9,
+            "enemySpeedMult": 1.1291465928526003,
+            "enemySpawnRate": 62
+        }
+    },
+    {
+        "id": "nebula-shooter-992",
+        "title": "Nebula Shooter 992",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.5962706124734565,
+            "fireRate": 10,
+            "enemySpeedMult": 0.844297544542124,
+            "enemySpawnRate": 78
+        }
+    },
+    {
+        "id": "galaxy-shooter-513",
+        "title": "Galaxy Shooter 513",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffffff",
+            "playerSpeed": 7.778509809182935,
+            "fireRate": 7,
+            "enemySpeedMult": 1.0913112195637988,
+            "enemySpawnRate": 78
+        }
+    },
+    {
+        "id": "pulsar-shooter-397",
+        "title": "Pulsar Shooter 397",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.095429507504649,
+            "fireRate": 10,
+            "enemySpeedMult": 1.2689036657376316,
+            "enemySpawnRate": 61
+        }
+    },
+    {
+        "id": "pulsar-shooter-177",
+        "title": "Pulsar Shooter 177",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ffff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ffff00",
+            "playerSpeed": 6.85687959497228,
+            "fireRate": 6,
+            "enemySpeedMult": 1.0332380387387508,
+            "enemySpawnRate": 72
+        }
+    },
+    {
+        "id": "nebula-shooter-362",
+        "title": "Nebula Shooter 362",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff0000)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff0000",
+            "playerSpeed": 5.681629021705984,
+            "fireRate": 9,
+            "enemySpeedMult": 1.145177055448488,
+            "enemySpawnRate": 51
+        }
+    },
+    {
+        "id": "pulsar-shooter-844",
+        "title": "Pulsar Shooter 844",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 6.308999900986505,
+            "fireRate": 8,
+            "enemySpeedMult": 0.976115292912447,
+            "enemySpawnRate": 63
+        }
+    },
+    {
+        "id": "astro-shooter-794",
+        "title": "Astro Shooter 794",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #ff00ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#ff00ff",
+            "playerSpeed": 7.259008012286253,
+            "fireRate": 10,
+            "enemySpeedMult": 1.1912507135536532,
+            "enemySpawnRate": 55
+        }
+    },
+    {
+        "id": "star-shooter-226",
+        "title": "Star Shooter 226",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 6.505335683554305,
+            "fireRate": 10,
+            "enemySpeedMult": 1.0078496369593528,
+            "enemySpawnRate": 55
+        }
+    },
+    {
+        "id": "cosmic-shooter-171",
+        "title": "Cosmic Shooter 171",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.648788722845711,
+            "fireRate": 6,
+            "enemySpeedMult": 0.9632387542702945,
+            "enemySpawnRate": 51
+        }
+    },
+    {
+        "id": "pulsar-shooter-1",
+        "title": "Pulsar Shooter 1",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ff00)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ff00",
+            "playerSpeed": 5.244168170265944,
+            "fireRate": 10,
+            "enemySpeedMult": 1.1994747644298815,
+            "enemySpawnRate": 70
+        }
+    },
+    {
+        "id": "star-shooter-407",
+        "title": "Star Shooter 407",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #0000ff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#0000ff",
+            "playerSpeed": 6.101714092395235,
+            "fireRate": 7,
+            "enemySpeedMult": 0.8866779900475276,
+            "enemySpawnRate": 52
+        }
+    },
+    {
+        "id": "star-shooter-181",
+        "title": "Star Shooter 181",
+        "icon": "🚀",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0a0a1a, #00ffff)",
+        "type": "shmup",
+        "config": {
+            "themeColor": "#00ffff",
+            "playerSpeed": 7.148239755759448,
+            "fireRate": 8,
+            "enemySpeedMult": 0.8208626322163991,
+            "enemySpawnRate": 73
+        }
+    },
+    {
+        "id": "gravity-dash-239",
+        "title": "Gravity Dash 239",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.5597651401559265,
+            "gravity": 0.6481477811097857,
+            "jumpForce": -14.618901068009471
+        }
+    },
+    {
+        "id": "gravity-runner-688",
+        "title": "Gravity Runner 688",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.590311396260699,
+            "gravity": 0.5460851354697825,
+            "jumpForce": -12.94499111870509
+        }
+    },
+    {
+        "id": "gravity-bounce-85",
+        "title": "Gravity Bounce 85",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 5.894561087294362,
+            "gravity": 0.5288658456853298,
+            "jumpForce": -14.43232080875115
+        }
+    },
+    {
+        "id": "gravity-vault-582",
+        "title": "Gravity Vault 582",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 5.651978887832536,
+            "gravity": 0.5768751151988021,
+            "jumpForce": -14.742036610069368
+        }
+    },
+    {
+        "id": "gravity-vault-736",
+        "title": "Gravity Vault 736",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 4.752969519720216,
+            "gravity": 0.760615389638861,
+            "jumpForce": -10.421807495262456
+        }
+    },
+    {
+        "id": "gravity-dash-38",
+        "title": "Gravity Dash 38",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.16304370119056,
+            "gravity": 0.6772930339137828,
+            "jumpForce": -11.423036099897502
+        }
+    },
+    {
+        "id": "gravity-runner-262",
+        "title": "Gravity Runner 262",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 6.851789631846295,
+            "gravity": 0.5409683677303946,
+            "jumpForce": -10.486667028793374
+        }
+    },
+    {
+        "id": "gravity-bound-829",
+        "title": "Gravity Bound 829",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.230118222186953,
+            "gravity": 0.5870983491983051,
+            "jumpForce": -11.583096058233147
+        }
+    },
+    {
+        "id": "gravity-runner-29",
+        "title": "Gravity Runner 29",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.6480515584715505,
+            "gravity": 0.7412084734589628,
+            "jumpForce": -13.768299773333576
+        }
+    },
+    {
+        "id": "gravity-vault-427",
+        "title": "Gravity Vault 427",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.1189375028827175,
+            "gravity": 0.581800265687132,
+            "jumpForce": -11.918470113385213
+        }
+    },
+    {
+        "id": "gravity-rush-632",
+        "title": "Gravity Rush 632",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.6384461222331765,
+            "gravity": 0.7466781277023474,
+            "jumpForce": -10.20020385258243
+        }
+    },
+    {
+        "id": "gravity-bound-458",
+        "title": "Gravity Bound 458",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.991168009807023,
+            "gravity": 0.5751057916919216,
+            "jumpForce": -12.477612946994356
+        }
+    },
+    {
+        "id": "gravity-jump-785",
+        "title": "Gravity Jump 785",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 5.6625670917499455,
+            "gravity": 0.6111911817188683,
+            "jumpForce": -13.172617818463973
+        }
+    },
+    {
+        "id": "gravity-vault-150",
+        "title": "Gravity Vault 150",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.237587159288637,
+            "gravity": 0.6173133515707521,
+            "jumpForce": -14.282018941304775
+        }
+    },
+    {
+        "id": "gravity-rush-236",
+        "title": "Gravity Rush 236",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 5.97740557098537,
+            "gravity": 0.5366314087306792,
+            "jumpForce": -12.04016320301768
+        }
+    },
+    {
+        "id": "gravity-jump-317",
+        "title": "Gravity Jump 317",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 5.5056969400624025,
+            "gravity": 0.7120292609006204,
+            "jumpForce": -11.627626660699324
+        }
+    },
+    {
+        "id": "gravity-runner-775",
+        "title": "Gravity Runner 775",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.303793019643334,
+            "gravity": 0.5092448176928103,
+            "jumpForce": -10.840556745012487
+        }
+    },
+    {
+        "id": "gravity-bound-443",
+        "title": "Gravity Bound 443",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.2949876371860185,
+            "gravity": 0.539216822156519,
+            "jumpForce": -11.768352222094142
+        }
+    },
+    {
+        "id": "gravity-bounce-989",
+        "title": "Gravity Bounce 989",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.696318533181417,
+            "gravity": 0.7435236377873876,
+            "jumpForce": -10.648458815443725
+        }
+    },
+    {
+        "id": "gravity-bounce-534",
+        "title": "Gravity Bounce 534",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.268880284313254,
+            "gravity": 0.6286341155227407,
+            "jumpForce": -11.01030421030214
+        }
+    },
+    {
+        "id": "gravity-runner-424",
+        "title": "Gravity Runner 424",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.634215934786111,
+            "gravity": 0.7175345045596894,
+            "jumpForce": -12.12937903690939
+        }
+    },
+    {
+        "id": "gravity-leap-635",
+        "title": "Gravity Leap 635",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.473825135967915,
+            "gravity": 0.5880669096401105,
+            "jumpForce": -11.677370198684024
+        }
+    },
+    {
+        "id": "gravity-runner-504",
+        "title": "Gravity Runner 504",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.3780516282742,
+            "gravity": 0.7724803944778966,
+            "jumpForce": -12.911589164298007
+        }
+    },
+    {
+        "id": "gravity-sprint-165",
+        "title": "Gravity Sprint 165",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.199434972897655,
+            "gravity": 0.6739303409423831,
+            "jumpForce": -11.854791556473206
+        }
+    },
+    {
+        "id": "gravity-leap-528",
+        "title": "Gravity Leap 528",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.237083026024905,
+            "gravity": 0.6376423864604445,
+            "jumpForce": -13.746821802571933
+        }
+    },
+    {
+        "id": "gravity-flip-12",
+        "title": "Gravity Flip 12",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.335799992098433,
+            "gravity": 0.6508778192542142,
+            "jumpForce": -14.491785452433925
+        }
+    },
+    {
+        "id": "gravity-vault-689",
+        "title": "Gravity Vault 689",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 5.347727308916077,
+            "gravity": 0.7982207715196035,
+            "jumpForce": -12.45679196133268
+        }
+    },
+    {
+        "id": "gravity-rush-569",
+        "title": "Gravity Rush 569",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.7268087043819795,
+            "gravity": 0.7722552895736625,
+            "jumpForce": -12.978279176559155
+        }
+    },
+    {
+        "id": "gravity-vault-899",
+        "title": "Gravity Vault 899",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.716409151259986,
+            "gravity": 0.6721001567496868,
+            "jumpForce": -13.160376581855067
+        }
+    },
+    {
+        "id": "gravity-rush-325",
+        "title": "Gravity Rush 325",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.057364280856682,
+            "gravity": 0.6682142954595262,
+            "jumpForce": -12.18204159228959
+        }
+    },
+    {
+        "id": "gravity-vault-627",
+        "title": "Gravity Vault 627",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.8240074922249505,
+            "gravity": 0.6552484437138049,
+            "jumpForce": -11.246379193192704
+        }
+    },
+    {
+        "id": "gravity-jump-74",
+        "title": "Gravity Jump 74",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.345964280242028,
+            "gravity": 0.7363163019452229,
+            "jumpForce": -10.845634935887349
+        }
+    },
+    {
+        "id": "gravity-sprint-315",
+        "title": "Gravity Sprint 315",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.071428360835766,
+            "gravity": 0.5104865253315561,
+            "jumpForce": -11.689778772260503
+        }
+    },
+    {
+        "id": "gravity-jump-965",
+        "title": "Gravity Jump 965",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.3892943267706785,
+            "gravity": 0.6855154612063951,
+            "jumpForce": -14.915337371703126
+        }
+    },
+    {
+        "id": "gravity-jump-783",
+        "title": "Gravity Jump 783",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.4117699268868975,
+            "gravity": 0.7160625211279006,
+            "jumpForce": -12.918890913325455
+        }
+    },
+    {
+        "id": "gravity-runner-912",
+        "title": "Gravity Runner 912",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.333817061810997,
+            "gravity": 0.5830550807298678,
+            "jumpForce": -10.493579664968681
+        }
+    },
+    {
+        "id": "gravity-rush-628",
+        "title": "Gravity Rush 628",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 6.704507778250898,
+            "gravity": 0.7776913271644437,
+            "jumpForce": -13.318353080758929
+        }
+    },
+    {
+        "id": "gravity-bounce-219",
+        "title": "Gravity Bounce 219",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.954374481943485,
+            "gravity": 0.6431308457836601,
+            "jumpForce": -10.23046739544114
+        }
+    },
+    {
+        "id": "gravity-flip-281",
+        "title": "Gravity Flip 281",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 5.470912995584257,
+            "gravity": 0.78677612347942,
+            "jumpForce": -14.133548351390903
+        }
+    },
+    {
+        "id": "gravity-leap-133",
+        "title": "Gravity Leap 133",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.920134086619608,
+            "gravity": 0.794585341278865,
+            "jumpForce": -13.846594358545115
+        }
+    },
+    {
+        "id": "gravity-leap-882",
+        "title": "Gravity Leap 882",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.997854280803997,
+            "gravity": 0.6054429492492127,
+            "jumpForce": -11.880635485021706
+        }
+    },
+    {
+        "id": "gravity-sprint-604",
+        "title": "Gravity Sprint 604",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.391121668576975,
+            "gravity": 0.5271819920115787,
+            "jumpForce": -10.498500577707286
+        }
+    },
+    {
+        "id": "gravity-vault-278",
+        "title": "Gravity Vault 278",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.422444016846677,
+            "gravity": 0.6340602566915562,
+            "jumpForce": -11.083659854858228
+        }
+    },
+    {
+        "id": "gravity-leap-296",
+        "title": "Gravity Leap 296",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.869109754915844,
+            "gravity": 0.5675384931748689,
+            "jumpForce": -12.355084246685347
+        }
+    },
+    {
+        "id": "gravity-bounce-165",
+        "title": "Gravity Bounce 165",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.659326820667706,
+            "gravity": 0.7881256526479321,
+            "jumpForce": -13.16107144956255
+        }
+    },
+    {
+        "id": "gravity-runner-790",
+        "title": "Gravity Runner 790",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.554872547198406,
+            "gravity": 0.6970196441203834,
+            "jumpForce": -14.556358818251235
+        }
+    },
+    {
+        "id": "gravity-jump-727",
+        "title": "Gravity Jump 727",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.674472772797323,
+            "gravity": 0.7438891648180939,
+            "jumpForce": -11.003904852463178
+        }
+    },
+    {
+        "id": "gravity-runner-387",
+        "title": "Gravity Runner 387",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.121802277444933,
+            "gravity": 0.5503988711149067,
+            "jumpForce": -11.120734866750585
+        }
+    },
+    {
+        "id": "gravity-bounce-560",
+        "title": "Gravity Bounce 560",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.028306561541616,
+            "gravity": 0.783711169307463,
+            "jumpForce": -12.744309798715353
+        }
+    },
+    {
+        "id": "gravity-rush-373",
+        "title": "Gravity Rush 373",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.967723260891707,
+            "gravity": 0.5874580826793695,
+            "jumpForce": -12.575276857088298
+        }
+    },
+    {
+        "id": "gravity-rush-690",
+        "title": "Gravity Rush 690",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.164836766369373,
+            "gravity": 0.7766419551763655,
+            "jumpForce": -12.239887206853979
+        }
+    },
+    {
+        "id": "gravity-sprint-672",
+        "title": "Gravity Sprint 672",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 5.54016455802732,
+            "gravity": 0.656259273729078,
+            "jumpForce": -12.692427970178018
+        }
+    },
+    {
+        "id": "gravity-sprint-937",
+        "title": "Gravity Sprint 937",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 6.601772460513666,
+            "gravity": 0.6816558059529505,
+            "jumpForce": -12.709250337659764
+        }
+    },
+    {
+        "id": "gravity-flip-407",
+        "title": "Gravity Flip 407",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.425012277478471,
+            "gravity": 0.7670755883879292,
+            "jumpForce": -14.786448385787306
+        }
+    },
+    {
+        "id": "gravity-vault-529",
+        "title": "Gravity Vault 529",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.785194638038856,
+            "gravity": 0.7946089570448718,
+            "jumpForce": -14.798357420084
+        }
+    },
+    {
+        "id": "gravity-dash-577",
+        "title": "Gravity Dash 577",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.4492691019898505,
+            "gravity": 0.5291123836900803,
+            "jumpForce": -11.685738807560249
+        }
+    },
+    {
+        "id": "gravity-jump-472",
+        "title": "Gravity Jump 472",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.547947352489909,
+            "gravity": 0.6718250692542174,
+            "jumpForce": -11.581806495383027
+        }
+    },
+    {
+        "id": "gravity-runner-873",
+        "title": "Gravity Runner 873",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 4.7437870627153975,
+            "gravity": 0.72955460652767,
+            "jumpForce": -14.344123683272745
+        }
+    },
+    {
+        "id": "gravity-runner-661",
+        "title": "Gravity Runner 661",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.11532716899706,
+            "gravity": 0.6591241854180172,
+            "jumpForce": -12.130572027383472
+        }
+    },
+    {
+        "id": "gravity-bound-8",
+        "title": "Gravity Bound 8",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.765316072113312,
+            "gravity": 0.6564817360904984,
+            "jumpForce": -12.816674109273773
+        }
+    },
+    {
+        "id": "gravity-sprint-72",
+        "title": "Gravity Sprint 72",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 5.79573371859747,
+            "gravity": 0.7444632281486457,
+            "jumpForce": -13.223268940778732
+        }
+    },
+    {
+        "id": "gravity-rush-925",
+        "title": "Gravity Rush 925",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.955217926846325,
+            "gravity": 0.6111086078579773,
+            "jumpForce": -14.677316130904721
+        }
+    },
+    {
+        "id": "gravity-bounce-208",
+        "title": "Gravity Bounce 208",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.169832440717755,
+            "gravity": 0.5121309188405293,
+            "jumpForce": -11.408385811955577
+        }
+    },
+    {
+        "id": "gravity-jump-275",
+        "title": "Gravity Jump 275",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.551174614740736,
+            "gravity": 0.7417532861705791,
+            "jumpForce": -10.77939914223483
+        }
+    },
+    {
+        "id": "gravity-bound-2",
+        "title": "Gravity Bound 2",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.115436035474879,
+            "gravity": 0.6279647639380732,
+            "jumpForce": -11.827625343915509
+        }
+    },
+    {
+        "id": "gravity-bounce-135",
+        "title": "Gravity Bounce 135",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.020092775586402,
+            "gravity": 0.6470853364519052,
+            "jumpForce": -14.269830972554
+        }
+    },
+    {
+        "id": "gravity-flip-547",
+        "title": "Gravity Flip 547",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.193604887412606,
+            "gravity": 0.5369700766865351,
+            "jumpForce": -11.289464962500997
+        }
+    },
+    {
+        "id": "gravity-jump-422",
+        "title": "Gravity Jump 422",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.394948864306111,
+            "gravity": 0.6759050654252587,
+            "jumpForce": -13.043502423885158
+        }
+    },
+    {
+        "id": "gravity-runner-608",
+        "title": "Gravity Runner 608",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 6.292975374194058,
+            "gravity": 0.6877854302209296,
+            "jumpForce": -13.093946571428807
+        }
+    },
+    {
+        "id": "gravity-bound-316",
+        "title": "Gravity Bound 316",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.692939816986689,
+            "gravity": 0.6301609950784732,
+            "jumpForce": -10.870086937957902
+        }
+    },
+    {
+        "id": "gravity-leap-739",
+        "title": "Gravity Leap 739",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.817677937294172,
+            "gravity": 0.6552503688902193,
+            "jumpForce": -14.999436285038254
+        }
+    },
+    {
+        "id": "gravity-leap-594",
+        "title": "Gravity Leap 594",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.713722567201588,
+            "gravity": 0.6449780447243623,
+            "jumpForce": -10.809505838288636
+        }
+    },
+    {
+        "id": "gravity-leap-880",
+        "title": "Gravity Leap 880",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.913874266578024,
+            "gravity": 0.7836300852220194,
+            "jumpForce": -14.545125202014235
+        }
+    },
+    {
+        "id": "gravity-rush-121",
+        "title": "Gravity Rush 121",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 4.950081667366758,
+            "gravity": 0.521930525943417,
+            "jumpForce": -13.271503387063763
+        }
+    },
+    {
+        "id": "gravity-leap-353",
+        "title": "Gravity Leap 353",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 5.957844106734539,
+            "gravity": 0.7658778565132749,
+            "jumpForce": -12.027962287292418
+        }
+    },
+    {
+        "id": "gravity-bounce-610",
+        "title": "Gravity Bounce 610",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.758433030938534,
+            "gravity": 0.7293953862487572,
+            "jumpForce": -12.530757582735443
+        }
+    },
+    {
+        "id": "gravity-sprint-818",
+        "title": "Gravity Sprint 818",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 5.6516185436882935,
+            "gravity": 0.7588408228886689,
+            "jumpForce": -10.045536352012945
+        }
+    },
+    {
+        "id": "gravity-rush-667",
+        "title": "Gravity Rush 667",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.927829762585889,
+            "gravity": 0.519099474857666,
+            "jumpForce": -11.29788975210393
+        }
+    },
+    {
+        "id": "gravity-rush-419",
+        "title": "Gravity Rush 419",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.179647158506169,
+            "gravity": 0.6063171247198137,
+            "jumpForce": -14.023003932301098
+        }
+    },
+    {
+        "id": "gravity-jump-80",
+        "title": "Gravity Jump 80",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.234151361499259,
+            "gravity": 0.5480738676986348,
+            "jumpForce": -14.232736585862689
+        }
+    },
+    {
+        "id": "gravity-bounce-272",
+        "title": "Gravity Bounce 272",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.908640726010723,
+            "gravity": 0.7081633302200576,
+            "jumpForce": -11.87035995706746
+        }
+    },
+    {
+        "id": "gravity-bounce-201",
+        "title": "Gravity Bounce 201",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.28386464799369,
+            "gravity": 0.6177286057081062,
+            "jumpForce": -11.295356687113006
+        }
+    },
+    {
+        "id": "gravity-leap-625",
+        "title": "Gravity Leap 625",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.006987630962344,
+            "gravity": 0.7976186624334898,
+            "jumpForce": -14.8194882981268
+        }
+    },
+    {
+        "id": "gravity-rush-71",
+        "title": "Gravity Rush 71",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.8947939761227826,
+            "gravity": 0.6252694858108767,
+            "jumpForce": -10.682259746199952
+        }
+    },
+    {
+        "id": "gravity-jump-587",
+        "title": "Gravity Jump 587",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2980b9, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2980b9",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.557327050615967,
+            "gravity": 0.6055200843630338,
+            "jumpForce": -12.772671612393994
+        }
+    },
+    {
+        "id": "gravity-rush-362",
+        "title": "Gravity Rush 362",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 6.883072496065624,
+            "gravity": 0.7051424547590308,
+            "jumpForce": -13.76474356695951
+        }
+    },
+    {
+        "id": "gravity-runner-601",
+        "title": "Gravity Runner 601",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #e74c3c)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#e74c3c",
+            "gameSpeed": 5.17567720605621,
+            "gravity": 0.7313478904298967,
+            "jumpForce": -14.126445917643727
+        }
+    },
+    {
+        "id": "gravity-bound-238",
+        "title": "Gravity Bound 238",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 4.78781331615821,
+            "gravity": 0.7994559189123691,
+            "jumpForce": -10.349786685217474
+        }
+    },
+    {
+        "id": "gravity-leap-692",
+        "title": "Gravity Leap 692",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 5.424797135690337,
+            "gravity": 0.6369112168428135,
+            "jumpForce": -11.857755375934971
+        }
+    },
+    {
+        "id": "gravity-rush-549",
+        "title": "Gravity Rush 549",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #8e44ad, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#8e44ad",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.644750999767438,
+            "gravity": 0.7816726747458173,
+            "jumpForce": -13.65871637138739
+        }
+    },
+    {
+        "id": "gravity-runner-469",
+        "title": "Gravity Runner 469",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 4.461631592385483,
+            "gravity": 0.6696161198535585,
+            "jumpForce": -12.057464044906055
+        }
+    },
+    {
+        "id": "gravity-dash-125",
+        "title": "Gravity Dash 125",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 4.5970593360217125,
+            "gravity": 0.7081285001208578,
+            "jumpForce": -11.57534171769586
+        }
+    },
+    {
+        "id": "gravity-rush-340",
+        "title": "Gravity Rush 340",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 4.880443906121889,
+            "gravity": 0.5295705013148397,
+            "jumpForce": -12.630397576643796
+        }
+    },
+    {
+        "id": "gravity-dash-600",
+        "title": "Gravity Dash 600",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 4.8854221305971,
+            "gravity": 0.5755144454592803,
+            "jumpForce": -14.397561500895955
+        }
+    },
+    {
+        "id": "gravity-dash-157",
+        "title": "Gravity Dash 157",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.289596243771085,
+            "gravity": 0.5117154998473545,
+            "jumpForce": -14.059330833348698
+        }
+    },
+    {
+        "id": "gravity-rush-988",
+        "title": "Gravity Rush 988",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #c0392b, #f1c40f)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#c0392b",
+            "groundColor": "#1a252f",
+            "playerColor": "#f1c40f",
+            "gameSpeed": 6.411277074395447,
+            "gravity": 0.7050392642775859,
+            "jumpForce": -14.569641078739103
+        }
+    },
+    {
+        "id": "gravity-runner-401",
+        "title": "Gravity Runner 401",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 4.764174115577415,
+            "gravity": 0.6960570764854186,
+            "jumpForce": -12.918520241702359
+        }
+    },
+    {
+        "id": "gravity-dash-399",
+        "title": "Gravity Dash 399",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #3498db)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#3498db",
+            "gameSpeed": 6.531690079023174,
+            "gravity": 0.5380615955190281,
+            "jumpForce": -10.00686882101293
+        }
+    },
+    {
+        "id": "gravity-dash-527",
+        "title": "Gravity Dash 527",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #16a085, #9b59b6)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#16a085",
+            "groundColor": "#1a252f",
+            "playerColor": "#9b59b6",
+            "gameSpeed": 6.251148254143419,
+            "gravity": 0.6762446520785711,
+            "jumpForce": -10.619398527292722
+        }
+    },
+    {
+        "id": "gravity-dash-835",
+        "title": "Gravity Dash 835",
+        "icon": "🏃",
+        "category": "arcade",
+        "gradient": "linear-gradient(135deg, #2c3e50, #2ecc71)",
+        "type": "platformer",
+        "config": {
+            "bgColor": "#2c3e50",
+            "groundColor": "#1a252f",
+            "playerColor": "#2ecc71",
+            "gameSpeed": 5.6876923565468225,
+            "gravity": 0.6241346922116563,
+            "jumpForce": -10.03209231491665
+        }
+    }
+]

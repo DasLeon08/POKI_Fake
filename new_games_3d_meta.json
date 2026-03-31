@@ -1,0 +1,1702 @@
+[
+    {
+        "id": "desert-outpost-7",
+        "title": "Desert Outpost 7",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.021149980940391014,
+            "botCount": 17,
+            "jumpForce": 0.35870313723150193,
+            "speed": 0.19956157113854944,
+            "weaponDamage": 26,
+            "maxHealth": 101,
+            "worldSize": 248
+        }
+    },
+    {
+        "id": "toxic-outpost-prime",
+        "title": "Toxic Outpost Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.02370449593669109,
+            "botCount": 18,
+            "jumpForce": 0.3925511901443175,
+            "speed": 0.17256711284285287,
+            "weaponDamage": 28,
+            "maxHealth": 104,
+            "worldSize": 210
+        }
+    },
+    {
+        "id": "neon-nexus-beta",
+        "title": "Neon Nexus Beta",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.024936649982406627,
+            "botCount": 27,
+            "jumpForce": 0.3156864771950498,
+            "speed": 0.24280331850322087,
+            "weaponDamage": 35,
+            "maxHealth": 192,
+            "worldSize": 288
+        }
+    },
+    {
+        "id": "mars-world-beta",
+        "title": "Mars World Beta",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.02347128342850458,
+            "botCount": 22,
+            "jumpForce": 0.34197382476318594,
+            "speed": 0.21486765971923893,
+            "weaponDamage": 40,
+            "maxHealth": 179,
+            "worldSize": 278
+        }
+    },
+    {
+        "id": "ice-nexus-beta",
+        "title": "Ice Nexus Beta",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.018920583143230172,
+            "botCount": 14,
+            "jumpForce": 0.284912711099889,
+            "speed": 0.19551123586262728,
+            "weaponDamage": 42,
+            "maxHealth": 179,
+            "worldSize": 273
+        }
+    },
+    {
+        "id": "neon-sector-beta",
+        "title": "Neon Sector Beta",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.022478252523082456,
+            "botCount": 11,
+            "jumpForce": 0.22265080644192034,
+            "speed": 0.20068586545770153,
+            "weaponDamage": 47,
+            "maxHealth": 194,
+            "worldSize": 178
+        }
+    },
+    {
+        "id": "neon-nexus-x",
+        "title": "Neon Nexus X",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.02205751276158424,
+            "botCount": 26,
+            "jumpForce": 0.25235186872178517,
+            "speed": 0.21536629444407956,
+            "weaponDamage": 40,
+            "maxHealth": 195,
+            "worldSize": 164
+        }
+    },
+    {
+        "id": "toxic-zone-pro",
+        "title": "Toxic Zone Pro",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.015673510950395077,
+            "botCount": 26,
+            "jumpForce": 0.20817288847231277,
+            "speed": 0.16140813556412917,
+            "weaponDamage": 23,
+            "maxHealth": 113,
+            "worldSize": 175
+        }
+    },
+    {
+        "id": "toxic-realm-zero",
+        "title": "Toxic Realm Zero",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.022159456590055842,
+            "botCount": 24,
+            "jumpForce": 0.356575317306636,
+            "speed": 0.22858240257931065,
+            "weaponDamage": 44,
+            "maxHealth": 114,
+            "worldSize": 210
+        }
+    },
+    {
+        "id": "ice-nexus-elite",
+        "title": "Ice Nexus Elite",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01774763163678246,
+            "botCount": 27,
+            "jumpForce": 0.20997647256049287,
+            "speed": 0.2247709087704104,
+            "weaponDamage": 40,
+            "maxHealth": 160,
+            "worldSize": 191
+        }
+    },
+    {
+        "id": "ice-dimension-zero",
+        "title": "Ice Dimension Zero",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.016653325325399624,
+            "botCount": 21,
+            "jumpForce": 0.364811930147121,
+            "speed": 0.20387136653663268,
+            "weaponDamage": 29,
+            "maxHealth": 153,
+            "worldSize": 179
+        }
+    },
+    {
+        "id": "toxic-realm-prime",
+        "title": "Toxic Realm Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.020147842516161692,
+            "botCount": 18,
+            "jumpForce": 0.2812500621403436,
+            "speed": 0.20257106564940353,
+            "weaponDamage": 42,
+            "maxHealth": 111,
+            "worldSize": 267
+        }
+    },
+    {
+        "id": "neon-world-7",
+        "title": "Neon World 7",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01874459699753269,
+            "botCount": 19,
+            "jumpForce": 0.29614575737141857,
+            "speed": 0.22184285748815663,
+            "weaponDamage": 44,
+            "maxHealth": 176,
+            "worldSize": 176
+        }
+    },
+    {
+        "id": "mars-outpost-elite",
+        "title": "Mars Outpost Elite",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.024047771369758726,
+            "botCount": 11,
+            "jumpForce": 0.32198606553648923,
+            "speed": 0.23910611190910486,
+            "weaponDamage": 27,
+            "maxHealth": 109,
+            "worldSize": 166
+        }
+    },
+    {
+        "id": "toxic-outpost-prime",
+        "title": "Toxic Outpost Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.02086618560088179,
+            "botCount": 26,
+            "jumpForce": 0.21911827018960445,
+            "speed": 0.2133303453683516,
+            "weaponDamage": 38,
+            "maxHealth": 113,
+            "worldSize": 254
+        }
+    },
+    {
+        "id": "ice-dimension-alpha",
+        "title": "Ice Dimension Alpha",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.016215903255677105,
+            "botCount": 13,
+            "jumpForce": 0.3297006981155045,
+            "speed": 0.18331276009715333,
+            "weaponDamage": 46,
+            "maxHealth": 157,
+            "worldSize": 218
+        }
+    },
+    {
+        "id": "neon-outpost-beta",
+        "title": "Neon Outpost Beta",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.017470936478943502,
+            "botCount": 10,
+            "jumpForce": 0.20496466624651366,
+            "speed": 0.1984524541828221,
+            "weaponDamage": 38,
+            "maxHealth": 182,
+            "worldSize": 166
+        }
+    },
+    {
+        "id": "ice-dimension-alpha",
+        "title": "Ice Dimension Alpha",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.02165313034389061,
+            "botCount": 22,
+            "jumpForce": 0.28078828673989586,
+            "speed": 0.21378089629732427,
+            "weaponDamage": 32,
+            "maxHealth": 181,
+            "worldSize": 204
+        }
+    },
+    {
+        "id": "toxic-station-x",
+        "title": "Toxic Station X",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.021354740762900573,
+            "botCount": 22,
+            "jumpForce": 0.3735192030193899,
+            "speed": 0.23244198182926903,
+            "weaponDamage": 23,
+            "maxHealth": 143,
+            "worldSize": 257
+        }
+    },
+    {
+        "id": "desert-arena-7",
+        "title": "Desert Arena 7",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.02241370220629234,
+            "botCount": 22,
+            "jumpForce": 0.301145926357594,
+            "speed": 0.15039127014331224,
+            "weaponDamage": 41,
+            "maxHealth": 182,
+            "worldSize": 190
+        }
+    },
+    {
+        "id": "toxic-nexus-7",
+        "title": "Toxic Nexus 7",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.022456579197841622,
+            "botCount": 28,
+            "jumpForce": 0.22559493617911242,
+            "speed": 0.24634953917998914,
+            "weaponDamage": 35,
+            "maxHealth": 125,
+            "worldSize": 281
+        }
+    },
+    {
+        "id": "toxic-zone-elite",
+        "title": "Toxic Zone Elite",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.019750332814784714,
+            "botCount": 17,
+            "jumpForce": 0.2886881191018169,
+            "speed": 0.2247139642670587,
+            "weaponDamage": 23,
+            "maxHealth": 145,
+            "worldSize": 195
+        }
+    },
+    {
+        "id": "desert-arena-elite",
+        "title": "Desert Arena Elite",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.017528312081659062,
+            "botCount": 24,
+            "jumpForce": 0.39977412272103574,
+            "speed": 0.223687076252288,
+            "weaponDamage": 42,
+            "maxHealth": 133,
+            "worldSize": 235
+        }
+    },
+    {
+        "id": "toxic-arena-pro",
+        "title": "Toxic Arena Pro",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.016607142621150726,
+            "botCount": 10,
+            "jumpForce": 0.30617400826825597,
+            "speed": 0.19433487600870164,
+            "weaponDamage": 31,
+            "maxHealth": 123,
+            "worldSize": 262
+        }
+    },
+    {
+        "id": "neon-arena-prime",
+        "title": "Neon Arena Prime",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01647975476312297,
+            "botCount": 11,
+            "jumpForce": 0.26868229877371286,
+            "speed": 0.17462249386429513,
+            "weaponDamage": 24,
+            "maxHealth": 124,
+            "worldSize": 284
+        }
+    },
+    {
+        "id": "neon-world-zero",
+        "title": "Neon World Zero",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.023316981686531905,
+            "botCount": 13,
+            "jumpForce": 0.25112170325179944,
+            "speed": 0.22203810160685317,
+            "weaponDamage": 23,
+            "maxHealth": 172,
+            "worldSize": 281
+        }
+    },
+    {
+        "id": "toxic-base-max",
+        "title": "Toxic Base Max",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.01760702241621918,
+            "botCount": 21,
+            "jumpForce": 0.3064930517197992,
+            "speed": 0.15556148437207074,
+            "weaponDamage": 23,
+            "maxHealth": 129,
+            "worldSize": 228
+        }
+    },
+    {
+        "id": "toxic-outpost-alpha",
+        "title": "Toxic Outpost Alpha",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.024137917977207917,
+            "botCount": 25,
+            "jumpForce": 0.20267029246878457,
+            "speed": 0.2406911394926432,
+            "weaponDamage": 24,
+            "maxHealth": 134,
+            "worldSize": 270
+        }
+    },
+    {
+        "id": "mars-world-beta",
+        "title": "Mars World Beta",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.016204716405721416,
+            "botCount": 18,
+            "jumpForce": 0.2767619861745547,
+            "speed": 0.2381105296885573,
+            "weaponDamage": 21,
+            "maxHealth": 123,
+            "worldSize": 277
+        }
+    },
+    {
+        "id": "toxic-world-max",
+        "title": "Toxic World Max",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.02443218515098243,
+            "botCount": 27,
+            "jumpForce": 0.38299760263668065,
+            "speed": 0.16576795714320178,
+            "weaponDamage": 25,
+            "maxHealth": 152,
+            "worldSize": 150
+        }
+    },
+    {
+        "id": "neon-base-omega",
+        "title": "Neon Base Omega",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.020128780534102525,
+            "botCount": 14,
+            "jumpForce": 0.35769756927858865,
+            "speed": 0.22927047300106723,
+            "weaponDamage": 42,
+            "maxHealth": 139,
+            "worldSize": 211
+        }
+    },
+    {
+        "id": "ice-base-alpha",
+        "title": "Ice Base Alpha",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.021013077277855098,
+            "botCount": 24,
+            "jumpForce": 0.26693392891322026,
+            "speed": 0.17279131219395608,
+            "weaponDamage": 34,
+            "maxHealth": 141,
+            "worldSize": 182
+        }
+    },
+    {
+        "id": "mars-outpost-beta",
+        "title": "Mars Outpost Beta",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.021736742840873687,
+            "botCount": 16,
+            "jumpForce": 0.39801478670738466,
+            "speed": 0.16963660123950305,
+            "weaponDamage": 38,
+            "maxHealth": 196,
+            "worldSize": 160
+        }
+    },
+    {
+        "id": "desert-world-prime",
+        "title": "Desert World Prime",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.023381540574292932,
+            "botCount": 26,
+            "jumpForce": 0.39050650472966086,
+            "speed": 0.2080171667356581,
+            "weaponDamage": 22,
+            "maxHealth": 172,
+            "worldSize": 170
+        }
+    },
+    {
+        "id": "neon-sector-elite",
+        "title": "Neon Sector Elite",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01789391703691939,
+            "botCount": 14,
+            "jumpForce": 0.2875626326254332,
+            "speed": 0.23267441508393596,
+            "weaponDamage": 39,
+            "maxHealth": 132,
+            "worldSize": 271
+        }
+    },
+    {
+        "id": "toxic-realm-7",
+        "title": "Toxic Realm 7",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.019798472497352032,
+            "botCount": 23,
+            "jumpForce": 0.2977287939361883,
+            "speed": 0.2436903731713328,
+            "weaponDamage": 22,
+            "maxHealth": 114,
+            "worldSize": 245
+        }
+    },
+    {
+        "id": "ice-world-alpha",
+        "title": "Ice World Alpha",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.020478589362957347,
+            "botCount": 17,
+            "jumpForce": 0.22726704622258342,
+            "speed": 0.23123312651929012,
+            "weaponDamage": 39,
+            "maxHealth": 132,
+            "worldSize": 265
+        }
+    },
+    {
+        "id": "desert-zone-beta",
+        "title": "Desert Zone Beta",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.02485846970542057,
+            "botCount": 24,
+            "jumpForce": 0.31036290548908224,
+            "speed": 0.24422015916764644,
+            "weaponDamage": 32,
+            "maxHealth": 187,
+            "worldSize": 260
+        }
+    },
+    {
+        "id": "desert-arena-elite",
+        "title": "Desert Arena Elite",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.02020715271569554,
+            "botCount": 17,
+            "jumpForce": 0.3719052252239307,
+            "speed": 0.17212886245884534,
+            "weaponDamage": 43,
+            "maxHealth": 157,
+            "worldSize": 298
+        }
+    },
+    {
+        "id": "toxic-dimension-prime",
+        "title": "Toxic Dimension Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.01607118219791756,
+            "botCount": 20,
+            "jumpForce": 0.20141934367330905,
+            "speed": 0.2176674500549936,
+            "weaponDamage": 36,
+            "maxHealth": 118,
+            "worldSize": 225
+        }
+    },
+    {
+        "id": "desert-base-max",
+        "title": "Desert Base Max",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.019106018247108936,
+            "botCount": 28,
+            "jumpForce": 0.2956159105309429,
+            "speed": 0.20217098115665194,
+            "weaponDamage": 30,
+            "maxHealth": 168,
+            "worldSize": 269
+        }
+    },
+    {
+        "id": "toxic-world-beta",
+        "title": "Toxic World Beta",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.017670568524426934,
+            "botCount": 23,
+            "jumpForce": 0.27236916211836637,
+            "speed": 0.1682642551043639,
+            "weaponDamage": 22,
+            "maxHealth": 133,
+            "worldSize": 281
+        }
+    },
+    {
+        "id": "ice-station-elite",
+        "title": "Ice Station Elite",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.015476103424322612,
+            "botCount": 12,
+            "jumpForce": 0.23781531225090477,
+            "speed": 0.1554844635410991,
+            "weaponDamage": 20,
+            "maxHealth": 143,
+            "worldSize": 258
+        }
+    },
+    {
+        "id": "mars-dimension-alpha",
+        "title": "Mars Dimension Alpha",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.024832323096653106,
+            "botCount": 24,
+            "jumpForce": 0.2092845991036923,
+            "speed": 0.22462960535130502,
+            "weaponDamage": 42,
+            "maxHealth": 195,
+            "worldSize": 188
+        }
+    },
+    {
+        "id": "desert-nexus-beta",
+        "title": "Desert Nexus Beta",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.01565325004700416,
+            "botCount": 16,
+            "jumpForce": 0.2363851646399834,
+            "speed": 0.20042461137490655,
+            "weaponDamage": 23,
+            "maxHealth": 162,
+            "worldSize": 261
+        }
+    },
+    {
+        "id": "toxic-base-max",
+        "title": "Toxic Base Max",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.024841562862778097,
+            "botCount": 18,
+            "jumpForce": 0.22107724116691083,
+            "speed": 0.2250961978948834,
+            "weaponDamage": 49,
+            "maxHealth": 155,
+            "worldSize": 215
+        }
+    },
+    {
+        "id": "neon-nexus-zero",
+        "title": "Neon Nexus Zero",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.022421686893659292,
+            "botCount": 14,
+            "jumpForce": 0.27680833161306717,
+            "speed": 0.201540575308821,
+            "weaponDamage": 26,
+            "maxHealth": 157,
+            "worldSize": 200
+        }
+    },
+    {
+        "id": "desert-arena-beta",
+        "title": "Desert Arena Beta",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.02019580923014579,
+            "botCount": 14,
+            "jumpForce": 0.37194682175773813,
+            "speed": 0.16689438533447626,
+            "weaponDamage": 36,
+            "maxHealth": 179,
+            "worldSize": 259
+        }
+    },
+    {
+        "id": "toxic-base-elite",
+        "title": "Toxic Base Elite",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.021396136498307402,
+            "botCount": 11,
+            "jumpForce": 0.3399158002786823,
+            "speed": 0.24564335749539173,
+            "weaponDamage": 34,
+            "maxHealth": 117,
+            "worldSize": 184
+        }
+    },
+    {
+        "id": "toxic-realm-max",
+        "title": "Toxic Realm Max",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.018113399759945414,
+            "botCount": 18,
+            "jumpForce": 0.32297362644770194,
+            "speed": 0.159144364458161,
+            "weaponDamage": 49,
+            "maxHealth": 125,
+            "worldSize": 151
+        }
+    },
+    {
+        "id": "ice-base-prime",
+        "title": "Ice Base Prime",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01812531500657935,
+            "botCount": 26,
+            "jumpForce": 0.2974572647867234,
+            "speed": 0.21781376642519923,
+            "weaponDamage": 45,
+            "maxHealth": 124,
+            "worldSize": 235
+        }
+    },
+    {
+        "id": "toxic-arena-zero",
+        "title": "Toxic Arena Zero",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.015991551296004925,
+            "botCount": 22,
+            "jumpForce": 0.24101506992761934,
+            "speed": 0.2317025959371855,
+            "weaponDamage": 47,
+            "maxHealth": 182,
+            "worldSize": 179
+        }
+    },
+    {
+        "id": "mars-arena-prime",
+        "title": "Mars Arena Prime",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.022160892458000094,
+            "botCount": 24,
+            "jumpForce": 0.2371143860770274,
+            "speed": 0.15643035811959105,
+            "weaponDamage": 25,
+            "maxHealth": 118,
+            "worldSize": 233
+        }
+    },
+    {
+        "id": "neon-zone-7",
+        "title": "Neon Zone 7",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.016541811962531346,
+            "botCount": 21,
+            "jumpForce": 0.39236765784931393,
+            "speed": 0.21546952569906036,
+            "weaponDamage": 23,
+            "maxHealth": 182,
+            "worldSize": 291
+        }
+    },
+    {
+        "id": "ice-station-pro",
+        "title": "Ice Station Pro",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.017015069876814365,
+            "botCount": 28,
+            "jumpForce": 0.31539853375258764,
+            "speed": 0.20772025517526346,
+            "weaponDamage": 24,
+            "maxHealth": 161,
+            "worldSize": 163
+        }
+    },
+    {
+        "id": "mars-station-pro",
+        "title": "Mars Station Pro",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.018113511129418582,
+            "botCount": 11,
+            "jumpForce": 0.3403715119867104,
+            "speed": 0.16361956132019126,
+            "weaponDamage": 32,
+            "maxHealth": 176,
+            "worldSize": 157
+        }
+    },
+    {
+        "id": "neon-base-beta",
+        "title": "Neon Base Beta",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.024962694508895242,
+            "botCount": 13,
+            "jumpForce": 0.35624075020818036,
+            "speed": 0.23489895086989254,
+            "weaponDamage": 35,
+            "maxHealth": 138,
+            "worldSize": 180
+        }
+    },
+    {
+        "id": "ice-world-pro",
+        "title": "Ice World Pro",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.021073005272000078,
+            "botCount": 13,
+            "jumpForce": 0.2681176659306557,
+            "speed": 0.1734843010602511,
+            "weaponDamage": 46,
+            "maxHealth": 162,
+            "worldSize": 285
+        }
+    },
+    {
+        "id": "mars-dimension-alpha",
+        "title": "Mars Dimension Alpha",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.018972452868138426,
+            "botCount": 19,
+            "jumpForce": 0.2178060299462287,
+            "speed": 0.21395958367346152,
+            "weaponDamage": 48,
+            "maxHealth": 168,
+            "worldSize": 260
+        }
+    },
+    {
+        "id": "mars-station-x",
+        "title": "Mars Station X",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.019740711808914714,
+            "botCount": 15,
+            "jumpForce": 0.25482267107101425,
+            "speed": 0.17106211413141456,
+            "weaponDamage": 46,
+            "maxHealth": 134,
+            "worldSize": 185
+        }
+    },
+    {
+        "id": "neon-arena-zero",
+        "title": "Neon Arena Zero",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.021686799306310917,
+            "botCount": 12,
+            "jumpForce": 0.2206537385933543,
+            "speed": 0.1919689218108227,
+            "weaponDamage": 38,
+            "maxHealth": 114,
+            "worldSize": 233
+        }
+    },
+    {
+        "id": "ice-base-zero",
+        "title": "Ice Base Zero",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.0199794306059718,
+            "botCount": 17,
+            "jumpForce": 0.38310555952241604,
+            "speed": 0.24072231473108968,
+            "weaponDamage": 26,
+            "maxHealth": 190,
+            "worldSize": 236
+        }
+    },
+    {
+        "id": "desert-world-zero",
+        "title": "Desert World Zero",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.023056459384350664,
+            "botCount": 22,
+            "jumpForce": 0.33117883057626,
+            "speed": 0.15573637712227312,
+            "weaponDamage": 46,
+            "maxHealth": 109,
+            "worldSize": 172
+        }
+    },
+    {
+        "id": "ice-zone-elite",
+        "title": "Ice Zone Elite",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01650430758475735,
+            "botCount": 15,
+            "jumpForce": 0.34500555591129967,
+            "speed": 0.19368038911524232,
+            "weaponDamage": 27,
+            "maxHealth": 181,
+            "worldSize": 285
+        }
+    },
+    {
+        "id": "mars-world-omega",
+        "title": "Mars World Omega",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.017364285462104806,
+            "botCount": 13,
+            "jumpForce": 0.20587797368802332,
+            "speed": 0.1987481872393448,
+            "weaponDamage": 49,
+            "maxHealth": 192,
+            "worldSize": 277
+        }
+    },
+    {
+        "id": "neon-dimension-pro",
+        "title": "Neon Dimension Pro",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01947733550067452,
+            "botCount": 20,
+            "jumpForce": 0.21502628102413957,
+            "speed": 0.18664800863436193,
+            "weaponDamage": 49,
+            "maxHealth": 121,
+            "worldSize": 258
+        }
+    },
+    {
+        "id": "mars-zone-omega",
+        "title": "Mars Zone Omega",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.020142100574205915,
+            "botCount": 29,
+            "jumpForce": 0.29496362256819264,
+            "speed": 0.23862401714327394,
+            "weaponDamage": 46,
+            "maxHealth": 154,
+            "worldSize": 289
+        }
+    },
+    {
+        "id": "desert-sector-elite",
+        "title": "Desert Sector Elite",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.022490894058909035,
+            "botCount": 21,
+            "jumpForce": 0.27950597618044926,
+            "speed": 0.20121076600798202,
+            "weaponDamage": 44,
+            "maxHealth": 143,
+            "worldSize": 209
+        }
+    },
+    {
+        "id": "mars-realm-7",
+        "title": "Mars Realm 7",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.016650694641114527,
+            "botCount": 26,
+            "jumpForce": 0.20842680819054893,
+            "speed": 0.15923087364503216,
+            "weaponDamage": 34,
+            "maxHealth": 191,
+            "worldSize": 175
+        }
+    },
+    {
+        "id": "mars-sector-zero",
+        "title": "Mars Sector Zero",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.02143150643802236,
+            "botCount": 16,
+            "jumpForce": 0.3542955682984854,
+            "speed": 0.20818687683037462,
+            "weaponDamage": 32,
+            "maxHealth": 117,
+            "worldSize": 232
+        }
+    },
+    {
+        "id": "ice-realm-x",
+        "title": "Ice Realm X",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01792244013516292,
+            "botCount": 27,
+            "jumpForce": 0.3165379386312581,
+            "speed": 0.19996620655127445,
+            "weaponDamage": 27,
+            "maxHealth": 177,
+            "worldSize": 274
+        }
+    },
+    {
+        "id": "mars-dimension-zero",
+        "title": "Mars Dimension Zero",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.021468913948373903,
+            "botCount": 21,
+            "jumpForce": 0.3035771772196693,
+            "speed": 0.20762934209493683,
+            "weaponDamage": 25,
+            "maxHealth": 162,
+            "worldSize": 278
+        }
+    },
+    {
+        "id": "toxic-outpost-prime",
+        "title": "Toxic Outpost Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.01589766580632082,
+            "botCount": 12,
+            "jumpForce": 0.30957452622608184,
+            "speed": 0.2358893208934874,
+            "weaponDamage": 29,
+            "maxHealth": 139,
+            "worldSize": 201
+        }
+    },
+    {
+        "id": "toxic-base-elite",
+        "title": "Toxic Base Elite",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.017727177979004666,
+            "botCount": 24,
+            "jumpForce": 0.24558131138154718,
+            "speed": 0.24976063363882522,
+            "weaponDamage": 49,
+            "maxHealth": 175,
+            "worldSize": 220
+        }
+    },
+    {
+        "id": "neon-base-beta",
+        "title": "Neon Base Beta",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.020172333496326834,
+            "botCount": 20,
+            "jumpForce": 0.3176514761220674,
+            "speed": 0.17002834260959473,
+            "weaponDamage": 43,
+            "maxHealth": 195,
+            "worldSize": 244
+        }
+    },
+    {
+        "id": "neon-station-omega",
+        "title": "Neon Station Omega",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.015056070738342068,
+            "botCount": 28,
+            "jumpForce": 0.38399384050075985,
+            "speed": 0.23194532187825634,
+            "weaponDamage": 37,
+            "maxHealth": 128,
+            "worldSize": 233
+        }
+    },
+    {
+        "id": "desert-sector-7",
+        "title": "Desert Sector 7",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.01825681875904604,
+            "botCount": 23,
+            "jumpForce": 0.2662548710659537,
+            "speed": 0.1500677454461872,
+            "weaponDamage": 22,
+            "maxHealth": 159,
+            "worldSize": 235
+        }
+    },
+    {
+        "id": "neon-realm-max",
+        "title": "Neon Realm Max",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01946297416906003,
+            "botCount": 10,
+            "jumpForce": 0.2273542957456145,
+            "speed": 0.24736817893995078,
+            "weaponDamage": 22,
+            "maxHealth": 195,
+            "worldSize": 194
+        }
+    },
+    {
+        "id": "toxic-realm-beta",
+        "title": "Toxic Realm Beta",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.01912210099517607,
+            "botCount": 24,
+            "jumpForce": 0.32733615513730396,
+            "speed": 0.1811092654674853,
+            "weaponDamage": 40,
+            "maxHealth": 160,
+            "worldSize": 241
+        }
+    },
+    {
+        "id": "desert-station-alpha",
+        "title": "Desert Station Alpha",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.024786662137474408,
+            "botCount": 22,
+            "jumpForce": 0.32777979340466024,
+            "speed": 0.22595709285575905,
+            "weaponDamage": 39,
+            "maxHealth": 147,
+            "worldSize": 231
+        }
+    },
+    {
+        "id": "ice-base-elite",
+        "title": "Ice Base Elite",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.020697097034424742,
+            "botCount": 16,
+            "jumpForce": 0.3511342316149722,
+            "speed": 0.1929242835848843,
+            "weaponDamage": 21,
+            "maxHealth": 163,
+            "worldSize": 248
+        }
+    },
+    {
+        "id": "ice-station-elite",
+        "title": "Ice Station Elite",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.018663444960511498,
+            "botCount": 20,
+            "jumpForce": 0.22374510225483835,
+            "speed": 0.18099794185798218,
+            "weaponDamage": 40,
+            "maxHealth": 176,
+            "worldSize": 206
+        }
+    },
+    {
+        "id": "toxic-station-alpha",
+        "title": "Toxic Station Alpha",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.02064683458068834,
+            "botCount": 29,
+            "jumpForce": 0.2620217601582313,
+            "speed": 0.1908584692913223,
+            "weaponDamage": 42,
+            "maxHealth": 140,
+            "worldSize": 234
+        }
+    },
+    {
+        "id": "neon-zone-zero",
+        "title": "Neon Zone Zero",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.01720005002576891,
+            "botCount": 21,
+            "jumpForce": 0.2328343755681222,
+            "speed": 0.21541482323004646,
+            "weaponDamage": 41,
+            "maxHealth": 174,
+            "worldSize": 297
+        }
+    },
+    {
+        "id": "toxic-dimension-pro",
+        "title": "Toxic Dimension Pro",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.02284486000067144,
+            "botCount": 27,
+            "jumpForce": 0.37884497520289284,
+            "speed": 0.21342719310989255,
+            "weaponDamage": 24,
+            "maxHealth": 144,
+            "worldSize": 285
+        }
+    },
+    {
+        "id": "desert-zone-prime",
+        "title": "Desert Zone Prime",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.019451058172461008,
+            "botCount": 14,
+            "jumpForce": 0.3138157803424644,
+            "speed": 0.24365063074905902,
+            "weaponDamage": 49,
+            "maxHealth": 160,
+            "worldSize": 214
+        }
+    },
+    {
+        "id": "neon-nexus-prime",
+        "title": "Neon Nexus Prime",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.02199138882878048,
+            "botCount": 27,
+            "jumpForce": 0.24892233166464678,
+            "speed": 0.1903243007887046,
+            "weaponDamage": 37,
+            "maxHealth": 184,
+            "worldSize": 210
+        }
+    },
+    {
+        "id": "ice-base-zero",
+        "title": "Ice Base Zero",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01900015036182589,
+            "botCount": 16,
+            "jumpForce": 0.3134742414300792,
+            "speed": 0.1740531086121322,
+            "weaponDamage": 33,
+            "maxHealth": 163,
+            "worldSize": 207
+        }
+    },
+    {
+        "id": "toxic-base-pro",
+        "title": "Toxic Base Pro",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.017346140913745273,
+            "botCount": 14,
+            "jumpForce": 0.2823653082114671,
+            "speed": 0.21255242780725733,
+            "weaponDamage": 29,
+            "maxHealth": 148,
+            "worldSize": 195
+        }
+    },
+    {
+        "id": "mars-nexus-zero",
+        "title": "Mars Nexus Zero",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.021541298819680824,
+            "botCount": 10,
+            "jumpForce": 0.35280374126957903,
+            "speed": 0.2376693081494331,
+            "weaponDamage": 30,
+            "maxHealth": 136,
+            "worldSize": 189
+        }
+    },
+    {
+        "id": "neon-nexus-elite",
+        "title": "Neon Nexus Elite",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.021438066932104594,
+            "botCount": 29,
+            "jumpForce": 0.3034333668816452,
+            "speed": 0.2247245164453714,
+            "weaponDamage": 28,
+            "maxHealth": 195,
+            "worldSize": 197
+        }
+    },
+    {
+        "id": "mars-dimension-alpha",
+        "title": "Mars Dimension Alpha",
+        "icon": "🔴",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #8c3b2d, #5c2b20)",
+        "config": {
+            "biome": "mars",
+            "gravity": 0.017171315836842827,
+            "botCount": 25,
+            "jumpForce": 0.36046071517242895,
+            "speed": 0.24451131781136543,
+            "weaponDamage": 44,
+            "maxHealth": 172,
+            "worldSize": 284
+        }
+    },
+    {
+        "id": "toxic-zone-beta",
+        "title": "Toxic Zone Beta",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.021496133349508194,
+            "botCount": 10,
+            "jumpForce": 0.26479127380390566,
+            "speed": 0.20703586085819042,
+            "weaponDamage": 39,
+            "maxHealth": 192,
+            "worldSize": 209
+        }
+    },
+    {
+        "id": "ice-dimension-max",
+        "title": "Ice Dimension Max",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.01674636277080305,
+            "botCount": 27,
+            "jumpForce": 0.28738519192815,
+            "speed": 0.24733096715810704,
+            "weaponDamage": 40,
+            "maxHealth": 183,
+            "worldSize": 252
+        }
+    },
+    {
+        "id": "neon-sector-elite",
+        "title": "Neon Sector Elite",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.02382212789464398,
+            "botCount": 29,
+            "jumpForce": 0.2377298152392232,
+            "speed": 0.17458554476030613,
+            "weaponDamage": 25,
+            "maxHealth": 190,
+            "worldSize": 239
+        }
+    },
+    {
+        "id": "neon-zone-7",
+        "title": "Neon Zone 7",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.017776094515683568,
+            "botCount": 17,
+            "jumpForce": 0.3101692096617907,
+            "speed": 0.2246098448228292,
+            "weaponDamage": 23,
+            "maxHealth": 146,
+            "worldSize": 289
+        }
+    },
+    {
+        "id": "neon-outpost-alpha",
+        "title": "Neon Outpost Alpha",
+        "icon": "⚡",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+        "config": {
+            "biome": "neon",
+            "gravity": 0.016646175339338255,
+            "botCount": 14,
+            "jumpForce": 0.33510483971285787,
+            "speed": 0.2389446912174049,
+            "weaponDamage": 32,
+            "maxHealth": 180,
+            "worldSize": 237
+        }
+    },
+    {
+        "id": "desert-base-prime",
+        "title": "Desert Base Prime",
+        "icon": "🏜️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #c2b280, #8b5a2b)",
+        "config": {
+            "biome": "desert",
+            "gravity": 0.02296931106271454,
+            "botCount": 19,
+            "jumpForce": 0.3861778812286274,
+            "speed": 0.2226475136442033,
+            "weaponDamage": 28,
+            "maxHealth": 194,
+            "worldSize": 208
+        }
+    },
+    {
+        "id": "ice-sector-max",
+        "title": "Ice Sector Max",
+        "icon": "❄️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #a5f2f3, #87ceeb)",
+        "config": {
+            "biome": "ice",
+            "gravity": 0.016423419302436713,
+            "botCount": 15,
+            "jumpForce": 0.3543296972573968,
+            "speed": 0.17397316337480512,
+            "weaponDamage": 35,
+            "maxHealth": 196,
+            "worldSize": 225
+        }
+    },
+    {
+        "id": "toxic-world-prime",
+        "title": "Toxic World Prime",
+        "icon": "☣️",
+        "category": "action",
+        "gradient": "linear-gradient(135deg, #1f2e1a, #7fff00)",
+        "config": {
+            "biome": "toxic",
+            "gravity": 0.017858730940712702,
+            "botCount": 23,
+            "jumpForce": 0.2739837347924101,
+            "speed": 0.2161252185246238,
+            "weaponDamage": 24,
+            "maxHealth": 155,
+            "worldSize": 237
+        }
+    }
+]

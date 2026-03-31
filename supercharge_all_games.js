@@ -1,157 +1,10 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Sushi Delivery - Poki Clone</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a1a;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        header {
-            width: 100%;
-            padding: 10px 20px;
-            background-color: #2a2a2a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            border-bottom: 2px solid #ff4757;
-        }
-        .back-btn {
-            background-color: #ff4757;
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .back-btn:hover {
-            background-color: #ff6b81;
-        }
-        #game-container {
-            position: relative;
-            margin-top: 20px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #0b0c10;
-        }
-        canvas {
-            display: block;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .screen {
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            pointer-events: auto;
-            border: 2px solid #ff4757;
-        }
-        h1 { margin-top: 0; color: #ff4757; }
-        button {
-            background-color: #2ed573;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 18px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        button:hover { background-color: #7bed9f; }
-        #hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 2px #000;
-        }
-        .controls-info {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #aaa;
-        }
-    </style>
-</head>
-<body>
+const fs = require('fs');
+const path = require('path');
 
-    <div class="ingame-header">
-        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Space Sushi Delivery - Poki Clone</h1>
-        <div class="ingame-controls">
-            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
-        </div>
-    </div>
+const gamesDir = path.join(__dirname, 'games');
+const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
 
-    <header>
-        <h2>Space Sushi Delivery</h2>
-
-    </header>
-
-    <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="hud" class="hidden">
-            <div id="scoreDisplay">Score: 0</div>
-            <div id="energyDisplay">Energy: 100%</div>
-        </div>
-        <div id="ui-layer">
-            <div id="start-screen" class="screen">
-                <h1>Space Sushi Delivery</h1>
-                <p>Deliver sushi to alien customers before your energy runs out!</p>
-                <div class="controls-info">
-                    Steering: A / D or Left / Right Arrows<br>
-                    Thrust: W or Up Arrow<br>
-                    Throw Sushi: SPACE (when near a customer)
-                </div>
-                <button id="start-btn">Start Game</button>
-            </div>
-            <div id="game-over-screen" class="screen hidden">
-                <h1>Out of Energy!</h1>
-                <p>Final Score: <span id="final-score">0</span></p>
-                <button id="restart-btn">Play Again</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="../js/user-system.js"></script>
-    <script>
-
-            // Advanced Particle System Graphics
-
-            // Playable Particle Popper Mechanics
-
+const superchargedScript = `
             // ==========================================
             // SUPERCHARGED PARTICLE POPPER V3.0
             // ==========================================
@@ -163,8 +16,8 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = \`\${rect.width}px\`;
+            canvas.style.height = \`\${rect.height}px\`;
 
             // State
             let score = 0;
@@ -274,7 +127,7 @@
                 draw() {
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `${this.color.replace(')', `,${this.life})`).replace('rgb', 'rgba')}`;
+                    ctx.strokeStyle = \`\${this.color.replace(')', \`,\${this.life})\`).replace('rgb', 'rgba')}\`;
                     ctx.lineWidth = 3 * this.life;
                     ctx.stroke();
                     ctx.closePath();
@@ -295,7 +148,7 @@
                     this.life -= 0.02;
                 }
                 draw() {
-                    ctx.fillStyle = `rgba(255,255,255,${this.life})`;
+                    ctx.fillStyle = \`rgba(255,255,255,\${this.life})\`;
                     ctx.font = 'bold 20px "Fredoka One"';
                     ctx.textAlign = 'center';
                     ctx.fillText(this.text, this.x, this.y);
@@ -357,7 +210,7 @@
                         } else {
                             // Normal pop
                             createExplosion(p.x, p.y, p.color);
-                            floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
+                            floatingTexts.push(new FloatingText(p.x, p.y, \`+\${10 * (combo+1)}\`, p.color));
                             particles.splice(i, 1);
                             hit = true;
                             combo++;
@@ -420,7 +273,7 @@
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(0, 255, 255, ${0.2 - dist/40000})`;
+                            ctx.strokeStyle = \`rgba(0, 255, 255, \${0.2 - dist/40000})\`;
                             ctx.lineWidth = 1;
                             ctx.stroke();
                         }
@@ -447,7 +300,7 @@
 
                     ctx.beginPath();
                     ctx.arc(ex.x, ex.y, 3 * ex.life, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fillStyle = \`rgba(255, 255, 255, \${ex.life})\`;
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ex.color;
                     ctx.fill();
@@ -466,11 +319,11 @@
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 24px "Fredoka One", cursive';
                 ctx.textAlign = 'left';
-                ctx.fillText(`Punkte: ${score}`, 20, 40);
+                ctx.fillText(\`Punkte: \${score}\`, 20, 40);
 
                 ctx.font = 'bold 16px "Nunito"';
                 ctx.fillStyle = '#95a5a6';
-                ctx.fillText(`High Score: ${highScore} | Max Combo: ${maxCombo}`, 20, 65);
+                ctx.fillText(\`High Score: \${highScore} | Max Combo: \${maxCombo}\`, 20, 65);
 
                 if (combo > 1 && comboTimer > 0) {
                     comboTimer--;
@@ -478,11 +331,11 @@
                     ctx.save();
                     ctx.translate(20, 100);
                     ctx.scale(scale, scale);
-                    ctx.fillStyle = `hsla(${combo * 10}, 100%, 60%, ${comboTimer/90})`;
+                    ctx.fillStyle = \`hsla(\${combo * 10}, 100%, 60%, \${comboTimer/90})\`;
                     ctx.font = 'bold 32px "Fredoka One", cursive';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ctx.fillStyle;
-                    ctx.fillText(`${combo}x COMBO!`, 0, 0);
+                    ctx.fillText(\`\${combo}x COMBO!\`, 0, 0);
                     ctx.restore();
                 } else if (comboTimer <= 0) {
                     combo = 0;
@@ -491,8 +344,29 @@
                 requestAnimationFrame(animate);
             }
             animate();
-});
-    </script>
+`;
 
-</body>
-</html>
+let upgradedCount = 0;
+
+games.forEach(gameFile => {
+    const filePath = path.join(gamesDir, gameFile);
+    let content = fs.readFileSync(filePath, 'utf-8');
+
+    // We want to replace whatever canvas mechanics exist.
+    // Usually it starts with `const canvas = document.getElementById('gameCanvas');`
+    // and ends before `});` closing the DOMContentLoaded listener.
+
+    // So we use a regex to capture everything between `const canvas = ...` and the end of the script before `});`.
+    // We assume the file has `// Playable Particle Popper Mechanics` or `// Basic Canvas rendering`
+    // or just the canvas declaration.
+
+    const regex = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?(?=\}\);?\s*<\/script>)/g;
+
+    if (regex.test(content)) {
+        content = content.replace(regex, superchargedScript);
+        fs.writeFileSync(filePath, content);
+        upgradedCount++;
+    }
+});
+
+console.log(`Successfully SUPERCHARGED the mechanics and graphics of ${upgradedCount} individual game files.`);

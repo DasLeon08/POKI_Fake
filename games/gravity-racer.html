@@ -61,6 +61,10 @@
             // Advanced Particle System Graphics
 
             // Playable Particle Popper Mechanics
+
+            // ==========================================
+            // SUPERCHARGED PARTICLE POPPER V3.0
+            // ==========================================
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
 
@@ -72,17 +76,31 @@
             canvas.style.width = `${rect.width}px`;
             canvas.style.height = `${rect.height}px`;
 
-            let particles = [];
-            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6348', '#a29bfe', '#fd79a8'];
-            let mouse = { x: -1000, y: -1000 };
+            // State
             let score = 0;
+            let highScore = localStorage.getItem('poki_highscore_v3') || 0;
             let combo = 0;
             let comboTimer = 0;
+            let maxCombo = 0;
+            let gameSpeed = 1;
+
+            let particles = [];
+            let explosions = [];
+            let floatingTexts = [];
+            let shockwaves = [];
+
+            // Mouse
+            let mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
+            let lastMouse = { x: -1000, y: -1000 };
 
             canvas.addEventListener('mousemove', (e) => {
                 const r = canvas.getBoundingClientRect();
+                lastMouse.x = mouse.x;
+                lastMouse.y = mouse.y;
                 mouse.x = e.clientX - r.left;
                 mouse.y = e.clientY - r.top;
+                mouse.vx = mouse.x - lastMouse.x;
+                mouse.vy = mouse.y - lastMouse.y;
             });
 
             canvas.addEventListener('mouseleave', () => {
@@ -90,7 +108,129 @@
                 mouse.y = -1000;
             });
 
-            // Click to pop particles
+            const colors = [
+                '#FF0099', '#493240', '#00C9FF', '#92FE9D',
+                '#ff4757', '#2ed573', '#1e90ff', '#ffa502',
+                '#ff6348', '#a29bfe', '#fd79a8', '#f9ca24'
+            ];
+
+            // Classes
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * (canvas.width / dpr);
+                    this.y = Math.random() * (canvas.height / dpr);
+                    this.vx = (Math.random() - 0.5) * 4 * gameSpeed;
+                    this.vy = (Math.random() - 0.5) * 4 * gameSpeed;
+                    this.radius = Math.random() * 5 + 3;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                    this.isBomb = Math.random() > 0.95; // 5% chance to be a bomb
+                    if (this.isBomb) {
+                        this.color = '#fff';
+                        this.radius = 8;
+                    }
+                }
+                update() {
+                    this.x += this.vx * gameSpeed;
+                    this.y += this.vy * gameSpeed;
+
+                    // Bounce
+                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
+                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
+
+                    // Dodge mouse slightly unless bomb
+                    if(!this.isBomb) {
+                        const dx = mouse.x - this.x;
+                        const dy = mouse.y - this.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 100) {
+                            this.vx -= dx * 0.005;
+                            this.vy -= dy * 0.005;
+                        }
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowBlur = this.isBomb ? 20 : 10;
+                    ctx.shadowColor = this.color;
+                    ctx.fill();
+                    ctx.closePath();
+
+                    if (this.isBomb) {
+                        ctx.strokeStyle = '#ff4757';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                    ctx.shadowBlur = 0;
+                }
+            }
+
+            class Shockwave {
+                constructor(x, y, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.color = color;
+                    this.radius = 0;
+                    this.maxRadius = 100;
+                    this.life = 1;
+                }
+                update() {
+                    this.radius += 5;
+                    this.life -= 0.05;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `${this.color.replace(')', `,${this.life})`).replace('rgb', 'rgba')}`;
+                    ctx.lineWidth = 3 * this.life;
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            }
+
+            class FloatingText {
+                constructor(x, y, text, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.text = text;
+                    this.color = color;
+                    this.life = 1.0;
+                    this.vy = -2;
+                }
+                update() {
+                    this.y += this.vy;
+                    this.life -= 0.02;
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(255,255,255,${this.life})`;
+                    ctx.font = 'bold 20px "Fredoka One"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.text, this.x, this.y);
+                }
+            }
+
+            function createExplosion(x, y, color, isBomb = false) {
+                const count = isBomb ? 20 : 8;
+                for(let i=0; i<count; i++) {
+                    explosions.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * (isBomb ? 15 : 6),
+                        vy: (Math.random() - 0.5) * (isBomb ? 15 : 6),
+                        life: 1.0,
+                        color: color
+                    });
+                }
+                // Shockwave
+                shockwaves.push(new Shockwave(x, y, color === '#fff' ? 'rgb(255,255,255)' : 'rgb(0,255,255)'));
+            }
+
+            // Init
+            for (let i = 0; i < 70; i++) particles.push(new Particle());
+
+            // Interaction
             canvas.addEventListener('mousedown', (e) => {
                 const r = canvas.getBoundingClientRect();
                 const mx = e.clientX - r.left;
@@ -103,135 +243,133 @@
                     const dy = my - p.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
 
-                    if (dist <= p.radius * 2.5) { // generous hit box
-                        // Pop effect
-                        createExplosion(p.x, p.y, p.color);
-                        particles.splice(i, 1);
-                        hit = true;
-                        combo++;
-                        comboTimer = 60; // frames
-                        score += 10 * combo;
+                    if (dist <= p.radius * 3) {
+                        if (p.isBomb) {
+                            // Bomb logic: blow up all nearby particles
+                            createExplosion(p.x, p.y, p.color, true);
+                            floatingTexts.push(new FloatingText(p.x, p.y, "BOOM!", "#fff"));
+                            particles.splice(i, 1);
 
-                        // Spawn new ones to keep game going
-                        for(let k=0; k<2; k++) particles.push(new Particle());
+                            // Find nearby
+                            for(let j = particles.length - 1; j >= 0; j--) {
+                                const bp = particles[j];
+                                const bdx = p.x - bp.x;
+                                const bdy = p.y - bp.y;
+                                if(Math.sqrt(bdx*bdx + bdy*bdy) < 150) {
+                                    createExplosion(bp.x, bp.y, bp.color);
+                                    score += 20 * combo;
+                                    particles.splice(j, 1);
+                                    particles.push(new Particle()); // respawn
+                                }
+                            }
+                            hit = true;
+                            combo += 5;
+                        } else {
+                            // Normal pop
+                            createExplosion(p.x, p.y, p.color);
+                            floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
+                            particles.splice(i, 1);
+                            hit = true;
+                            combo++;
+                            score += 10 * combo;
+                            particles.push(new Particle());
+                        }
 
-                        // Sync with global system
+                        comboTimer = 90; // longer combo timer
+                        if(combo > maxCombo) maxCombo = combo;
+
+                        // Increase difficulty
+                        gameSpeed = 1 + (score / 5000);
+
+                        // Sync XP
                         if (window.userSystem) {
-                            window.userSystem.addXP(Math.min(combo, 5));
+                            window.userSystem.addXP(Math.min(combo, 10));
                         }
                     }
                 }
-                if (!hit) combo = 0;
+
+                if (!hit) {
+                    combo = 0;
+                    floatingTexts.push(new FloatingText(mx, my, "Miss!", "#ff4757"));
+                } else {
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('poki_highscore_v3', highScore);
+                    }
+                }
             });
 
-            let explosions = [];
-            function createExplosion(x, y, color) {
-                for(let i=0; i<8; i++) {
-                    explosions.push({
-                        x: x, y: y,
-                        vx: (Math.random() - 0.5) * 6,
-                        vy: (Math.random() - 0.5) * 6,
-                        life: 1.0,
-                        color: color
-                    });
-                }
-            }
-
-            class Particle {
-                constructor() {
-                    this.x = Math.random() * (canvas.width / dpr);
-                    this.y = Math.random() * (canvas.height / dpr);
-                    this.vx = (Math.random() - 0.5) * 3;
-                    this.vy = (Math.random() - 0.5) * 3;
-                    this.radius = Math.random() * 4 + 2;
-                    this.color = colors[Math.floor(Math.random() * colors.length)];
-                }
-                update() {
-                    this.x += this.vx;
-                    this.y += this.vy;
-
-                    // Bounce off walls
-                    if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
-                    if (this.x > (canvas.width / dpr) - this.radius) { this.x = (canvas.width / dpr) - this.radius; this.vx *= -1; }
-                    if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
-                    if (this.y > (canvas.height / dpr) - this.radius) { this.y = (canvas.height / dpr) - this.radius; this.vy *= -1; }
-
-                    // Dodge mouse slightly
-                    const dx = mouse.x - this.x;
-                    const dy = mouse.y - this.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < 80) {
-                        this.vx -= dx * 0.005;
-                        this.vy -= dy * 0.005;
-                    }
-
-                    // Speed limit
-                    const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
-                    if (speed > 4) {
-                        this.vx = (this.vx / speed) * 4;
-                        this.vy = (this.vy / speed) * 4;
-                    }
-                }
-                draw() {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = this.color;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = this.color;
-                    ctx.fill();
-                    ctx.closePath();
-                    ctx.shadowBlur = 0;
-                }
-            }
-
-            // Init particles
-            for (let i = 0; i < 60; i++) particles.push(new Particle());
+            // Parallax Stars
+            let stars = Array.from({length: 50}, () => ({
+                x: Math.random() * (canvas.width/dpr),
+                y: Math.random() * (canvas.height/dpr),
+                s: Math.random() * 2 + 0.5
+            }));
 
             function animate() {
-                // Clear with trail
-                ctx.fillStyle = 'rgba(10, 14, 23, 0.25)';
+                // Dark background with slight transparency for trails
+                ctx.fillStyle = 'rgba(10, 14, 25, 0.4)';
                 ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
-                // Draw connecting lines
+                // Draw stars
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                stars.forEach(s => {
+                    s.y += s.s * 0.5 * gameSpeed;
+                    if(s.y > canvas.height/dpr) s.y = 0;
+                    ctx.fillRect(s.x, s.y, s.s, s.s);
+                });
+
+                // Draw connecting lines (Performance opt: only check close ones)
                 for(let i=0; i<particles.length; i++) {
                     for(let j=i+1; j<particles.length; j++) {
                         const dx = particles[i].x - particles[j].x;
                         const dy = particles[i].y - particles[j].y;
                         const dist = dx*dx + dy*dy;
 
-                        if(dist < 7000) {
+                        if(dist < 8000) {
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.15 - dist/46000})`;
+                            ctx.strokeStyle = `rgba(0, 255, 255, ${0.2 - dist/40000})`;
                             ctx.lineWidth = 1;
                             ctx.stroke();
                         }
                     }
                 }
 
-                particles.forEach(p => {
-                    p.update();
-                    p.draw();
-                });
+                // Entities
+                particles.forEach(p => { p.update(); p.draw(); });
 
-                // Handle explosions
+                // Shockwaves
+                for(let i = shockwaves.length - 1; i >= 0; i--) {
+                    shockwaves[i].update();
+                    shockwaves[i].draw();
+                    if(shockwaves[i].life <= 0) shockwaves.splice(i, 1);
+                }
+
+                // Explosions
                 for(let i = explosions.length - 1; i >= 0; i--) {
                     let ex = explosions[i];
                     ex.x += ex.vx;
                     ex.y += ex.vy;
-                    ex.life -= 0.05;
-
-                    if(ex.life <= 0) {
-                        explosions.splice(i, 1);
-                        continue;
-                    }
+                    ex.life -= 0.03;
+                    if(ex.life <= 0) { explosions.splice(i, 1); continue; }
 
                     ctx.beginPath();
-                    ctx.arc(ex.x, ex.y, 2 * ex.life, 0, Math.PI*2);
+                    ctx.arc(ex.x, ex.y, 3 * ex.life, 0, Math.PI*2);
                     ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = ex.color;
                     ctx.fill();
                     ctx.closePath();
+                    ctx.shadowBlur = 0;
+                }
+
+                // Floating texts
+                for(let i = floatingTexts.length - 1; i >= 0; i--) {
+                    floatingTexts[i].update();
+                    floatingTexts[i].draw();
+                    if(floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
                 }
 
                 // UI overlays
@@ -240,11 +378,22 @@
                 ctx.textAlign = 'left';
                 ctx.fillText(`Punkte: ${score}`, 20, 40);
 
+                ctx.font = 'bold 16px "Nunito"';
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillText(`High Score: ${highScore} | Max Combo: ${maxCombo}`, 20, 65);
+
                 if (combo > 1 && comboTimer > 0) {
                     comboTimer--;
-                    ctx.fillStyle = `rgba(255, 71, 87, ${comboTimer/60})`;
-                    ctx.font = 'bold 28px "Fredoka One", cursive';
-                    ctx.fillText(`${combo}x COMBO!`, 20, 75);
+                    const scale = 1 + (comboTimer/90) * 0.5;
+                    ctx.save();
+                    ctx.translate(20, 100);
+                    ctx.scale(scale, scale);
+                    ctx.fillStyle = `hsla(${combo * 10}, 100%, 60%, ${comboTimer/90})`;
+                    ctx.font = 'bold 32px "Fredoka One", cursive';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = ctx.fillStyle;
+                    ctx.fillText(`${combo}x COMBO!`, 0, 0);
+                    ctx.restore();
                 } else if (comboTimer <= 0) {
                     combo = 0;
                 }
@@ -252,33 +401,7 @@
                 requestAnimationFrame(animate);
             }
             animate();
-
-</script>
-
-    <script src="../js/user-system.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameId = 'gravity-racer';
-            const likeBtn = document.getElementById('inGameLikeBtn');
-            const userSystem = new UserSystem();
-
-            if (userSystem.isLiked(gameId)) {
-                likeBtn.classList.add('liked');
-                likeBtn.innerHTML = '♥';
-            }
-
-            likeBtn.addEventListener('click', () => {
-                const isLiked = userSystem.toggleLike(gameId);
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    likeBtn.innerHTML = '♥';
-                    userSystem.showToast('Spiel geliked! +5 XP');
-                } else {
-                    likeBtn.classList.remove('liked');
-                    likeBtn.innerHTML = '♡';
-                }
-            });
-        });
+});
     </script>
 
 </body>

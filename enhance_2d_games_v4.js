@@ -1,79 +1,10 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Docking Sim - Poki Clone</title>
-    <style>
-        body { margin: 0; padding: 0; background-color: #0b0c10; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-        header { width: 100%; padding: 10px 20px; background-color: #1f2833; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; border-bottom: 2px solid #66fcf1; }
-        .back-btn { background-color: #66fcf1; color: #0b0c10; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
-        .back-btn:hover { background-color: #45a29e; }
-        #game-container { position: relative; margin-top: 20px; box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); border-radius: 8px; overflow: hidden; background-color: #0b0c10; }
-        canvas { display: block; }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .hidden { display: none !important; }
-        .screen { background-color: rgba(31, 40, 51, 0.9); padding: 30px; border-radius: 10px; text-align: center; pointer-events: auto; border: 2px solid #66fcf1; }
-        h1 { margin-top: 0; color: #66fcf1; }
-        button { background-color: #45a29e; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        button:hover { background-color: #66fcf1; color: #0b0c10; }
-        #hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; font-size: 18px; font-family: monospace; color: #66fcf1; }
-        .hud-panel { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; border: 1px solid #45a29e; }
-        .controls-info { margin-top: 15px; font-size: 14px; color: #c5c6c7; font-family: monospace; }
-        .warning { color: #ff4757 !important; }
-    </style>
-</head>
-<body>
+const fs = require('fs');
+const path = require('path');
 
-    <div class="ingame-header">
-        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Space Docking Sim - Poki Clone</h1>
-        <div class="ingame-controls">
-            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
-        </div>
-    </div>
+const gamesDir = path.join(__dirname, 'games');
+const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
 
-    <header>
-        <h2>Space Docking Sim</h2>
-
-    </header>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="hud" class="hidden">
-            <div class="hud-panel" id="distDisplay">DIST: 0.0m</div>
-            <div class="hud-panel" id="velDisplay">VEL: 0.0 m/s</div>
-            <div class="hud-panel" id="fuelDisplay">RCS FUEL: 100%</div>
-        </div>
-        <div id="ui-layer">
-            <div id="start-screen" class="screen">
-                <h1>Space Docking Sim</h1>
-                <p>Align and dock with the space station. Max safe velocity: 1.0 m/s</p>
-                <div class="controls-info">
-                    W/S: Translate Forward/Back<br>
-                    A/D: Translate Left/Right<br>
-                    Q/E: Roll (Rotate) Left/Right<br>
-                    Use RCS thrusters carefully. Zero friction in space!
-                </div>
-                <button id="start-btn">Initiate Docking</button>
-            </div>
-            <div id="game-over-screen" class="screen hidden">
-                <h1 id="end-title">Docking Failed</h1>
-                <p id="end-message">You crashed into the station.</p>
-                <button id="restart-btn">Retry Mission</button>
-            </div>
-        </div>
-    </div>
-    <script src="../js/user-system.js"></script>
-    <script>
-
-            // Advanced Particle System Graphics
-
-            // Playable Particle Popper Mechanics
-
-            // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V3.0
-            // ==========================================
-
+const v4Script = `
             // ==========================================
             // SUPERCHARGED PARTICLE POPPER V4.0 (WAVES & POWERUPS)
             // ==========================================
@@ -85,8 +16,8 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = \`\${rect.width}px\`;
+            canvas.style.height = \`\${rect.height}px\`;
 
             // State
             let score = 0;
@@ -255,7 +186,7 @@
                 draw() {
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `${this.color.replace(')', `,${this.life})`).replace('rgb', 'rgba')}`;
+                    ctx.strokeStyle = \`\${this.color.replace(')', \`,\${this.life})\`).replace('rgb', 'rgba')}\`;
                     ctx.lineWidth = 4 * this.life;
                     ctx.stroke();
                     ctx.closePath();
@@ -268,8 +199,8 @@
                 }
                 update() { this.y += this.vy; this.life -= 0.02; }
                 draw() {
-                    ctx.fillStyle = `rgba(255,255,255,${this.life})`;
-                    ctx.font = `bold ${20 * this.scale}px "Fredoka One"`;
+                    ctx.fillStyle = \`rgba(255,255,255,\${this.life})\`;
+                    ctx.font = \`bold \${20 * this.scale}px "Fredoka One"\`;
                     ctx.textAlign = 'center';
                     ctx.shadowBlur = 5;
                     ctx.shadowColor = this.color;
@@ -296,7 +227,7 @@
 
             function nextWave() {
                 wave++;
-                floatingTexts.push(new FloatingText(canvas.width/(2*dpr), canvas.height/(2*dpr), `WAVE ${wave}!`, '#f1c40f', 2));
+                floatingTexts.push(new FloatingText(canvas.width/(2*dpr), canvas.height/(2*dpr), \`WAVE \${wave}!\`, '#f1c40f', 2));
                 particlesToClear = 50 + (wave * 20);
                 particlesCleared = 0;
                 gameSpeed += 0.2;
@@ -358,7 +289,7 @@
                             particlesCleared++;
                         } else {
                             createExplosion(p.x, p.y, p.color);
-                            floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
+                            floatingTexts.push(new FloatingText(p.x, p.y, \`+\${10 * (combo+1)}\`, p.color));
                             particles.splice(i, 1);
                             hit = true;
                             combo++;
@@ -396,7 +327,7 @@
                 x: Math.random() * (canvas.width/dpr),
                 y: Math.random() * (canvas.height/dpr),
                 s: Math.random() * 3 + 0.5,
-                c: `hsl(${Math.random()*360}, 80%, 80%)`
+                c: \`hsl(\${Math.random()*360}, 80%, 80%)\`
             }));
 
             function animate() {
@@ -431,7 +362,7 @@
                             ctx.beginPath();
                             ctx.moveTo(particles[i].x, particles[i].y);
                             ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(0, 255, 255, ${0.25 - dist/40000})`;
+                            ctx.strokeStyle = \`rgba(0, 255, 255, \${0.25 - dist/40000})\`;
                             ctx.lineWidth = powerupMagnet > 0 ? 2 : 1;
                             ctx.stroke();
                         }
@@ -457,7 +388,7 @@
 
                     ctx.beginPath();
                     ctx.arc(ex.x, ex.y, 3 * ex.life, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`;
+                    ctx.fillStyle = \`rgba(255, 255, 255, \${ex.life})\`;
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ex.color;
                     ctx.fill();
@@ -478,11 +409,11 @@
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 24px "Fredoka One", cursive';
                 ctx.textAlign = 'left';
-                ctx.fillText(`Punkte: ${score}`, 20, 40);
+                ctx.fillText(\`Punkte: \${score}\`, 20, 40);
 
                 ctx.font = 'bold 16px "Nunito"';
                 ctx.fillStyle = '#95a5a6';
-                ctx.fillText(`High Score: ${highScore} | Max Combo: ${maxCombo}`, 20, 65);
+                ctx.fillText(\`High Score: \${highScore} | Max Combo: \${maxCombo}\`, 20, 65);
 
                 // Wave Progress Bar
                 ctx.fillStyle = '#2c3e50';
@@ -490,7 +421,7 @@
                 ctx.fillStyle = '#f1c40f';
                 ctx.fillRect(20, 80, 200 * (particlesCleared / particlesToClear), 10);
                 ctx.fillStyle = 'white';
-                ctx.fillText(`WAVE ${wave}`, 230, 90);
+                ctx.fillText(\`WAVE \${wave}\`, 230, 90);
 
                 if (combo > 1 && comboTimer > 0) {
                     comboTimer--;
@@ -498,11 +429,11 @@
                     ctx.save();
                     ctx.translate(20, 130);
                     ctx.scale(scale, scale);
-                    ctx.fillStyle = `hsla(${combo * 10}, 100%, 60%, ${comboTimer/120})`;
+                    ctx.fillStyle = \`hsla(\${combo * 10}, 100%, 60%, \${comboTimer/120})\`;
                     ctx.font = 'bold 32px "Fredoka One", cursive';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = ctx.fillStyle;
-                    ctx.fillText(`${combo}x COMBO!`, 0, 0);
+                    ctx.fillText(\`\${combo}x COMBO!\`, 0, 0);
                     ctx.restore();
                 } else if (comboTimer <= 0) {
                     combo = 0;
@@ -511,18 +442,34 @@
                 // Powerup Timers
                 if(powerupMagnet > 0) {
                     ctx.fillStyle = '#9b59b6';
-                    ctx.fillText(`MAGNET: ${Math.ceil(powerupMagnet/60)}s`, 20, canvas.height/dpr - 40);
+                    ctx.fillText(\`MAGNET: \${Math.ceil(powerupMagnet/60)}s\`, 20, canvas.height/dpr - 40);
                 }
                 if(powerupFreeze > 0) {
                     ctx.fillStyle = '#00ffff';
-                    ctx.fillText(`FREEZE: ${Math.ceil(powerupFreeze/60)}s`, 20, canvas.height/dpr - 20);
+                    ctx.fillText(\`FREEZE: \${Math.ceil(powerupFreeze/60)}s\`, 20, canvas.height/dpr - 20);
                 }
 
                 requestAnimationFrame(animate);
             }
             animate();
-});
-    </script>
+`;
 
-</body>
-</html>
+let upgradedCount = 0;
+
+games.forEach(gameFile => {
+    const filePath = path.join(gamesDir, gameFile);
+    let content = fs.readFileSync(filePath, 'utf-8');
+
+    // We only want to inject this into the 2D games, NOT the 3D ones.
+    // 3D games use <script src="../js/engine3d.js"></script>
+    if (!content.includes('engine3d.js')) {
+        const regex = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?(?=\}\);?\s*<\/script>)/g;
+        if (regex.test(content)) {
+            content = content.replace(regex, v4Script);
+            fs.writeFileSync(filePath, content);
+            upgradedCount++;
+        }
+    }
+});
+
+console.log(`Successfully injected V4 mechanics (Waves & Powerups) into ${upgradedCount} 2D games.`);

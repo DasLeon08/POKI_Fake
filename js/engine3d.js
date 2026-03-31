@@ -18,6 +18,10 @@ class GameEngine3D {
         this.score = 0;
         this.coins = 0;
         this.health = this.config.maxHealth;
+        this.jetpackFuel = 100;
+        this.maxJetpackFuel = 100;
+        this.grenades = 3;
+        this.explosions = [];
         this.isLocked = false;
 
         this.bots = [];
@@ -368,7 +372,11 @@ class GameEngine3D {
                 case 'KeyS': this.keys.s = true; break;
                 case 'KeyD': this.keys.d = true; break;
                 case 'Space':
+                    this.keys.space = true;
                     if (this.camera.position.y <= 2) this.velocity.y = this.config.jumpForce;
+                    break;
+                case 'KeyG':
+                    this.throwGrenade();
                     break;
                 case 'KeyE':
                     this.openShop();
@@ -382,6 +390,7 @@ class GameEngine3D {
                 case 'KeyA': this.keys.a = false; break;
                 case 'KeyS': this.keys.s = false; break;
                 case 'KeyD': this.keys.d = false; break;
+                case 'Space': this.keys.space = false; break;
             }
         });
 
@@ -397,7 +406,15 @@ class GameEngine3D {
         this.ui.innerHTML = \`
             <div id="crosshair" style="display:none; position:fixed; top:50%; left:50%; width:10px; height:10px; background:white; border-radius:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:100; mix-blend-mode: difference;"></div>
             <div style="position:fixed; bottom:20px; left:20px; color:white; font-family:'Fredoka One', cursive; font-size:24px; text-shadow:2px 2px 0 #000; z-index:100;">
-                <div id="hp-display">HP: \${this.health} / \${this.config.maxHealth}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="hp-display">HP: ${this.health} / ${this.config.maxHealth}</div>
+                    <div style="width:100px; height:10px; background:#333; border-radius:5px; overflow:hidden;"><div id="hp-bar" style="width:100%; height:100%; background:#2ecc71;"></div></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="jetpack-display" style="color:#3498db;">Fuel: ${Math.floor(this.jetpackFuel)}%</div>
+                    <div style="width:100px; height:10px; background:#333; border-radius:5px; overflow:hidden;"><div id="jetpack-bar" style="width:100%; height:100%; background:#3498db;"></div></div>
+                </div>
+                <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
                 <div id="score-display" style="color:#e74c3c;">Kills: \${this.score}</div>
                 <div style="font-size:14px; color:#aaa; margin-top:5px; background:rgba(0,0,0,0.5); padding:5px; border-radius:5px;">Press [E] for Upgrades Shop</div>
@@ -480,6 +497,31 @@ class GameEngine3D {
         }
         document.getElementById('shop-coins').innerText = this.coins;
         this.updateUIDisplay();
+    }
+
+    throwGrenade() {
+        if (this.grenades <= 0) return;
+        this.grenades--;
+        this.updateUIDisplay();
+
+        const dir = new THREE.Vector3();
+        this.camera.getWorldDirection(dir);
+
+        const gGeo = new THREE.DodecahedronGeometry(0.3);
+        const gMat = new THREE.MeshStandardMaterial({ color: 0x27ae60, metalness: 0.8, roughness: 0.2 });
+        const grenade = new THREE.Mesh(gGeo, gMat);
+
+        grenade.position.copy(this.camera.position);
+        grenade.position.add(dir.clone().multiplyScalar(1.5));
+
+        this.scene.add(grenade);
+        this.projectiles.push({
+            mesh: grenade,
+            velocity: dir.multiplyScalar(0.8).add(new THREE.Vector3(0, 0.5, 0)), // arc
+            life: 150,
+            isGrenade: true,
+            isPlayer: true
+        });
     }
 
     shoot() {
@@ -604,6 +646,15 @@ class GameEngine3D {
             if (this.camera.position.y < 2) {
                 this.velocity.y = 0;
                 this.camera.position.y = 2;
+                // Recharge jetpack
+                if (this.jetpackFuel < this.maxJetpackFuel) this.jetpackFuel += 1;
+            } else if (this.keys.space && this.jetpackFuel > 0) {
+                // Jetpack boost
+                this.velocity.y += 0.03;
+                this.jetpackFuel -= 2;
+                if (this.velocity.y > 0.4) this.velocity.y = 0.4;
+                // Jetpack particles
+                this.spawnParticles(this.camera.position.clone().add(new THREE.Vector3(0, -1.5, 0)), 0x3498db, 2);
             }
 
             // Apply Weapon Bobbing and Recoil
@@ -627,6 +678,9 @@ class GameEngine3D {
         // Update Projectiles
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
+            if (p.isGrenade) {
+                p.velocity.y -= this.config.gravity * 0.8; // grenade gravity
+            }
             p.mesh.position.add(p.velocity);
             p.life--;
 
@@ -699,8 +753,42 @@ class GameEngine3D {
             }
 
             if (hit || p.life <= 0) {
-                this.scene.remove(p.mesh);
-                this.projectiles.splice(i, 1);
+                if (p.isGrenade) {
+                    // Grenade explosion (AoE)
+                    this.spawnParticles(p.mesh.position, 0xe74c3c, 50);
+                    this.scene.remove(p.mesh);
+                    this.projectiles.splice(i, 1);
+
+                    // Check radius
+                    for (let j = this.bots.length - 1; j >= 0; j--) {
+                        const bot = this.bots[j];
+                        const dist = p.mesh.position.distanceTo(bot.group.position);
+                        if (dist < 15) {
+                            bot.health -= 150; // massive damage
+                            this.showHitMarker();
+                            if (bot.health <= 0) {
+                                this.scene.remove(bot.group);
+                                this.addKillFeed(`You BLEW UP <b>${bot.name}</b>`);
+                                this.score++;
+                                this.coins += 50; // extra reward
+                                if (window.userSystem) window.userSystem.addXP(50);
+                                setTimeout(() => {
+                                    bot.health = 100;
+                                    bot.group.position.set((Math.random() - 0.5) * this.config.worldSize * 0.8, 0, (Math.random() - 0.5) * this.config.worldSize * 0.8);
+                                    this.scene.add(bot.group);
+                                }, 4000);
+                            }
+                        }
+                    }
+
+                    // Flash screen orange
+                    document.body.style.boxShadow = 'inset 0 0 200px rgba(230,126,34,0.8)';
+                    setTimeout(() => document.body.style.boxShadow = 'none', 150);
+
+                } else {
+                    this.scene.remove(p.mesh);
+                    this.projectiles.splice(i, 1);
+                }
             }
         }
 

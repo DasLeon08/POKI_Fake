@@ -18,6 +18,7 @@ class PlatformerEngine {
         this.initCanvas();
 
         this.player = {
+            wallSliding: false,
             x: 100,
             y: 0,
             width: 30,
@@ -55,76 +56,17 @@ class PlatformerEngine {
 
     initPlatforms() {
         // Initial solid ground
-        this.platforms.push({
-            x: 0, y: this.height - 100, width: this.width * 2, height: 100
-        });
-    }
-
-    setupControls() {
-        const jump = () => {
-            if (this.isGameOver) {
-                // Reload or reset logic could go here
-                return;
-            }
-            if (this.player.jumps < this.config.maxJumps) {
-                this.player.vy = this.player.inverted ? -this.config.jumpForce : this.config.jumpForce;
-                this.player.jumps++;
-                if(window.audio) window.audio.playJump();
-                this.createParticles(this.player.x, this.player.inverted ? this.player.y : this.player.y + this.player.height, '#fff', 5);
-            }
-        };
-
-        window.addEventListener('keydown', e => {
-            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jump();
-            if (e.code === 'KeyG') {
-                this.player.inverted = !this.player.inverted;
-                if(window.audio) window.audio.playPowerup();
-            }
-            if (e.code === 'ShiftLeft' && this.dashCooldown <= 0) {
-                this.isDashing = true;
-                this.dashCooldown = 60; // 1 second cooldown
-                setTimeout(() => this.isDashing = false, 200); // 0.2s duration
-            } // Gravity flip mechanic
-        });
-
-        this.canvas.addEventListener('mousedown', jump);
-        this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); }, {passive: false});
-    }
-
-    createParticles(x, y, color, count) {
-        for(let i=0; i<count; i++) {
-            this.particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 5 - this.config.gameSpeed,
-                vy: (Math.random() - 0.5) * 5,
-                life: 1.0,
-                color: color
-            });
-        }
-    }
-
-    update() {
-        this.frameCount++;
-        if (this.dashCooldown > 0) this.dashCooldown--;
-
-        // Speed up
-        if (this.frameCount % 600 === 0) this.config.gameSpeed += 0.5;
-        this.score += this.config.gameSpeed / 10;
-
-        // Player physics
-        this.player.vy += this.player.inverted ? -this.config.gravity : this.config.gravity;
-        this.player.y += this.player.vy;
-
-        // Platform generation
-        if (this.platforms[this.platforms.length - 1].x < this.width) {
-            let pY = this.height - 100 + (Math.random() - 0.5) * 100;
-            // Ensure gap
-            let gap = Math.random() * 150 + 50;
+        const isMoving = Math.random() > 0.7; // 30% chance to be a moving platform
+            const type = Math.random() > 0.5 ? 'h' : 'v';
             this.platforms.push({
                 x: this.platforms[this.platforms.length - 1].x + this.platforms[this.platforms.length - 1].width + gap,
                 y: pY,
                 width: Math.random() * 300 + 100,
-                height: this.height - pY
+                height: this.height - pY,
+                isMoving: isMoving,
+                type: type,
+                origY: pY,
+                offset: 0
             });
 
             // Add obstacle
@@ -156,10 +98,22 @@ class PlatformerEngine {
 
         // Check collisions & move
         let grounded = false;
+        this.player.wallSliding = false;
 
         // Platforms
         for (let i = this.platforms.length - 1; i >= 0; i--) {
             let p = this.platforms[i];
+
+            // Move logic
+            if (p.isMoving) {
+                p.offset += 0.05;
+                if (p.type === 'v') {
+                    p.y = p.origY + Math.sin(p.offset) * 100;
+                    p.height = this.height - p.y;
+                } else {
+                    p.x += Math.cos(p.offset) * 2;
+                }
+            }
             p.x -= this.config.gameSpeed;
 
             if (this.player.x < p.x + p.width &&
@@ -177,9 +131,22 @@ class PlatformerEngine {
                     this.player.vy = 0;
                     this.player.jumps = 0;
                     grounded = true;
+                    this.player.wallSliding = false;
                 } else {
                     // Hit side of platform
-                    this.isGameOver = true;
+                    if (this.player.vy > 0 && !this.player.inverted) {
+                        this.player.wallSliding = true;
+                        this.player.vy = 2; // Slide down slowly
+                        this.player.jumps = 1; // Allow wall jump
+                        if (this.frameCount % 5 === 0) this.createParticles(this.player.x + this.player.width, this.player.y + this.player.height/2, '#fff', 2);
+                    } else if (this.player.vy < 0 && this.player.inverted) {
+                        this.player.wallSliding = true;
+                        this.player.vy = -2; // Slide up slowly
+                        this.player.jumps = 1;
+                        if (this.frameCount % 5 === 0) this.createParticles(this.player.x + this.player.width, this.player.y + this.player.height/2, '#fff', 2);
+                    } else {
+                        this.isGameOver = true;
+                    }
                 }
             }
             if (p.x + p.width < 0) this.platforms.splice(i, 1);

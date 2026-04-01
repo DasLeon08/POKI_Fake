@@ -18,6 +18,7 @@ class GameEngine3D {
         this.score = 0;
         this.coins = 0;
         this.health = this.config.maxHealth;
+        this.killStreak = 0;
         this.jetpackFuel = 100;
         this.maxJetpackFuel = 100;
         this.grenades = 3;
@@ -40,8 +41,43 @@ class GameEngine3D {
         this.isZoomed = false;
         this.baseFov = 75;
         this.medkits = [];
+        this.jumps = 0;
+        this.maxJumps = 2; // Double Jump
+        this.killStreak = 0;
+        this.killStreakTimer = 0;
+
+        // Dynamic Weather System
+        this.weatherParticles = [];
+        this.initWeather();
 
         this.init();
+    }
+
+    initWeather() {
+        const type = this.config.biome;
+        let count = 0, color = 0xffffff, size = 1, speed = 0.5, drift = 0;
+
+        if (type === 'toxic') { count = 300; color = 0x7fff00; size = 2; speed = 0.8; drift = 0.2; }
+        else if (type === 'ice') { count = 500; color = 0xffffff; size = 1.5; speed = 0.3; drift = 0.5; }
+        else if (type === 'desert') { count = 400; color = 0xdeb887; size = 1; speed = 0.4; drift = 0.8; }
+        else if (type === 'mars') { count = 200; color = 0xffa07a; size = 1.2; speed = 0.6; drift = 0.3; }
+        else if (type === 'neon') { return; } // No weather in neon
+
+        const wGeo = new THREE.BufferGeometry();
+        const wPos = new Float32Array(count * 3);
+
+        for(let i=0; i<count; i++) {
+            wPos[i*3] = (Math.random() - 0.5) * this.config.worldSize;
+            wPos[i*3+1] = Math.random() * 100;
+            wPos[i*3+2] = (Math.random() - 0.5) * this.config.worldSize;
+        }
+
+        wGeo.setAttribute('position', new THREE.BufferAttribute(wPos, 3));
+        const wMat = new THREE.PointsMaterial({ color: color, size: size, transparent: true, opacity: 0.6 });
+
+        this.weatherSystem = new THREE.Points(wGeo, wMat);
+        this.scene.add(this.weatherSystem);
+        this.weatherConfig = { speed, drift };
     }
 
     init() {
@@ -421,11 +457,17 @@ class GameEngine3D {
                     this.dash();
                     break;
                 case 'Space':
+                    if (!this.keys.space && this.jumps < this.maxJumps) {
+                        this.velocity.y = this.config.jumpForce;
+                        this.jumps++;
+                        if(window.audio) window.audio.playJump();
+
+                        // Particle burst on double jump
+                        if (this.jumps === 2) {
+                            this.spawnParticles(this.camera.position.clone().add(new THREE.Vector3(0, -1.5, 0)), 0xffffff, 10);
+                        }
+                    }
                     this.keys.space = true;
-                    if (this.camera.position.y <= 2) {
-            this.velocity.y = this.config.jumpForce;
-            if(window.audio) window.audio.playJump();
-        }
                     break;
                 case 'KeyG':
                     this.throwGrenade();
@@ -710,6 +752,10 @@ class GameEngine3D {
 
         // Dash Cooldown & FOV restore
         if (this.dashCooldown > 0) this.dashCooldown--;
+        if (this.killStreakTimer > 0) {
+            this.killStreakTimer--;
+            if (this.killStreakTimer <= 0) this.killStreak = 0;
+        }
 
         // Snipe Zoom
         const targetFov = this.isZoomed ? 30 : this.baseFov;
@@ -824,6 +870,7 @@ class GameEngine3D {
             if (this.camera.position.y < 2) {
                 this.velocity.y = 0;
                 this.camera.position.y = 2;
+                this.jumps = 0;
                 // Recharge jetpack
                 if (this.jetpackFuel < this.maxJetpackFuel) this.jetpackFuel += 1;
             } else if (this.keys.space && this.jetpackFuel > 0) {
@@ -855,6 +902,21 @@ class GameEngine3D {
                 this.nebulaField.rotation.y += 0.0002;
                 this.nebulaField.rotation.x += 0.0001;
             }
+        }
+
+        // Update Weather
+        if (this.weatherSystem) {
+            const positions = this.weatherSystem.geometry.attributes.position.array;
+            for(let i=0; i<positions.length; i+=3) {
+                positions[i+1] -= this.weatherConfig.speed; // Y (fall)
+                positions[i] += this.weatherConfig.drift;   // X (drift)
+
+                if (positions[i+1] < 0) {
+                    positions[i+1] = 100;
+                    positions[i] = (Math.random() - 0.5) * this.config.worldSize;
+                }
+            }
+            this.weatherSystem.geometry.attributes.position.needsUpdate = true;
         }
 
         // Update Projectiles
@@ -907,7 +969,19 @@ class GameEngine3D {
                             this.spawnParticles(bot.group.position, 0xffaa00, 30);
 
                             this.scene.remove(bot.group);
-                            this.addKillFeed(\`You fragged <b>\${bot.name}</b>\`);
+                            this.addKillFeed(`You fragged <b>${bot.name}</b>`);
+
+                            this.killStreak++;
+                            this.killStreakTimer = 180; // 3 seconds
+                            if (this.killStreak === 2) this.showToastUI("DOUBLE KILL!");
+                            if (this.killStreak === 3) this.showToastUI("TRIPLE KILL!");
+                            if (this.killStreak >= 4) this.showToastUI("RAMPAGE! " + this.killStreak + "X");
+
+                            // Streak bonus
+                            if (this.killStreak > 1) {
+                                this.coins += 10 * this.killStreak;
+                                if (window.userSystem) window.userSystem.addXP(10 * this.killStreak);
+                            }
                             this.score++;
                             this.coins += 25;
                             if (window.userSystem) window.userSystem.addXP(30);

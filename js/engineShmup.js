@@ -29,6 +29,8 @@ class ShmupEngine {
         this.nukes = 3;
         this.shakeTimer = 0;
         this.starLayers = [[], [], []];
+        this.drones = [];
+        this.missiles = [];
         this.wave = 1;
         this.enemiesKilled = 0;
 
@@ -168,7 +170,7 @@ class ShmupEngine {
 
     spawnPowerup(x, y) {
         if (Math.random() > 0.1) return; // 10% chance
-        const types = ['heal', 'weapon', 'shield'];
+        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles'];
         this.powerups.push({
             x: x, y: y, radius: 12,
             vy: 2,
@@ -201,6 +203,14 @@ class ShmupEngine {
         if (this.player.powerupTimer > 0) this.player.powerupTimer--;
 
         // Auto Fire
+        if (this.player.powerupTimer > 0 && this.player.powerupType === 'missiles' && this.frameCount % (this.config.fireRate * 2) === 0) {
+            this.missiles.push({
+                x: this.player.x, y: this.player.y - 10,
+                vx: (Math.random()-0.5)*10, vy: -5,
+                damage: 30
+            });
+        }
+
         if (this.frameCount % this.config.fireRate === 0) {
             if(window.audio && this.bullets.length < 50) window.audio.playLaser();
             const spread = this.player.weaponLevel;
@@ -226,6 +236,34 @@ class ShmupEngine {
             if(b.y < -50 || b.x < -50 || b.x > this.width + 50) this.bullets.splice(i, 1);
         }
 
+        // Homing Missiles
+        for(let i = this.missiles.length - 1; i >= 0; i--) {
+            let m = this.missiles[i];
+            m.x += m.vx; m.y += m.vy;
+
+            // Find closest enemy
+            let closest = null; let minDist = Infinity;
+            this.enemies.forEach(e => {
+                const dist = Math.sqrt((e.x-m.x)**2 + (e.y-m.y)**2);
+                if (dist < minDist) { minDist = dist; closest = e; }
+            });
+
+            if (closest) {
+                const angle = Math.atan2(closest.y - m.y, closest.x - m.x);
+                m.vx += Math.cos(angle) * 0.5;
+                m.vy += Math.sin(angle) * 0.5;
+
+                // Speed cap
+                const speed = Math.sqrt(m.vx**2 + m.vy**2);
+                if (speed > 8) { m.vx = (m.vx/speed)*8; m.vy = (m.vy/speed)*8; }
+            }
+
+            // Smoke trail
+            this.particles.push({x: m.x, y: m.y, vx: 0, vy: 0, life: 0.5, color: '#bdc3c7'});
+
+            if(m.y < -50 || m.x < -50 || m.x > this.width + 50) this.missiles.splice(i, 1);
+        }
+
         // Enemy Bullets
         for(let i = this.enemyBullets.length - 1; i >= 0; i--) {
             let b = this.enemyBullets[i];
@@ -235,7 +273,24 @@ class ShmupEngine {
             const dx = b.x - this.player.x;
             const dy = b.y - this.player.y;
             if (Math.sqrt(dx*dx + dy*dy) < this.player.radius + 5) {
-                if (this.player.powerupTimer <= 0 || this.player.powerupType !== 'shield') {
+
+            // Drone collision
+            let hitDrone = false;
+            for(let d=this.drones.length-1; d>=0; d--) {
+                let drone = this.drones[d];
+                const dxD = b.x - (this.player.x + Math.cos(drone.angle)*40);
+                const dyD = b.y - (this.player.y + Math.sin(drone.angle)*40);
+                if (Math.sqrt(dxD*dxD + dyD*dyD) < 15) {
+                    drone.hp--;
+                    hitDrone = true;
+                    this.createExplosion(b.x, b.y, '#3498db', 5);
+                    if(drone.hp <= 0) this.drones.splice(d,1);
+                    break;
+                }
+            }
+            if(hitDrone) { this.enemyBullets.splice(i, 1); continue; }
+
+            if (this.player.powerupTimer <= 0 || this.player.powerupType !== 'shield') {
                     this.player.health -= b.damage;
                     this.createExplosion(this.player.x, this.player.y, '#ff0000', 10);
                 }
@@ -285,6 +340,19 @@ class ShmupEngine {
 
             // Bullet Collision
             let hit = false;
+            // Check Missiles
+            for(let j = this.missiles.length - 1; j >= 0; j--) {
+                let m = this.missiles[j];
+                if(Math.sqrt((m.x-e.x)**2 + (m.y-e.y)**2) < e.radius + 10) {
+                    e.health -= m.damage;
+                    this.missiles.splice(j, 1);
+                    this.createExplosion(m.x, m.y, '#e74c3c', 15);
+                    if(e.health <= 0) {
+                        hit = true; break; // handle death below
+                    }
+                }
+            }
+
             for(let j = this.bullets.length - 1; j >= 0; j--) {
                 let b = this.bullets[j];
                 const dx = b.x - e.x;
@@ -309,9 +377,32 @@ class ShmupEngine {
                     }
                 }
             }
+            if(e.health <= 0 && hit) { // from missile
+                this.score += e.type === 'boss' ? 1000 : 100;
+                this.enemiesKilled++;
+                this.spawnPowerup(e.x, e.y);
+                this.createExplosion(e.x, e.y, '#ffaa00', e.type === 'boss' ? 100 : 20);
+                this.enemies.splice(i, 1);
+                if(window.userSystem) window.userSystem.addXP(e.type === 'boss' ? 50 : 5);
+                if (this.enemiesKilled % 20 === 0) this.wave++;
+                continue;
+            }
             if(hit) continue;
 
             // Player Collision (Ram)
+            // Drone Ramming
+            for(let d=this.drones.length-1; d>=0; d--) {
+                let drone = this.drones[d];
+                const dxD = e.x - (this.player.x + Math.cos(drone.angle)*40);
+                const dyD = e.y - (this.player.y + Math.sin(drone.angle)*40);
+                if (Math.sqrt(dxD*dxD + dyD*dyD) < e.radius + 10) {
+                    e.health -= 50;
+                    drone.hp--;
+                    this.createExplosion(e.x, e.y, '#3498db', 10);
+                    if(drone.hp <= 0) this.drones.splice(d,1);
+                }
+            }
+
             const dx = e.x - this.player.x;
             const dy = e.y - this.player.y;
             if(Math.sqrt(dx*dx + dy*dy) < e.radius + this.player.radius) {
@@ -336,6 +427,12 @@ class ShmupEngine {
                 if(p.type === 'heal') this.player.health = Math.min(100, this.player.health + 30);
                 if(p.type === 'weapon') this.player.weaponLevel = Math.min(5, this.player.weaponLevel + 1);
                 if(p.type === 'shield') { this.player.powerupTimer = 300; this.player.powerupType = 'shield'; }
+                if(p.type === 'drone') {
+                    this.drones.push({ angle: 0, hp: 3 });
+                }
+                if(p.type === 'missiles') {
+                    this.player.powerupTimer = 400; this.player.powerupType = 'missiles';
+                }
 
                 this.createExplosion(p.x, p.y, p.color, 15);
                 this.powerups.splice(i, 1);
@@ -429,6 +526,29 @@ class ShmupEngine {
         this.ctx.fillStyle = '#f1c40f';
         this.bullets.forEach(b => {
             this.ctx.fillRect(b.x - 2, b.y - 10, 4, 20);
+        });
+
+        // Missiles
+        this.ctx.fillStyle = '#e74c3c';
+        this.missiles.forEach(m => {
+            this.ctx.fillRect(m.x - 3, m.y - 8, 6, 16);
+            this.ctx.fillStyle = '#f1c40f';
+            this.ctx.fillRect(m.x - 2, m.y + 8, 4, 4); // flame
+            this.ctx.fillStyle = '#e74c3c';
+        });
+
+        // Drones
+        this.ctx.fillStyle = '#3498db';
+        this.drones.forEach((d, i) => {
+            d.angle += 0.05 + (i * 0.01);
+            const dx = this.player.x + Math.cos(d.angle) * 40;
+            const dy = this.player.y + Math.sin(d.angle) * 40;
+            this.ctx.beginPath();
+            this.ctx.arc(dx, dy, 8, 0, Math.PI*2);
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = d.hp;
+            this.ctx.stroke();
         });
 
         this.ctx.fillStyle = '#ff0000';

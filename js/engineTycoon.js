@@ -22,6 +22,7 @@ class TycoonEngine {
             clickPower: this.config.clickPower,
             clickUpgrades: 0,
             buildings: this.config.buildings.map(b => ({ id: b.id, count: 0 })),
+            autoClickers: 0,
             prestige: 0
         };
 
@@ -46,8 +47,27 @@ class TycoonEngine {
             let multiplier = 1 + (this.state.prestige * 0.5); // +50% per prestige level
             this.state.currency += this.calculateCPS() * multiplier;
 
+            // Auto Clickers
+            if (this.state.autoClickers > 0) {
+                for(let i=0; i<this.state.autoClickers; i++) {
+                    const clickVal = this.state.clickPower * multiplier;
+                    this.state.currency += clickVal;
+                    if(Math.random() < 0.1) {
+                        const btnRect = document.getElementById('tycoon-main-btn').getBoundingClientRect();
+                        this.createClickText(btnRect.left + Math.random()*btnRect.width, btnRect.top + Math.random()*btnRect.height, `+${this.formatNumber(clickVal)} (Auto)`);
+                    }
+                }
+            }
+
             // Random Golden Click event (1% chance per second)
             if (Math.random() < 0.01 && !document.getElementById('golden-click')) {
+                this.spawnGoldenClick();
+            }
+
+            // Thief Event
+            if (Math.random() < 0.005 && !document.getElementById('thief-event')) {
+                this.spawnThief();
+            }
                 this.spawnGoldenClick();
             }
             this.updateUI();
@@ -79,6 +99,35 @@ class TycoonEngine {
         if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return Math.floor(num).toString();
+    }
+
+    spawnThief() {
+        const btn = document.createElement('div');
+        btn.id = 'thief-event';
+        btn.innerHTML = '🏃‍♂️💨';
+        btn.style.position = 'fixed';
+        btn.style.left = '-100px';
+        btn.style.top = (20 + Math.random() * 60) + '%';
+        btn.style.fontSize = '4rem';
+        btn.style.cursor = 'crosshair';
+        btn.style.zIndex = 2000;
+        btn.style.transition = 'left 6s linear';
+
+        btn.onclick = () => {
+            const reward = Math.max(500, this.calculateCPS() * 300); // 5 mins worth
+            this.state.currency += reward;
+            this.createClickText(btn.getBoundingClientRect().left, btn.getBoundingClientRect().top, `+${this.formatNumber(reward)} THIEF CAUGHT!`);
+            this.createParticles(btn.getBoundingClientRect().left + 25, btn.getBoundingClientRect().top + 25, '#2ecc71', 50);
+            btn.remove();
+            this.updateUI();
+            if(window.audio) window.audio.playExplosion();
+        };
+
+        document.body.appendChild(btn);
+
+        // Run across
+        setTimeout(() => btn.style.left = '120%', 100);
+        setTimeout(() => { if(btn.parentNode) btn.remove(); }, 6100);
     }
 
     spawnGoldenClick() {
@@ -208,6 +257,16 @@ class TycoonEngine {
         }
     }
 
+    buyAutoClicker() {
+        const cost = Math.floor(200 * Math.pow(1.5, this.state.autoClickers || 0));
+        if (this.state.currency >= cost) {
+            this.state.currency -= cost;
+            this.state.autoClickers = (this.state.autoClickers || 0) + 1;
+            this.updateUI();
+            if(window.audio) window.audio.playCoin();
+        }
+    }
+
     buyClickUpgrade() {
         const cost = Math.floor(50 * Math.pow(1.5, this.state.clickUpgrades));
         if (this.state.currency >= cost) {
@@ -240,6 +299,16 @@ class TycoonEngine {
                             <div style="color: #95a5a6; font-size: 0.9rem;">Level \${this.state.clickUpgrades}</div>
                         </div>
                         <div id="click-upgrade-cost" style="color: \${this.config.colorTheme}; font-weight: bold;">50</div>
+
+                        <div id="auto-clicker-cost" style="color: ${this.config.colorTheme}; font-weight: bold;">500</div>
+                    </div>
+
+                    <div id="auto-clicker-btn" onclick="window.tycoon.buyAutoClicker()" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
+                        <div>
+                            <div style="color: white; font-weight: bold; font-size: 1.1rem;">Manager Einstellen (Auto-Klick)</div>
+                            <div style="color: #95a5a6; font-size: 0.9rem;">Besitz: ${this.state.autoClickers || 0}</div>
+                        </div>
+                        <div id="auto-clicker-cost-disp" style="color: ${this.config.colorTheme}; font-weight: bold;">${this.formatNumber(Math.floor(200 * Math.pow(1.5, this.state.autoClickers || 0)))}</div>
                     </div>
 
                     <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Gebäude</h3>
@@ -284,6 +353,14 @@ class TycoonEngine {
         const clickEl = document.getElementById('click-upgrade-btn');
         document.getElementById('click-upgrade-cost').innerText = this.formatNumber(clickCost);
         clickEl.style.background = this.state.currency >= clickCost ? 'rgba(52, 152, 219, 0.4)' : 'rgba(0,0,0,0.3)';
+
+        const autoCost = Math.floor(200 * Math.pow(1.5, this.state.autoClickers || 0));
+        const autoEl = document.getElementById('auto-clicker-btn');
+        if (autoEl) {
+            document.getElementById('auto-clicker-cost-disp').innerText = this.formatNumber(autoCost);
+            autoEl.querySelector('div > div:nth-child(2)').innerText = 'Besitz: ' + (this.state.autoClickers || 0);
+            autoEl.style.background = this.state.currency >= autoCost ? 'rgba(155, 89, 182, 0.4)' : 'rgba(0,0,0,0.3)';
+        }
 
         this.config.buildings.forEach(b => {
             const stateB = this.state.buildings.find(ob => ob.id === b.id);

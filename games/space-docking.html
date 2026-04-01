@@ -80,8 +80,8 @@
             // ==========================================
 
             // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V5.0
-            // Added: CRT Overlay, Black Holes, Chain Lightning
+            // SUPERCHARGED PARTICLE POPPER V6.0
+            // Added: Mirror Portals, Advanced CRT Overlay, Screen Shake
             // ==========================================
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -114,7 +114,8 @@
             let explosions = [];
             let floatingTexts = [];
             let shockwaves = [];
-            let lightning = []; // v5
+            let lightning = [];
+            let portals = [];
 
             // Mouse
             let mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
@@ -170,7 +171,25 @@
                         if (Math.sqrt(dx*dx + dy*dy) < 100) { this.vx -= dx * 0.005; this.vy -= dy * 0.005; }
                     }
 
-                    if (this.type === 'blackhole') {
+
+            // Portal Teleportation
+            portals.forEach(pt => {
+                const dx = pt.x - this.x;
+                const dy = pt.y - this.y;
+                if(Math.sqrt(dx*dx + dy*dy) < 30) {
+                    const linked = portals.find(p => p.id === pt.link);
+                    if(linked && !this.justTeleported) {
+                        this.x = linked.x;
+                        this.y = linked.y;
+                        this.justTeleported = 30; // cooldown
+                        if(window.audio) window.audio.playJump();
+                        createExplosion(linked.x, linked.y, linked.color, false);
+                    }
+                }
+            });
+            if(this.justTeleported > 0) this.justTeleported--;
+
+            if (this.type === 'blackhole') {
                         // Pull other particles into it
                         particles.forEach(p => {
                             if (p !== this && p.type !== 'blackhole') {
@@ -244,6 +263,11 @@
             function createLightning(p1, p2) {
                 lightning.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, life: 1.0 });
             }
+
+
+            // V6 Mirror Portals
+            portals.push({x: canvas.width/dpr * 0.1, y: canvas.height/dpr * 0.5, id: 0, link: 1, color: '#e67e22', angle: 0});
+            portals.push({x: canvas.width/dpr * 0.9, y: canvas.height/dpr * 0.5, id: 1, link: 0, color: '#e67e22', angle: 0});
 
             for (let i = 0; i < 70; i++) particles.push(new Particle());
 
@@ -405,6 +429,30 @@
 
                 if(powerupMagnet > 0) { ctx.fillStyle = '#9b59b6'; ctx.fillText(`MAGNET: ${Math.ceil(powerupMagnet/60)}s`, 20, canvas.height/dpr - 40); }
                 if(powerupFreeze > 0) { ctx.fillStyle = '#00ffff'; ctx.fillText(`FREEZE: ${Math.ceil(powerupFreeze/60)}s`, 20, canvas.height/dpr - 20); }
+
+
+                // Draw Portals
+                portals.forEach(pt => {
+                    pt.angle += 0.05;
+                    ctx.save();
+                    ctx.translate(pt.x, pt.y);
+                    ctx.rotate(pt.angle);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 20, 30 + Math.sin(frameCount*0.1)*5, 0, 0, Math.PI*2);
+                    ctx.strokeStyle = pt.color;
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = pt.color;
+                    ctx.stroke();
+                    ctx.restore();
+                });
+
+                // Screen Shake logic tied to explosions (simulated by translating canvas context)
+                if(explosions.length > 20) {
+                    ctx.setTransform(dpr, 0, 0, dpr, (Math.random()-0.5)*5, (Math.random()-0.5)*5);
+                } else {
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
 
                 drawCRT();
                 requestAnimationFrame(animate);

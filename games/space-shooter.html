@@ -41,8 +41,8 @@
             // ==========================================
 
             // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V7.0
-            // Added: Giant Boss Particles, Multi-Hit Health, Mini Swarm
+            // SUPERCHARGED PARTICLE POPPER V8.0
+            // Added: Meteor Showers, Shield Generators
             // ==========================================
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -77,6 +77,8 @@
             let shockwaves = [];
             let lightning = [];
             let portals = [];
+            let meteors = [];
+            let meteorShower = 0;
 
             // Mouse
             let mouse = { x: -1000, y: -1000, vx: 0, vy: 0 };
@@ -108,6 +110,7 @@
                     else if (rand > 0.91) { this.type = 'freeze'; this.color = '#00ffff'; this.radius = 10; }
                     else if (rand > 0.88) { this.type = 'lightning'; this.color = '#f1c40f'; this.radius = 10; } // V5
                     else if (rand > 0.86) { this.type = 'blackhole'; this.color = '#000000'; this.radius = 15; }
+             else if (rand > 0.84) { this.type = 'shield_gen'; this.color = '#3498db'; this.radius = 12; this.hp = 3; }
 
                     // V7 Boss Injection (every 5 waves)
                     if (wave % 5 === 0 && Math.random() > 0.98) {
@@ -193,10 +196,19 @@
                     ctx.shadowColor = this.type === 'blackhole' ? '#fff' : this.color;
                     ctx.fill();
                     ctx.closePath();
+                    if (this.isShielded) {
+                        ctx.strokeStyle = '#3498db'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI*2); ctx.stroke();
+                    }
 
                     if (this.type === 'bomb') { ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 2; ctx.stroke(); }
                     else if (this.type === 'blackhole') { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
-                    else if (this.type === 'boss') {
+                    else if (this.type === 'shield_gen') {
+                        ctx.strokeStyle = '#3498db'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8, 0, (Math.PI*2) * (this.hp/3)); ctx.stroke();
+                        ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
+                        ctx.beginPath(); ctx.arc(this.x, this.y, 150, 0, Math.PI*2); ctx.fill(); // range indicator
+                    } else if (this.type === 'boss') {
                         ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 5, 0, (Math.PI*2) * (this.hp/10)); ctx.stroke();
                     }
@@ -258,10 +270,29 @@
                 const mx = e.clientX - r.left; const my = e.clientY - r.top;
 
                 let hit = false;
+
+             // Check Meteors First (Overlay)
+             for (let i = meteors.length - 1; i >= 0; i--) {
+                 const m = meteors[i];
+                 const dx = mx - m.x; const dy = my - m.y;
+                 if (Math.sqrt(dx*dx + dy*dy) <= m.radius) {
+                     m.hp--;
+                     createExplosion(m.x, m.y, m.color, false);
+                     if (m.hp <= 0) {
+                         createExplosion(m.x, m.y, '#e74c3c', true);
+                         score += 500 * combo;
+                         floatingTexts.push(new FloatingText(m.x, m.y, "+500", "#f1c40f", 2));
+                         meteors.splice(i, 1);
+                     }
+                     hit = true; combo++;
+                     if(window.audio) window.audio.playExplosion();
+                     break; // hit only 1
+                 }
+             }
                 for (let i = particles.length - 1; i >= 0; i--) {
                     const p = particles[i];
                     const dx = mx - p.x; const dy = my - p.y;
-                    if (Math.sqrt(dx*dx + dy*dy) <= p.radius * 3.5) {
+                    if (Math.sqrt(dx*dx + dy*dy) <= p.radius * 3.5 && !p.isShielded) {
                         if (p.type === 'bomb' || p.type === 'blackhole') {
                             createExplosion(p.x, p.y, p.color, true);
                             floatingTexts.push(new FloatingText(p.x, p.y, p.type === 'blackhole' ? "SINGULARITY!" : "BOOM!", "#fff", 1.5));
@@ -312,7 +343,15 @@
                 if (!hit) { combo = 0; floatingTexts.push(new FloatingText(mx, my, "Miss!", "#ff4757")); }
                 else {
                     if (score > highScore) { highScore = score; localStorage.setItem('poki_highscore_v5', highScore); }
-                    if (particlesCleared >= particlesToClear) nextWave();
+                    if (particlesCleared >= particlesToClear) {
+                nextWave();
+                // V8 Event Trigger: 20% chance per wave
+                if (Math.random() < 0.2) {
+                    meteorShower = 300; // 5 seconds
+                    floatingTexts.push(new FloatingText(canvas.width/(2*dpr), canvas.height/(2*dpr)+40, "METEOR SHOWER!", "#e74c3c", 2));
+                    if(window.audio) window.audio.playExplosion();
+                }
+            }
                 }
             });
 
@@ -366,7 +405,53 @@
                     if(l.life <= 0) lightning.splice(i, 1);
                 }
 
-                particles.forEach(p => { p.update(); p.draw(); });
+                // Shield Gen Logic
+             let shieldedParticles = [];
+             particles.forEach(sg => {
+                 if (sg.type === 'shield_gen') {
+                     particles.forEach(p => {
+                         if (p !== sg && Math.abs(sg.x - p.x) < 150 && Math.abs(sg.y - p.y) < 150) {
+                             shieldedParticles.push(p);
+                             ctx.beginPath();
+                             ctx.moveTo(sg.x, sg.y); ctx.lineTo(p.x, p.y);
+                             ctx.strokeStyle = 'rgba(52, 152, 219, 0.4)';
+                             ctx.lineWidth = 2; ctx.stroke();
+                         }
+                     });
+                 }
+             });
+
+             // Meteor Logic
+             if (meteorShower > 0) {
+                 meteorShower--;
+                 if (frameCount % 10 === 0) {
+                     meteors.push({
+                         x: Math.random() * canvas.width/dpr, y: -50,
+                         vx: (Math.random()-0.5)*5, vy: 15 + Math.random()*10,
+                         radius: 20 + Math.random()*20, color: '#e67e22', hp: 1
+                     });
+                 }
+             }
+
+             for(let i=meteors.length-1; i>=0; i--) {
+                 let m = meteors[i];
+                 m.x += m.vx; m.y += m.vy;
+
+                 // Draw
+                 ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI*2);
+                 ctx.fillStyle = m.color; ctx.shadowBlur = 20; ctx.shadowColor = '#e74c3c'; ctx.fill(); ctx.shadowBlur = 0;
+
+                 // Tail
+                 ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - m.vx*5, m.y - m.vy*5);
+                 ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = m.radius; ctx.stroke();
+
+                 if (m.y > canvas.height/dpr + 50) meteors.splice(i, 1);
+             }
+
+             particles.forEach(p => {
+                 p.isShielded = shieldedParticles.includes(p);
+                 p.update(); p.draw();
+             });
 
                 for(let i = shockwaves.length - 1; i >= 0; i--) { shockwaves[i].update(); shockwaves[i].draw(); if(shockwaves[i].life <= 0) shockwaves.splice(i, 1); }
 

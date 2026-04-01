@@ -23,7 +23,7 @@ class TycoonEngine {
             currency: 0,
             clickPower: this.config.clickPower,
             clickUpgrades: 0,
-            buildings: this.config.buildings.map(b => ({ id: b.id, count: 0 })),
+            buildings: this.config.buildings.map(b => ({ id: b.id, count: 0, level: 1 })),
             shares: 0,
             autoClickers: 0,
             prestige: 0
@@ -101,7 +101,8 @@ class TycoonEngine {
         let cps = 0;
         this.config.buildings.forEach(b => {
             const owned = this.state.buildings.find(ob => ob.id === b.id).count;
-            cps += owned * b.cps;
+            const lvl = this.state.buildings.find(ob => ob.id === b.id).level || 1;
+            cps += owned * (b.cps * Math.pow(1.2, lvl - 1));
         });
         return cps;
     }
@@ -255,6 +256,57 @@ class TycoonEngine {
         setTimeout(() => el.remove(), 1000);
     }
 
+    spinSlots() {
+        if (this.state.currency >= 500) {
+            this.state.currency -= 500;
+            const symbols = ['🍒', '🍋', '🔔', '💎', '7️⃣'];
+            const r1 = symbols[Math.floor(Math.random() * symbols.length)];
+            const r2 = symbols[Math.floor(Math.random() * symbols.length)];
+            const r3 = symbols[Math.floor(Math.random() * symbols.length)];
+
+            const resEl = document.getElementById('slot-result');
+            resEl.innerText = `${r1}${r2}${r3}`;
+
+            if (r1 === r2 && r2 === r3) {
+                // JACKPOT
+                let win = 5000;
+                if (r1 === '7️⃣') win = 50000;
+                if (r1 === '💎') win = 100000;
+
+                this.state.currency += win;
+                this.createClickText(window.innerWidth/2, window.innerHeight/2, `JACKPOT! +${this.formatNumber(win)}`);
+                this.createParticles(window.innerWidth/2, window.innerHeight/2, '#f1c40f', 100);
+                if(window.audio) window.audio.playExplosion();
+            } else if (r1 === r2 || r2 === r3 || r1 === r3) {
+                // Small win
+                this.state.currency += 1000;
+                this.createClickText(window.innerWidth/2, window.innerHeight/2, `+1k`);
+                if(window.audio) window.audio.playCoin();
+            } else {
+                if(window.audio) window.audio.playJump(); // sad sound
+            }
+            this.updateUI();
+        }
+    }
+
+    levelUpBuilding(id) {
+        const b = this.config.buildings.find(x => x.id === id);
+        const stateB = this.state.buildings.find(x => x.id === id);
+        const lvl = stateB.level || 1;
+        const cost = Math.floor(b.baseCost * 5 * Math.pow(1.5, lvl)); // expensive to level up
+
+        if (this.state.currency >= cost) {
+            this.state.currency -= cost;
+            stateB.level = lvl + 1;
+            this.createClickText(event.clientX, event.clientY, `LEVEL UP!`);
+            this.createParticles(event.clientX, event.clientY, '#3498db', 20);
+            if(window.audio) window.audio.playPowerup();
+            this.updateUI();
+        } else {
+            this.createClickText(event.clientX, event.clientY, `Need ${this.formatNumber(cost)}`);
+        }
+    }
+
     buyBuilding(id) {
         const building = this.config.buildings.find(b => b.id === id);
         const stateBuilding = this.state.buildings.find(ob => ob.id === id);
@@ -350,6 +402,11 @@ class TycoonEngine {
 
                     <div id="buildings-list"></div>
 
+                    <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Casino 🎰</h3>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align:center;">
+                        <div id="slot-result" style="font-size: 2rem; margin-bottom:10px; letter-spacing:10px;">❓❓❓</div>
+                        <button onclick="window.tycoon.spinSlots()" style="width:100%; padding:10px; background:linear-gradient(135deg, #f1c40f, #f39c12); border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 10px rgba(241,196,15,0.4);">SPIN (500 🪙)</button>
+                    </div>
                     <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Stock Market 📈</h3>
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
@@ -417,7 +474,8 @@ class TycoonEngine {
             const cost = this.getBuildingCost(b.baseCost, stateB.count);
 
             document.getElementById('cost-' + b.id).innerText = this.formatNumber(cost);
-            document.getElementById('count-' + b.id).innerText = 'Besitz: ' + stateB.count;
+            document.getElementById('count-' + b.id).innerText = 'Besitz: ' + stateB.count + ' (Lv.' + (stateB.level||1) + ')';
+            document.getElementById('cps-' + b.id).innerText = '+' + this.formatNumber(b.cps * Math.pow(1.2, (stateB.level||1)-1)) + ' / sek';
 
             const el = document.getElementById('b-' + b.id);
             el.style.background = this.state.currency >= cost ? 'rgba(46, 204, 113, 0.3)' : 'rgba(0,0,0,0.3)';

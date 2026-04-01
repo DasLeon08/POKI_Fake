@@ -47,6 +47,8 @@ class GameEngine3D {
         this.killStreakTimer = 0;
         this.bulletTimeFuel = 100;
         this.isBulletTime = false;
+        this.turrets = [];
+        this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
         this.weatherParticles = [];
@@ -458,6 +460,8 @@ class GameEngine3D {
                 case 'ShiftLeft':
                     this.dash();
                     break;
+                case 'KeyF': this.fireGrapple(); break;
+                case 'KeyT': this.deployTurret(); break;
                 case 'KeyQ':
                     if (this.bulletTimeFuel > 20) this.isBulletTime = true;
                     break;
@@ -525,6 +529,10 @@ class GameEngine3D {
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div id="bt-display" style="color:#f39c12;">Focus: ${Math.floor(this.bulletTimeFuel)}% [Q]</div>
                     <div style="width:100px; height:10px; background:#333; border-radius:5px; overflow:hidden;"><div id="bt-bar" style="width:100%; height:100%; background:#f39c12;"></div></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="color:#9b59b6;">Turrets: ${Math.floor(this.coins/100)} [T] (100 🪙)</div>
+                    <div style="color:#2ecc71;">Grapple [F]</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -615,6 +623,76 @@ class GameEngine3D {
         }
         document.getElementById('shop-coins').innerText = this.coins;
         this.updateUIDisplay();
+    }
+
+    fireGrapple() {
+        if (this.grapple.active) {
+            // Cancel
+            this.grapple.active = false;
+            this.scene.remove(this.grapple.line);
+            return;
+        }
+
+        // Raycast to find wall/obstacle
+        const dir = new THREE.Vector3();
+        this.camera.getWorldDirection(dir);
+
+        const raycaster = new THREE.Raycaster(this.camera.position, dir, 0, 100);
+        const intersects = [];
+
+        // Mock raycast against obstacles bounding boxes
+        let hitDist = Infinity;
+        let hitPoint = null;
+        for(let obs of this.obstacles) {
+            const tempBox = new THREE.Box3().copy(obs);
+            const p = new THREE.Vector3();
+            if(raycaster.ray.intersectBox(tempBox, p)) {
+                const dist = this.camera.position.distanceTo(p);
+                if(dist < hitDist) { hitDist = dist; hitPoint = p; }
+            }
+        }
+
+        if (hitPoint) {
+            this.grapple.active = true;
+            this.grapple.point = hitPoint;
+            if(window.audio) window.audio.playLaser();
+
+            // Draw line
+            const mat = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 });
+            const pts = [this.camera.position, hitPoint];
+            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+            this.grapple.line = new THREE.Line(geo, mat);
+            this.scene.add(this.grapple.line);
+        }
+    }
+
+    deployTurret() {
+        if (this.coins >= 100) {
+            this.coins -= 100;
+            this.updateUIDisplay();
+
+            const tGeo = new THREE.CylinderGeometry(0.5, 0.8, 1.5, 8);
+            const tMat = new THREE.MeshStandardMaterial({ color: 0x9b59b6, metalness: 0.8 });
+            const turret = new THREE.Mesh(tGeo, tMat);
+
+            // Barrel
+            const bGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+            const bMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const barrel = new THREE.Mesh(bGeo, bMat);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(0, 0.5, 0.5);
+            turret.add(barrel);
+
+            turret.position.copy(this.camera.position);
+            turret.position.y = 0.75; // ground level
+            this.scene.add(turret);
+
+            this.turrets.push({ mesh: turret, barrel: barrel, fireTimer: 0, life: 1000 });
+            if(window.audio) window.audio.playPowerup();
+            this.showToastUI("TURRET DEPLOYED");
+        } else {
+            this.showToastUI("Not enough coins (100)");
+        }
     }
 
     dash() {
@@ -771,6 +849,61 @@ class GameEngine3D {
         }
 
         const timeScale = this.isBulletTime ? 0.2 : 1.0;
+
+        // Grapple Physics
+        if (this.grapple.active && this.grapple.point) {
+            const dir = new THREE.Vector3().subVectors(this.grapple.point, this.camera.position).normalize();
+            this.camera.position.add(dir.multiplyScalar(0.8)); // pull speed
+            this.velocity.y = 0.1; // slight lift
+
+            // Update line
+            const positions = this.grapple.line.geometry.attributes.position.array;
+            positions[0] = this.camera.position.x; positions[1] = this.camera.position.y - 0.5; positions[2] = this.camera.position.z;
+            this.grapple.line.geometry.attributes.position.needsUpdate = true;
+
+            // Auto release if close
+            if (this.camera.position.distanceTo(this.grapple.point) < 2) {
+                this.grapple.active = false;
+                this.scene.remove(this.grapple.line);
+            }
+        }
+
+        // Turret Logic
+        for(let i=this.turrets.length-1; i>=0; i--) {
+            let t = this.turrets[i];
+            t.life--;
+            if (t.life <= 0) { this.scene.remove(t.mesh); this.turrets.splice(i,1); continue; }
+
+            // Find closest bot
+            let closest = null; let minDist = 40;
+            this.bots.forEach(b => {
+                if (b.health > 0) {
+                    const d = t.mesh.position.distanceTo(b.group.position);
+                    if (d < minDist) { minDist = d; closest = b; }
+                }
+            });
+
+            if (closest) {
+                t.mesh.lookAt(closest.group.position);
+                t.fireTimer--;
+                if (t.fireTimer <= 0) {
+                    t.fireTimer = 20;
+                    // Shoot
+                    const dir = new THREE.Vector3().subVectors(closest.group.position, t.mesh.position).normalize();
+                    const projGeo = new THREE.SphereGeometry(0.1, 4, 4);
+                    const projMat = new THREE.MeshBasicMaterial({ color: 0x9b59b6 });
+                    const proj = new THREE.Mesh(projGeo, projMat);
+                    proj.position.copy(t.mesh.position);
+                    proj.position.y += 0.5;
+
+                    this.scene.add(proj);
+                    this.projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(2.0), life: 50, isPlayer: true, damage: 15 });
+                    if(window.audio) window.audio.playLaser();
+                }
+            } else {
+                t.mesh.rotation.y += 0.02; // idle scan
+            }
+        }
 
         // Dash Cooldown & FOV restore
         if (this.dashCooldown > 0) this.dashCooldown--;

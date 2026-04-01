@@ -32,6 +32,8 @@ class ShmupEngine {
         this.blackHoleActive = 0;
         this.drones = [];
         this.missiles = [];
+        this.pets = [];
+        this.laserActive = 0;
         this.wave = 1;
         this.enemiesKilled = 0;
 
@@ -181,7 +183,7 @@ class ShmupEngine {
 
     spawnPowerup(x, y) {
         if (Math.random() > 0.1) return; // 10% chance
-        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles'];
+        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles', 'pet', 'laser'];
         this.powerups.push({
             x: x, y: y, radius: 12,
             vy: 2,
@@ -212,6 +214,47 @@ class ShmupEngine {
         this.player.y = Math.max(this.player.radius, Math.min(this.height - this.player.radius, this.player.y));
 
         if (this.player.powerupTimer > 0) this.player.powerupTimer--;
+
+        // Pet Auto Fire
+        this.pets.forEach((pt, idx) => {
+            pt.fireTimer--;
+            if (pt.fireTimer <= 0) {
+                pt.fireTimer = 30 + Math.random()*20;
+                this.bullets.push({
+                    x: this.player.x + pt.offsetX, y: this.player.y + pt.offsetY - 10,
+                    vx: 0, vy: -12, damage: 15
+                });
+                if(window.audio) window.audio.playLaser();
+            }
+
+            // Draw Pet (hacky to put in update but saves a loop)
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x + pt.offsetX, this.player.y + pt.offsetY, 8, 0, Math.PI*2);
+            this.ctx.fillStyle = '#2ecc71';
+            this.ctx.fill();
+        });
+
+        // Laser Logic
+        if (this.laserActive > 0) {
+            this.laserActive--;
+            this.ctx.fillStyle = `rgba(0, 255, 255, ${Math.random()})`;
+            this.ctx.fillRect(this.player.x - 20, 0, 40, this.player.y);
+
+            // Damage everything in beam
+            this.enemies.forEach((e, i) => {
+                if (e.x > this.player.x - 40 && e.x < this.player.x + 40) {
+                    e.health -= 50; // continuous damage
+                    this.createExplosion(e.x, e.y, '#00ffff', 2);
+                    if (e.health <= 0) {
+                        this.score += e.type === 'boss' ? 1000 : 100;
+                        this.enemiesKilled++;
+                        this.spawnPowerup(e.x, e.y);
+                        this.createExplosion(e.x, e.y, '#ffaa00', 20);
+                        this.enemies.splice(i, 1);
+                    }
+                }
+            });
+        }
 
         // Auto Fire
         if (this.player.powerupTimer > 0 && this.player.powerupType === 'missiles' && this.frameCount % (this.config.fireRate * 2) === 0) {
@@ -476,6 +519,16 @@ class ShmupEngine {
                     this.drones.push({ angle: 0, hp: 3 });
                 }
                 if(p.type === 'missiles') {
+                    this.player.powerupTimer = 400; this.player.powerupType = 'missiles';
+                }
+                if(p.type === 'pet') {
+                    this.pets.push({ offsetX: (Math.random()-0.5)*100, offsetY: 50, fireTimer: 0 });
+                }
+                if(p.type === 'laser') {
+                    this.laserActive = 120; // 2 seconds
+                    this.shakeTimer = 120;
+                    if(window.audio) window.audio.playExplosion(); // loud laser sound
+                }
                     this.player.powerupTimer = 400; this.player.powerupType = 'missiles';
                 }
 

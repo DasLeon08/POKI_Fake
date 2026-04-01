@@ -33,6 +33,8 @@ class PlatformerEngine {
         this.dashCooldown = 0;
         this.isDashing = false;
         this.parallaxX = 0;
+        this.jetpack = { fuel: 0, maxFuel: 100 };
+        this.pipes = [];
         this.platforms = [];
         this.obstacles = [];
         this.particles = [];
@@ -67,7 +69,10 @@ class PlatformerEngine {
                 type: type,
                 origY: pY,
                 offset: 0,
-                hasBouncePad: hasBouncePad
+                hasBouncePad: hasBouncePad,
+                hasJetpack: hasJetpack,
+                hasPipe: hasPipe,
+                pipeLink: null // set later if paired
             });
 
             // Add obstacle
@@ -142,6 +147,22 @@ class PlatformerEngine {
                         if(window.audio) window.audio.playPowerup();
                         this.createParticles(this.player.x, this.player.y, '#f1c40f', 20);
                         grounded = false; // immediately airborne
+                    }
+
+                    // Jetpack pickup
+                    if (p.hasJetpack) {
+                        this.jetpack.fuel = this.jetpack.maxFuel;
+                        p.hasJetpack = false; // consumed
+                        if(window.audio) window.audio.playPowerup();
+                    }
+
+                    // Pipe Teleport
+                    if (p.hasPipe && Math.abs(this.player.x - (p.x + p.width/2)) < 30 && this.keys['ArrowDown']) {
+                        // Teleport up high
+                        this.player.y = -200;
+                        this.player.vy = 0;
+                        if(window.audio) window.audio.playJump();
+                        this.createParticles(this.player.x, this.player.y, '#9b59b6', 50);
                     }
                 } else {
                     // Hit side of platform
@@ -250,6 +271,18 @@ class PlatformerEngine {
             if (p.hasBouncePad) {
                 this.ctx.fillStyle = '#f1c40f';
                 this.ctx.fillRect(p.x + p.width/2 - 20, p.y - 5, 40, 5);
+            }
+            if (p.hasJetpack) {
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillRect(p.x + p.width/2 - 10, p.y - 20, 20, 20);
+                this.ctx.fillStyle = '#f1c40f';
+                this.ctx.fillRect(p.x + p.width/2 - 5, p.y - 15, 10, 10);
+            }
+            if (p.hasPipe) {
+                this.ctx.fillStyle = '#2ecc71';
+                this.ctx.fillRect(p.x + p.width/2 - 30, p.y - 40, 60, 40);
+                this.ctx.fillStyle = '#27ae60';
+                this.ctx.fillRect(p.x + p.width/2 - 25, p.y - 40, 50, 40);
             }
             this.ctx.fillStyle = this.config.groundColor;
         });

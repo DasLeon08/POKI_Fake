@@ -35,6 +35,9 @@ class PlatformerEngine {
         this.parallaxX = 0;
         this.jetpack = { fuel: 0, maxFuel: 100 };
         this.pipes = [];
+        this.swingHook = { active: false, x: 0, y: 0, length: 150, angle: 0, aVelocity: 0, aAccel: 0 };
+        this.player.sizeMult = 1;
+        this.sizeTimer = 0;
         this.platforms = [];
         this.obstacles = [];
         this.particles = [];
@@ -72,6 +75,8 @@ class PlatformerEngine {
                 hasBouncePad: hasBouncePad,
                 hasJetpack: hasJetpack,
                 hasPipe: hasPipe,
+                hasMushroom: hasMushroom,
+                hasHook: hasHook,
                 pipeLink: null // set later if paired
             });
 
@@ -150,6 +155,13 @@ class PlatformerEngine {
                     }
 
                     // Jetpack pickup
+                    if (p.hasMushroom) {
+                        this.player.sizeMult = Math.random() > 0.5 ? 2.5 : 0.5; // Giant or Tiny
+                        this.sizeTimer = 300; // 5 seconds
+                        p.hasMushroom = false;
+                        if(window.audio) window.audio.playPowerup();
+                        this.createParticles(this.player.x, this.player.y, '#e74c3c', 20);
+                    }
                     if (p.hasJetpack) {
                         this.jetpack.fuel = this.jetpack.maxFuel;
                         p.hasJetpack = false; // consumed
@@ -190,22 +202,26 @@ class PlatformerEngine {
             o.x -= this.config.gameSpeed;
 
             if (this.player.x < o.x + o.width &&
-                this.player.x + this.player.width > o.x &&
+                this.player.x + (this.player.width * this.player.sizeMult) > o.x &&
                 this.player.y < o.y + o.height &&
-                this.player.y + this.player.height > o.y) {
+                this.player.y + (this.player.height * this.player.sizeMult) > o.y) {
 
                 if (o.isCoin) {
                     this.coins++;
-                    if(window.audio) window.audio.playCoin();
                     this.score += 50;
                     this.obstacles.splice(i, 1);
                     this.createParticles(o.x, o.y, '#f1c40f', 5);
                     continue;
                 } else if (o.breakable && this.isDashing) {
                     this.score += 100;
-                    if(window.audio) window.audio.playExplosion();
                     this.obstacles.splice(i, 1);
                     this.createParticles(o.x, o.y, '#3498db', 20); // glass shatter
+                    continue;
+                } else if (this.player.sizeMult > 2.0 && !o.danger) {
+                    // Giant smashes small obstacles
+                    this.score += 10;
+                    this.obstacles.splice(i, 1);
+                    this.createParticles(o.x, o.y, '#95a5a6', 10);
                     continue;
                 } else {
                     this.isGameOver = true;
@@ -278,6 +294,12 @@ class PlatformerEngine {
                 this.ctx.fillStyle = '#f1c40f';
                 this.ctx.fillRect(p.x + p.width/2 - 5, p.y - 15, 10, 10);
             }
+            if (p.hasMushroom) {
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.beginPath(); this.ctx.arc(p.x + p.width/2, p.y - 15, 10, Math.PI, 0); this.ctx.fill();
+                this.ctx.fillStyle = '#ecf0f1';
+                this.ctx.fillRect(p.x + p.width/2 - 4, p.y - 15, 8, 10); // stem
+            }
             if (p.hasPipe) {
                 this.ctx.fillStyle = '#2ecc71';
                 this.ctx.fillRect(p.x + p.width/2 - 30, p.y - 40, 60, 40);
@@ -306,7 +328,7 @@ class PlatformerEngine {
         }
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.playerColor;
-        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.ctx.fillRect(this.player.x, this.player.y, this.player.width * this.player.sizeMult, this.player.height * this.player.sizeMult);
         this.ctx.shadowBlur = 0;
 
         // Particles

@@ -34,6 +34,9 @@ class ShmupEngine {
         this.missiles = [];
         this.pets = [];
         this.laserActive = 0;
+        this.rewinds = 2; // Z key
+        this.history = []; // state history
+        this.isRewinding = false;
         this.wave = 1;
         this.enemiesKilled = 0;
 
@@ -96,6 +99,13 @@ class ShmupEngine {
             this.player.x = e.touches[0].clientX - rect.left;
             this.player.y = e.touches[0].clientY - rect.top;
         }, { passive: false });
+    }
+
+    rewindTime() {
+        if (this.rewinds <= 0 || this.isRewinding) return;
+        this.rewinds--;
+        this.isRewinding = true;
+        if(window.audio) window.audio.playPowerup();
     }
 
     fireNuke() {
@@ -183,7 +193,7 @@ class ShmupEngine {
 
     spawnPowerup(x, y) {
         if (Math.random() > 0.1) return; // 10% chance
-        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles', 'pet', 'laser'];
+        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles', 'pet', 'laser', 'reflector'];
         this.powerups.push({
             x: x, y: y, radius: 12,
             vy: 2,
@@ -378,7 +388,15 @@ class ShmupEngine {
             }
             if(hitDrone) { this.enemyBullets.splice(i, 1); continue; }
 
-            if (this.player.powerupTimer <= 0 || this.player.powerupType !== 'shield') {
+            if (this.player.powerupTimer > 0 && this.player.powerupType === 'reflector') {
+                // Bounce back
+                b.vy *= -1;
+                b.damage *= 2; // double damage back
+                this.bullets.push(b); // convert to player bullet
+                this.enemyBullets.splice(i, 1);
+                if(window.audio) window.audio.playCoin();
+                continue;
+            } else if (this.player.powerupTimer <= 0 || this.player.powerupType !== 'shield') {
                     this.player.health -= b.damage;
                     this.createExplosion(this.player.x, this.player.y, '#ff0000', 10);
                 }
@@ -527,28 +545,11 @@ class ShmupEngine {
                 if(p.type === 'laser') {
                     this.laserActive = 120; // 2 seconds
                     this.shakeTimer = 120;
-                    if(window.audio) window.audio.playExplosion(); // loud laser sound
+                    if(window.audio) window.audio.playExplosion();
                 }
-                    this.player.powerupTimer = 400; this.player.powerupType = 'missiles';
+                if(p.type === 'reflector') {
+                    this.player.powerupTimer = 400; this.player.powerupType = 'reflector';
                 }
-
-                this.createExplosion(p.x, p.y, p.color, 15);
-                this.powerups.splice(i, 1);
-                this.score += 50;
-                if(window.audio) window.audio.playPowerup();
-                continue;
-            }
-            if(p.y > this.height + 50) this.powerups.splice(i, 1);
-        }
-
-        // Particles
-        for(let i = this.particles.length - 1; i >= 0; i--) {
-            let p = this.particles[i];
-            p.x += p.vx; p.y += p.vy;
-            p.life -= 0.03;
-            if(p.life <= 0) this.particles.splice(i, 1);
-        }
-    }
 
     draw() {
         this.ctx.save();
@@ -704,7 +705,7 @@ class ShmupEngine {
 
         // Nuke UI
         this.ctx.fillStyle = '#fff';
-        this.ctx.fillText(`Nukes: ${this.nukes} (Space)`, 20, this.height - 50);
+        this.ctx.fillText(`Nukes: ${this.nukes} (Space) | Rewinds: ${this.rewinds} (Z)`, 20, this.height - 50);
         this.ctx.restore();
     }
 
@@ -732,8 +733,30 @@ class ShmupEngine {
             this.spawnEnemy();
         }
 
-        this.updatePlayer();
-        this.updateEntities();
+        if (this.isRewinding) {
+            // Apply history backwards
+            if (this.history.length > 0) {
+                const h = this.history.pop();
+                this.enemies = h.e;
+                this.enemyBullets = h.eb;
+                this.player.health = Math.max(this.player.health, h.ph); // heal if rewinding past damage
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+                this.ctx.fillRect(0, 0, this.width, this.height); // rewind effect
+            } else {
+                this.isRewinding = false;
+            }
+        } else {
+            // Record state (limit to 60 frames = ~1 sec rewind)
+            this.history.push({
+                e: JSON.parse(JSON.stringify(this.enemies)), // deep copy required for simple array of objects
+                eb: JSON.parse(JSON.stringify(this.enemyBullets)),
+                ph: this.player.health
+            });
+            if(this.history.length > 60) this.history.shift();
+
+            this.updatePlayer();
+            this.updateEntities();
+        }
         this.draw();
 
         requestAnimationFrame(() => this.loop());

@@ -75,7 +75,7 @@
             // ==========================================
 
             // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V8.0
+            // SUPERCHARGED PARTICLE POPPER V9.0
             // Added: Meteor Showers, Shield Generators
             // ==========================================
             const canvas = document.getElementById('gameCanvas');
@@ -145,6 +145,8 @@
                     else if (rand > 0.88) { this.type = 'lightning'; this.color = '#f1c40f'; this.radius = 10; } // V5
                     else if (rand > 0.86) { this.type = 'blackhole'; this.color = '#000000'; this.radius = 15; }
              else if (rand > 0.84) { this.type = 'shield_gen'; this.color = '#3498db'; this.radius = 12; this.hp = 3; }
+             else if (rand > 0.82) { this.type = 'nuclear'; this.color = '#2ecc71'; this.radius = 14; }
+             else if (rand > 0.80) { this.type = 'ghost'; this.color = '#bdc3c7'; this.radius = 10; this.alpha = 0; this.phase = Math.random()*Math.PI; }
 
                     // V7 Boss Injection (every 5 waves)
                     if (wave % 5 === 0 && Math.random() > 0.98) {
@@ -158,6 +160,11 @@
                 update() {
                     let speedMult = gameSpeed;
                     if (powerupFreeze > 0) speedMult *= 0.1;
+
+                    if (this.type === 'ghost') {
+                        this.phase += 0.05 * speedMult;
+                        this.alpha = (Math.sin(this.phase) + 1) / 2; // 0 to 1
+                    }
 
                     this.x += this.vx * speedMult;
                     this.y += this.vy * speedMult;
@@ -225,7 +232,7 @@
                         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     }
 
-                    ctx.fillStyle = this.color;
+                    ctx.fillStyle = this.type === 'ghost' ? `rgba(189, 195, 199, ${this.alpha})` : this.color;
                     ctx.shadowBlur = this.type !== 'normal' ? 20 : 10;
                     ctx.shadowColor = this.type === 'blackhole' ? '#fff' : this.color;
                     ctx.fill();
@@ -242,6 +249,9 @@
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8, 0, (Math.PI*2) * (this.hp/3)); ctx.stroke();
                         ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
                         ctx.beginPath(); ctx.arc(this.x, this.y, 150, 0, Math.PI*2); ctx.fill(); // range indicator
+                    } else if (this.type === 'nuclear') {
+                        ctx.strokeStyle = '#27ae60'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI*2); ctx.stroke();
                     } else if (this.type === 'boss') {
                         ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 5, 0, (Math.PI*2) * (this.hp/10)); ctx.stroke();
@@ -304,6 +314,7 @@
                 const mx = e.clientX - r.left; const my = e.clientY - r.top;
 
                 let hit = false;
+             let newProjectiles = []; // for nuclear
 
              // Check Meteors First (Overlay)
              for (let i = meteors.length - 1; i >= 0; i--) {
@@ -326,7 +337,10 @@
                 for (let i = particles.length - 1; i >= 0; i--) {
                     const p = particles[i];
                     const dx = mx - p.x; const dy = my - p.y;
-                    if (Math.sqrt(dx*dx + dy*dy) <= p.radius * 3.5 && !p.isShielded) {
+                    // Check Ghost tangibility
+                    const isTangible = p.type !== 'ghost' || (p.type === 'ghost' && p.alpha > 0.7);
+
+                    if (Math.sqrt(dx*dx + dy*dy) <= p.radius * 3.5 && !p.isShielded && isTangible) {
                         if (p.type === 'bomb' || p.type === 'blackhole') {
                             createExplosion(p.x, p.y, p.color, true);
                             floatingTexts.push(new FloatingText(p.x, p.y, p.type === 'blackhole' ? "SINGULARITY!" : "BOOM!", "#fff", 1.5));
@@ -373,6 +387,8 @@
                         if (window.userSystem) window.userSystem.addXP(Math.min(combo, 15));
                     }
                 }
+
+                particles.push(...newProjectiles);
 
                 if (!hit) { combo = 0; floatingTexts.push(new FloatingText(mx, my, "Miss!", "#ff4757")); }
                 else {

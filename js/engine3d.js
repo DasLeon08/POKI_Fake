@@ -48,6 +48,8 @@ class GameEngine3D {
         this.bulletTimeFuel = 100;
         this.isBulletTime = false;
         this.turrets = [];
+        this.decoys = [];
+        this.swordActive = 0;
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -461,6 +463,8 @@ class GameEngine3D {
                     this.dash();
                     break;
                 case 'KeyF': this.fireGrapple(); break;
+                case 'KeyV': this.swingSword(); break;
+                case 'KeyH': this.deployDecoy(); break;
                 case 'KeyT': this.deployTurret(); break;
                 case 'KeyQ':
                     if (this.bulletTimeFuel > 20) this.isBulletTime = true;
@@ -533,6 +537,8 @@ class GameEngine3D {
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div style="color:#9b59b6;">Turrets: ${Math.floor(this.coins/100)} [T] (100 🪙)</div>
                     <div style="color:#2ecc71;">Grapple [F]</div>
+                    <div style="color:#e74c3c;">Sword [V]</div>
+                    <div style="color:#3498db;">Decoy [H] (50 🪙)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -663,6 +669,73 @@ class GameEngine3D {
             const geo = new THREE.BufferGeometry().setFromPoints(pts);
             this.grapple.line = new THREE.Line(geo, mat);
             this.scene.add(this.grapple.line);
+        }
+    }
+
+    swingSword() {
+        if (this.swordActive > 0) return;
+        this.swordActive = 20; // 20 frames
+
+        // Visual swing
+        this.gunMesh.rotation.z = Math.PI / 2;
+        this.gunMesh.rotation.x = -Math.PI / 4;
+        setTimeout(() => {
+            this.gunMesh.rotation.z = 0;
+            this.gunMesh.rotation.x = 0;
+        }, 300);
+
+        if(window.audio) window.audio.playLaser(); // proxy sound
+
+        // Damage logic
+        const hitBox = new THREE.Box3().setFromCenterAndSize(
+            this.camera.position.clone().add(this.direction.clone().multiplyScalar(3)),
+            new THREE.Vector3(4, 4, 4)
+        );
+
+        this.bots.forEach(bot => {
+            if (bot.health > 0) {
+                const bBox = new THREE.Box3().setFromObject(bot.group);
+                if (hitBox.intersectsBox(bBox)) {
+                    bot.health -= 150; // Massive damage
+                    this.showHitMarker();
+                    this.spawnParticles(bot.group.position, 0xff00ff, 20); // sword sparks
+                    if (bot.health <= 0) {
+                        this.scene.remove(bot.group);
+                        this.addKillFeed(`You SLICED <b>${bot.name}</b>`);
+                        this.score++; this.coins += 25;
+                        if(window.userSystem) window.userSystem.addXP(40);
+
+                        setTimeout(() => {
+                            bot.health = 100;
+                            bot.group.position.set((Math.random() - 0.5) * this.config.worldSize * 0.8, 0, (Math.random() - 0.5) * this.config.worldSize * 0.8);
+                            this.scene.add(bot.group);
+                        }, 4000);
+                    }
+                }
+            }
+        });
+    }
+
+    deployDecoy() {
+        if (this.coins >= 50) {
+            this.coins -= 50;
+            this.updateUIDisplay();
+
+            const dGeo = new THREE.BoxGeometry(1.2, 2.5, 1);
+            const dMat = new THREE.MeshBasicMaterial({ color: 0x3498db, transparent: true, opacity: 0.5, wireframe: true });
+            const decoy = new THREE.Mesh(dGeo, dMat);
+
+            decoy.position.copy(this.camera.position);
+            decoy.position.add(this.direction.clone().multiplyScalar(2));
+            decoy.position.y = 1.25;
+
+            this.scene.add(decoy);
+            this.decoys.push({ mesh: decoy, life: 300 }); // 5 seconds
+
+            if(window.audio) window.audio.playPowerup();
+            this.showToastUI("DECOY OUT");
+        } else {
+            this.showToastUI("Not enough coins (50)");
         }
     }
 
@@ -907,6 +980,7 @@ class GameEngine3D {
 
         // Dash Cooldown & FOV restore
         if (this.dashCooldown > 0) this.dashCooldown--;
+        if (this.swordActive > 0) this.swordActive--;
         if (this.killStreakTimer > 0) {
             this.killStreakTimer--;
             if (this.killStreakTimer <= 0) this.killStreak = 0;
@@ -1224,6 +1298,18 @@ class GameEngine3D {
             }
         }
 
+        // Decoy Logic
+        for(let i=this.decoys.length-1; i>=0; i--) {
+            let d = this.decoys[i];
+            d.life--;
+            d.mesh.rotation.y += 0.1; // spinning holo effect
+            if(d.life <= 0) {
+                this.spawnParticles(d.mesh.position, 0x3498db, 20);
+                this.scene.remove(d.mesh);
+                this.decoys.splice(i, 1);
+            }
+        }
+
         // Update Bots (AI & LookAt)
         this.bots.forEach(bot => {
             if (bot.health > 0) {
@@ -1249,11 +1335,50 @@ class GameEngine3D {
                 // Bot Shooting
                 bot.shootTimer -= timeScale;
                 if (bot.shootTimer <= 0) {
-                    const dist = bot.group.position.distanceTo(this.camera.position);
-                    if (dist < 100) {
-                        // Check line of sight (simple: just shoot if close, let obstacles block projectiles)
-                        this.botShoot(bot);
+                    // Decoy targeting priority
+                    let targetPos = this.camera.position;
+                    let targetDist = bot.group.position.distanceTo(targetPos);
+
+                    if (this.decoys.length > 0) {
+                        // Find closest decoy
+                        let cDecoy = null; let cDist = Infinity;
+                        this.decoys.forEach(d => {
+                            const dist = bot.group.position.distanceTo(d.mesh.position);
+                            if(dist < cDist) { cDist = dist; cDecoy = d.mesh.position; }
+                        });
+
+                        // If decoy is closer than player, or just randomly prefer decoy
+                        if (cDecoy && (cDist < targetDist || Math.random() > 0.3)) {
+                            targetPos = cDecoy;
+                            targetDist = cDist;
+                        }
                     }
+
+                    if (targetDist < 100) {
+                        // Overwrite botShoot logic slightly inline to use targetPos instead of camera
+                        const dir = new THREE.Vector3();
+                        dir.subVectors(targetPos, bot.group.position).normalize();
+
+                        const projGeo = new THREE.SphereGeometry(0.2, 8, 8);
+                        const projMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                        const proj = new THREE.Mesh(projGeo, projMat);
+
+                        const projLight = new THREE.PointLight(0xff0000, 1, 15);
+                        proj.add(projLight);
+
+                        proj.position.copy(bot.group.position);
+                        proj.position.y += 2.4;
+                        proj.position.add(dir.clone().multiplyScalar(2));
+
+                        this.scene.add(proj);
+                        this.projectiles.push({
+                            mesh: proj,
+                            velocity: dir.multiplyScalar(2.0),
+                            life: 100,
+                            isPlayer: false
+                        });
+                    }
+
                     bot.shootTimer = 50 + Math.random() * 80; // shoot faster in V2
                 }
             }

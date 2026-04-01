@@ -19,6 +19,8 @@ class TycoonEngine {
         this.saveKey = 'poki_tycoon_' + this.config.currencyName.replace(/\\s/g, '_');
         this.stockPrice = 100;
         this.stockTrend = 0;
+        this.bankBalance = 0;
+        this.interestRate = 0.05; // 5% per 10s
         this.state = JSON.parse(localStorage.getItem(this.saveKey)) || {
             currency: 0,
             clickPower: this.config.clickPower,
@@ -52,6 +54,16 @@ class TycoonEngine {
 
             // Update Stock Market
             this.stockTrend += (Math.random() - 0.5) * 2;
+
+            // Interest tick every 10 seconds
+            if (Date.now() % 10000 < 1000 && this.bankBalance > 0) {
+                const interest = this.bankBalance * this.interestRate;
+                this.bankBalance += interest;
+                this.createClickText(window.innerWidth/2, window.innerHeight/2, `Zinsen! +${this.formatNumber(interest)}`);
+                if(window.audio) window.audio.playCoin();
+            }
+            const bbEl = document.getElementById('bank-balance');
+            if (bbEl) bbEl.innerText = this.formatNumber(this.bankBalance);
             this.stockTrend *= 0.95; // dampen
             this.stockPrice += this.stockTrend + (Math.random() - 0.5) * 5;
             if (this.stockPrice < 10) this.stockPrice = 10;
@@ -83,6 +95,11 @@ class TycoonEngine {
             // Thief Event
             if (Math.random() < 0.005 && !document.getElementById('thief-event')) {
                 this.spawnThief();
+            }
+
+            // Loot Crate Event (rare)
+            if (Math.random() < 0.002 && !document.getElementById('loot-crate')) {
+                this.spawnLootCrate();
             }
                 this.spawnGoldenClick();
             }
@@ -145,6 +162,41 @@ class TycoonEngine {
         // Run across
         setTimeout(() => btn.style.left = '120%', 100);
         setTimeout(() => { if(btn.parentNode) btn.remove(); }, 6100);
+    }
+
+    spawnLootCrate() {
+        const crate = document.createElement('div');
+        crate.id = 'loot-crate';
+        crate.innerHTML = '📦';
+        crate.style.position = 'fixed';
+        crate.style.left = (Math.random() * 80 + 10) + '%';
+        crate.style.top = (Math.random() * 80 + 10) + '%';
+        crate.style.fontSize = '5rem';
+        crate.style.cursor = 'pointer';
+        crate.style.zIndex = 2000;
+        crate.style.transition = 'transform 0.1s';
+
+        let clicks = 0;
+        crate.onclick = () => {
+            clicks++;
+            crate.style.transform = `scale(${1 - clicks*0.05}) rotate(${(Math.random()-0.5)*20}deg)`;
+            this.createParticles(crate.getBoundingClientRect().left + 40, crate.getBoundingClientRect().top + 40, '#e67e22', 5);
+            if(window.audio) window.audio.playJump(); // thud sound
+
+            if (clicks >= 10) {
+                // Break open
+                const reward = Math.max(5000, this.calculateCPS() * 600); // 10 mins worth
+                this.state.currency += reward;
+                this.createClickText(crate.getBoundingClientRect().left, crate.getBoundingClientRect().top, `MASSIVE LOOT! +${this.formatNumber(reward)}`);
+                this.createParticles(crate.getBoundingClientRect().left + 40, crate.getBoundingClientRect().top + 40, '#f1c40f', 200);
+                crate.remove();
+                this.updateUI();
+                if(window.audio) window.audio.playExplosion();
+            }
+        };
+
+        document.body.appendChild(crate);
+        setTimeout(() => { if(crate.parentNode) crate.remove(); }, 15000); // 15 sec to break it
     }
 
     spawnGoldenClick() {
@@ -325,6 +377,24 @@ class TycoonEngine {
         }
     }
 
+    depositBank() {
+        if (this.state.currency > 0) {
+            this.bankBalance += this.state.currency;
+            this.state.currency = 0;
+            this.updateUI();
+            if(window.audio) window.audio.playCoin();
+        }
+    }
+
+    withdrawBank() {
+        if (this.bankBalance > 0) {
+            this.state.currency += this.bankBalance;
+            this.bankBalance = 0;
+            this.updateUI();
+            if(window.audio) window.audio.playPowerup();
+        }
+    }
+
     buyStock() {
         const cost = Math.floor(this.stockPrice);
         if (this.state.currency >= cost) {
@@ -406,6 +476,15 @@ class TycoonEngine {
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align:center;">
                         <div id="slot-result" style="font-size: 2rem; margin-bottom:10px; letter-spacing:10px;">❓❓❓</div>
                         <button onclick="window.tycoon.spinSlots()" style="width:100%; padding:10px; background:linear-gradient(135deg, #f1c40f, #f39c12); border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 10px rgba(241,196,15,0.4);">SPIN (500 🪙)</button>
+                    </div>
+                    <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Bank 🏦</h3>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <div style="color:white; margin-bottom:10px;">Guthaben: <span id="bank-balance" style="font-weight:bold; color:#2ecc71;">0</span></div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="window.tycoon.depositBank()" style="flex:1; padding:8px; background:#f39c12; border:none; color:white; border-radius:5px; cursor:pointer;">Einzahlen (All)</button>
+                            <button onclick="window.tycoon.withdrawBank()" style="flex:1; padding:8px; background:#9b59b6; border:none; color:white; border-radius:5px; cursor:pointer;">Auszahlen</button>
+                        </div>
+                        <div style="color:#95a5a6; font-size:0.8rem; margin-top:10px;">Zinsen: +5% alle 10s</div>
                     </div>
                     <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Stock Market 📈</h3>
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">

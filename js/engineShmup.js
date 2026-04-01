@@ -26,6 +26,9 @@ class ShmupEngine {
         };
 
         this.score = 0;
+        this.nukes = 3;
+        this.shakeTimer = 0;
+        this.starLayers = [[], [], []];
         this.wave = 1;
         this.enemiesKilled = 0;
 
@@ -56,19 +59,25 @@ class ShmupEngine {
     }
 
     initStars() {
-        for(let i=0; i<100; i++) {
-            this.stars.push({
-                x: Math.random() * this.width,
-                y: Math.random() * this.height,
-                size: Math.random() * 2,
-                speed: Math.random() * 3 + 1
-            });
+        for(let l=0; l<3; l++) {
+            for(let i=0; i<50; i++) {
+                this.starLayers[l].push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height,
+                    size: Math.random() * (l+1) * 0.5,
+                    speed: (l+1) * 0.5 + Math.random()
+                });
+            }
         }
+    }
     }
 
     setupControls() {
         window.addEventListener('keydown', e => this.keys[e.code] = true);
-        window.addEventListener('keyup', e => this.keys[e.code] = false);
+        window.addEventListener('keyup', e => {
+            this.keys[e.code] = false;
+            if (e.code === 'Space') this.fireNuke();
+        });
 
         // Mouse/Touch support
         this.canvas.addEventListener('mousemove', e => {
@@ -84,21 +93,54 @@ class ShmupEngine {
         }, { passive: false });
     }
 
+    fireNuke() {
+        if (this.nukes <= 0) return;
+        this.nukes--;
+        this.shakeTimer = 30; // shake screen for 0.5s
+
+        // Massive explosion
+        this.createExplosion(this.width/2, this.height/2, '#ffffff', 200);
+
+        // Clear all enemies and enemy bullets
+        this.enemies.forEach(e => {
+            this.createExplosion(e.x, e.y, '#ffaa00', e.type === 'boss' ? 50 : 10);
+            this.score += e.type === 'boss' ? 500 : 50;
+            this.enemiesKilled++;
+            if(window.userSystem) window.userSystem.addXP(5);
+        });
+
+        this.enemies = [];
+        this.enemyBullets = [];
+        if (this.enemiesKilled % 20 === 0) this.wave++;
+    }
+
     spawnEnemy() {
         const isBoss = (this.wave % this.config.bossWave === 0) && this.enemies.length === 0;
 
         if (isBoss) {
+            // Structured Formations (20% chance instead of random 1)
+        if (Math.random() < 0.2 && !isBoss && this.enemies.length < 5) {
+            // V-Formation
+            const startX = this.width / 2;
+            for(let i=0; i<5; i++) {
+                this.enemies.push({
+                    x: startX + (i-2)*40,
+                    y: -30 - Math.abs(i-2)*30,
+                    radius: 15, health: hp, vx: 0, vy: vy, type: 'basic', fireTimer: Math.random()*60
+                });
+            }
+        } else {
             this.enemies.push({
-                x: this.width / 2,
-                y: -100,
-                radius: 60,
-                health: 2000 * (this.wave / this.config.bossWave),
-                maxHealth: 2000 * (this.wave / this.config.bossWave),
-                vx: 2,
-                vy: 1,
-                type: 'boss',
-                fireTimer: 0
+                x: Math.random() * (this.width - 40) + 20,
+                y: -30,
+                radius: radius,
+                health: hp,
+                vx: vx,
+                vy: vy,
+                type: eType,
+                fireTimer: Math.random() * 60
             });
+        }
             return;
         }
 
@@ -311,17 +353,28 @@ class ShmupEngine {
     }
 
     draw() {
+        this.ctx.save();
+        if (this.shakeTimer > 0) {
+            const dx = (Math.random() - 0.5) * 20;
+            const dy = (Math.random() - 0.5) * 20;
+            this.ctx.translate(dx, dy);
+            this.shakeTimer--;
+        }
+
         // Background
         this.ctx.fillStyle = '#0a0a1a';
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.fillRect(-20, -20, this.width+40, this.height+40); // cover shake gaps
 
-        // Stars
+        // 3 Layer Parallax Stars
         this.ctx.fillStyle = '#ffffff';
-        this.stars.forEach(s => {
-            s.y += s.speed;
-            if(s.y > this.height) { s.y = 0; s.x = Math.random() * this.width; }
-            this.ctx.globalAlpha = Math.random();
-            this.ctx.fillRect(s.x, s.y, s.size, s.size);
+        this.ctx.fillStyle = '#ffffff';
+        this.starLayers.forEach((layer, index) => {
+            layer.forEach(s => {
+                s.y += s.speed;
+                if(s.y > this.height) { s.y = 0; s.x = Math.random() * this.width; }
+                this.ctx.globalAlpha = 0.3 + (index * 0.2);
+                this.ctx.fillRect(s.x, s.y, s.size, s.size);
+            });
         });
         this.ctx.globalAlpha = 1.0;
 
@@ -416,6 +469,11 @@ class ShmupEngine {
         this.ctx.fillRect(20, this.height - 30, 200, 15);
         this.ctx.fillStyle = this.player.health > 30 ? '#2ecc71' : '#e74c3c';
         this.ctx.fillRect(20, this.height - 30, Math.max(0, 200 * (this.player.health/100)), 15);
+
+        // Nuke UI
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillText(`Nukes: ${this.nukes} (Space)`, 20, this.height - 50);
+        this.ctx.restore();
     }
 
     loop() {

@@ -36,6 +36,10 @@ class GameEngine3D {
         // Bobbing & Recoil
         this.walkTime = 0;
         this.recoil = 0;
+        this.dashCooldown = 0;
+        this.isZoomed = false;
+        this.baseFov = 75;
+        this.medkits = [];
 
         this.init();
     }
@@ -181,6 +185,48 @@ class GameEngine3D {
 
         this.starField = new THREE.Points(starGeo, starMat);
         this.scene.add(this.starField);
+
+        // Procedural Nebula Clouds
+        const nebGeo = new THREE.BufferGeometry();
+        const nebCount = 50;
+        const nebPos = new Float32Array(nebCount * 3);
+        const nebColors = new Float32Array(nebCount * 3);
+        const color2 = new THREE.Color();
+        for(let i=0; i<nebCount; i++) {
+            const r = 350;
+            const theta = 2 * Math.PI * Math.random();
+            const phi = Math.acos(2 * Math.random() - 1);
+            nebPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+            nebPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+            nebPos[i*3+2] = r * Math.cos(phi);
+            color2.setHSL(Math.random(), 1.0, 0.5);
+            nebColors[i*3] = color2.r; nebColors[i*3+1] = color2.g; nebColors[i*3+2] = color2.b;
+        }
+        nebGeo.setAttribute('position', new THREE.BufferAttribute(nebPos, 3));
+        nebGeo.setAttribute('color', new THREE.BufferAttribute(nebColors, 3));
+
+        // Create a basic circular canvas texture for clouds
+        const nebCanvas = document.createElement('canvas');
+        nebCanvas.width = 64; nebCanvas.height = 64;
+        const nebCtx = nebCanvas.getContext('2d');
+        const grad = nebCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        nebCtx.fillStyle = grad;
+        nebCtx.fillRect(0,0,64,64);
+        const nebTex = new THREE.CanvasTexture(nebCanvas);
+
+        const nebMat = new THREE.PointsMaterial({
+            size: 200,
+            map: nebTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.15,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        this.nebulaField = new THREE.Points(nebGeo, nebMat);
+        this.scene.add(this.nebulaField);
     }
 
     buildWorld() {
@@ -371,6 +417,9 @@ class GameEngine3D {
                 case 'KeyA': this.keys.a = true; break;
                 case 'KeyS': this.keys.s = true; break;
                 case 'KeyD': this.keys.d = true; break;
+                case 'ShiftLeft':
+                    this.dash();
+                    break;
                 case 'Space':
                     this.keys.space = true;
                     if (this.camera.position.y <= 2) this.velocity.y = this.config.jumpForce;
@@ -394,7 +443,15 @@ class GameEngine3D {
             }
         });
 
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 2) this.isZoomed = false;
+        });
+
         document.addEventListener('mousedown', (e) => {
+            if (this.isLocked && e.button === 2) {
+                // Right click Snipe Zoom
+                this.isZoomed = true;
+            } else
             if (this.isLocked && e.button === 0) {
                 this.shoot();
             }
@@ -432,6 +489,12 @@ class GameEngine3D {
                 </div>
 
                 <button onclick="window.gameEngine.closeShop()" style="margin-top:10px; padding:10px 30px; background:transparent; border:2px solid #95a5a6; color:#95a5a6; border-radius:20px; cursor:pointer; font-weight:bold;">Close & Resume</button>
+            </div>
+
+
+            <!-- Radar Minimap -->
+            <div style="position:fixed; top:20px; left:20px; width:150px; height:150px; background:rgba(0,10,20,0.7); border:2px solid #00ffff; border-radius:50%; z-index:90; overflow:hidden;">
+                <canvas id="radarCanvas" width="150" height="150" style="position:absolute; top:0; left:0;"></canvas>
             </div>
 
             <div id="kill-feed" style="position:fixed; top:20px; right:20px; color:white; font-family:'Nunito', sans-serif; font-size:15px; font-weight:bold; text-shadow:1px 1px 2px #000; text-align:right; z-index:100; max-height:200px; overflow:hidden;"></div>
@@ -497,6 +560,41 @@ class GameEngine3D {
         }
         document.getElementById('shop-coins').innerText = this.coins;
         this.updateUIDisplay();
+    }
+
+    dash() {
+        if (this.dashCooldown > 0) return;
+        // Boost in current movement direction
+        const euler = new THREE.Euler(0, this.camera.rotation.y, 0, 'YXZ');
+        const moveDir = this.direction.clone().applyEuler(euler);
+        if (moveDir.lengthSq() > 0) {
+            this.camera.position.x -= moveDir.x * 5; // massive instant dash
+            this.camera.position.z -= moveDir.z * 5;
+            this.dashCooldown = 120; // 2 sec cooldown
+            this.spawnParticles(this.camera.position.clone(), 0xffffff, 20); // Dash trail
+            this.showToastUI("DASH!");
+            // FOV kick
+            this.camera.fov = 90;
+            this.camera.updateProjectionMatrix();
+        }
+    }
+
+    showToastUI(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        div.style.position = 'fixed';
+        div.style.top = '60%';
+        div.style.left = '50%';
+        div.style.transform = 'translate(-50%, -50%)';
+        div.style.color = '#00ffff';
+        div.style.fontFamily = "'Fredoka One', cursive";
+        div.style.fontSize = '30px';
+        div.style.pointerEvents = 'none';
+        div.style.transition = 'all 0.5s';
+        div.style.zIndex = '1000';
+        document.body.appendChild(div);
+        setTimeout(() => { div.style.top = '50%'; div.style.opacity = '0'; }, 50);
+        setTimeout(() => div.remove(), 500);
     }
 
     throwGrenade() {
@@ -605,6 +703,81 @@ class GameEngine3D {
     animate() {
         requestAnimationFrame(() => this.animate());
 
+        // Dash Cooldown & FOV restore
+        if (this.dashCooldown > 0) this.dashCooldown--;
+
+        // Snipe Zoom
+        const targetFov = this.isZoomed ? 30 : this.baseFov;
+        if (Math.abs(this.camera.fov - targetFov) > 0.5) {
+            this.camera.fov += (targetFov - this.camera.fov) * 0.1;
+            this.camera.updateProjectionMatrix();
+        }
+
+        // Medkit Collection
+        for (let i = this.medkits.length - 1; i >= 0; i--) {
+            const m = this.medkits[i];
+            m.mesh.rotation.y += 0.05; // spin
+            m.life--;
+
+            const dist = m.mesh.position.distanceTo(this.camera.position);
+            if (dist < 2.0) {
+                // Collect
+                this.health = Math.min(this.config.maxHealth, this.health + 30);
+                this.showToastUI("+30 HP");
+                document.body.style.boxShadow = 'inset 0 0 100px rgba(46,204,113,0.8)';
+                setTimeout(() => document.body.style.boxShadow = 'none', 150);
+
+                this.scene.remove(m.mesh);
+                this.medkits.splice(i, 1);
+            } else if (m.life <= 0) {
+                this.scene.remove(m.mesh);
+                this.medkits.splice(i, 1);
+            }
+        }
+
+        // Draw Radar Minimap
+        const rCanvas = document.getElementById('radarCanvas');
+        if (rCanvas) {
+            const rCtx = rCanvas.getContext('2d');
+            rCtx.clearRect(0,0,150,150);
+
+            // Radar scanline
+            rCtx.fillStyle = 'rgba(0,255,255,0.1)';
+            rCtx.beginPath();
+            rCtx.arc(75, 75, 75, 0, Math.PI*2);
+            rCtx.fill();
+
+            const scanAngle = (performance.now() / 1000) * Math.PI;
+            rCtx.fillStyle = 'rgba(0,255,255,0.3)';
+            rCtx.beginPath();
+            rCtx.moveTo(75,75);
+            rCtx.arc(75,75,75, scanAngle, scanAngle + 0.5);
+            rCtx.closePath();
+            rCtx.fill();
+
+            // Draw Player (Center, fixed rotation)
+            rCtx.fillStyle = '#00ffff';
+            rCtx.beginPath(); rCtx.arc(75, 75, 3, 0, Math.PI*2); rCtx.fill();
+
+            // Draw Bots relative to player
+            rCtx.fillStyle = '#ff0000';
+            this.bots.forEach(bot => {
+                if (bot.health > 0) {
+                    const dx = bot.group.position.x - this.camera.position.x;
+                    const dz = bot.group.position.z - this.camera.position.z;
+                    // Scale map (150px = approx 80 units diameter)
+                    const mapScale = 1.5;
+                    const mapX = 75 + (dx * mapScale);
+                    const mapY = 75 + (dz * mapScale);
+
+                    if (mapX > 0 && mapX < 150 && mapY > 0 && mapY < 150) {
+                        rCtx.beginPath(); rCtx.arc(mapX, mapY, 2, 0, Math.PI*2); rCtx.fill();
+                    }
+                }
+            });
+        }
+
+
         if (this.isLocked) {
             // Player Movement
             this.direction.z = Number(this.keys.w) - Number(this.keys.s);
@@ -673,6 +846,10 @@ class GameEngine3D {
         // Starfield Rotation
         if (this.starField) {
             this.starField.rotation.y += 0.0005;
+            if (this.nebulaField) {
+                this.nebulaField.rotation.y += 0.0002;
+                this.nebulaField.rotation.x += 0.0001;
+            }
         }
 
         // Update Projectiles
@@ -701,6 +878,26 @@ class GameEngine3D {
                         this.spawnParticles(p.mesh.position, 0xffff00, 5);
 
                         if (bot.health <= 0) {
+                            // Medkit drop (25% chance)
+                            if (Math.random() > 0.75) {
+                                const mkGeo = new THREE.BoxGeometry(0.8, 0.4, 0.8);
+                                const mkMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x220000 });
+                                const mk = new THREE.Mesh(mkGeo, mkMat);
+
+                                // Red cross
+                                const crGeo = new THREE.BoxGeometry(0.5, 0.41, 0.15);
+                                const crMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                                const cr1 = new THREE.Mesh(crGeo, crMat);
+                                const cr2 = new THREE.Mesh(crGeo, crMat);
+                                cr2.rotation.y = Math.PI / 2;
+                                mk.add(cr1); mk.add(cr2);
+
+                                mk.position.copy(bot.group.position);
+                                mk.position.y = 0.2;
+                                this.scene.add(mk);
+                                this.medkits.push({ mesh: mk, life: 600 });
+                            }
+
                             // Explosion on bot kill
                             this.spawnParticles(bot.group.position, 0xffaa00, 30);
 

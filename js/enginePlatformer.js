@@ -28,6 +28,10 @@ class PlatformerEngine {
         };
 
         this.score = 0;
+        this.coins = 0;
+        this.dashCooldown = 0;
+        this.isDashing = false;
+        this.parallaxX = 0;
         this.platforms = [];
         this.obstacles = [];
         this.particles = [];
@@ -71,7 +75,12 @@ class PlatformerEngine {
 
         window.addEventListener('keydown', e => {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jump();
-            if (e.code === 'KeyG') this.player.inverted = !this.player.inverted; // Gravity flip mechanic
+            if (e.code === 'KeyG') this.player.inverted = !this.player.inverted;
+            if (e.code === 'ShiftLeft' && this.dashCooldown <= 0) {
+                this.isDashing = true;
+                this.dashCooldown = 60; // 1 second cooldown
+                setTimeout(() => this.isDashing = false, 200); // 0.2s duration
+            } // Gravity flip mechanic
         });
 
         this.canvas.addEventListener('mousedown', jump);
@@ -92,6 +101,7 @@ class PlatformerEngine {
 
     update() {
         this.frameCount++;
+        if (this.dashCooldown > 0) this.dashCooldown--;
 
         // Speed up
         if (this.frameCount % 600 === 0) this.config.gameSpeed += 0.5;
@@ -120,8 +130,23 @@ class PlatformerEngine {
                     y: pY - 30,
                     width: 30,
                     height: 30,
-                    danger: true
+                    danger: true,
+                    breakable: Math.random() > 0.8 // 20% are glass/breakable
                 });
+            }
+
+            // Coins
+            if (Math.random() > 0.4) {
+                for(let c=0; c<3; c++) {
+                    this.obstacles.push({
+                        x: this.platforms[this.platforms.length - 1].x + 50 + (c * 40),
+                        y: pY - 60 - Math.random() * 50,
+                        width: 15,
+                        height: 15,
+                        danger: false,
+                        isCoin: true
+                    });
+                }
             }
         }
 
@@ -165,9 +190,23 @@ class PlatformerEngine {
                 this.player.x + this.player.width > o.x &&
                 this.player.y < o.y + o.height &&
                 this.player.y + this.player.height > o.y) {
-                this.isGameOver = true;
+
+                if (o.isCoin) {
+                    this.coins++;
+                    this.score += 50;
+                    this.obstacles.splice(i, 1);
+                    this.createParticles(o.x, o.y, '#f1c40f', 5);
+                    continue;
+                } else if (o.breakable && this.isDashing) {
+                    this.score += 100;
+                    this.obstacles.splice(i, 1);
+                    this.createParticles(o.x, o.y, '#3498db', 20); // glass shatter
+                    continue;
+                } else {
+                    this.isGameOver = true;
+                }
             }
-            if (o.x + o.width < 0) this.obstacles.splice(i, 1);
+            if (o && o.x + o.width < 0) this.obstacles.splice(i, 1);
         }
 
         // Death bounds
@@ -194,6 +233,22 @@ class PlatformerEngine {
         // Grid pattern in BG
         this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
         this.ctx.lineWidth = 1;
+        // Parallax Mountains
+        this.parallaxX -= this.config.gameSpeed * 0.3;
+        if(this.parallaxX < -this.width) this.parallaxX = 0;
+
+        this.ctx.fillStyle = '#111822'; // mountain
+        this.ctx.beginPath();
+        for(let i=0; i<2; i++) {
+            const startX = this.parallaxX + (i*this.width);
+            this.ctx.moveTo(startX, this.height);
+            this.ctx.lineTo(startX + 200, this.height - 300);
+            this.ctx.lineTo(startX + 400, this.height - 100);
+            this.ctx.lineTo(startX + 600, this.height - 400);
+            this.ctx.lineTo(startX + this.width, this.height);
+        }
+        this.ctx.fill();
+
         const offset = (this.frameCount * (this.config.gameSpeed * 0.2)) % 50;
         this.ctx.beginPath();
         for(let i=-offset; i<this.width; i+=50) { this.ctx.moveTo(i, 0); this.ctx.lineTo(i, this.height); }
@@ -210,9 +265,79 @@ class PlatformerEngine {
         });
 
         // Obstacles
-        this.ctx.fillStyle = '#e74c3c';
         this.obstacles.forEach(o => {
-            this.ctx.fillRect(o.x, o.y, o.width, o.height);
+            if (o.isCoin) {
+                this.ctx.fillStyle = '#f1c40f';
+                this.ctx.beginPath();
+                this.ctx.arc(o.x + o.width/2, o.y + o.height/2, o.width/2, 0, Math.PI*2);
+                this.ctx.fill();
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '10px Arial';
+                this.ctx.fillText('
+
+        // Player
+        this.ctx.fillStyle = this.isDashing ? '#ffffff' : this.config.playerColor;
+        if(this.isDashing) {
+            this.ctx.shadowBlur = 20;
+            this.ctx.shadowColor = '#fff';
+        }
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = this.config.playerColor;
+        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.ctx.shadowBlur = 0;
+
+        // Particles
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            this.ctx.fillRect(p.x, p.y, 4, 4);
+        });
+        this.ctx.globalAlpha = 1.0;
+
+        // UI
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 24px "Fredoka One"';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(\`Distance: \${Math.floor(this.score)}m\`, 20, 40);
+
+        this.ctx.font = '14px "Nunito"';
+        this.ctx.fillStyle = '#bdc3c7';
+        this.ctx.fillText('Press [G] Invert Gravity | [Shift] Dash/Break Glass', 20, 95);
+    }
+
+    loop() {
+        if (this.isGameOver) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 40px "Fredoka One"';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('GAME OVER', this.width/2, this.height/2);
+            this.ctx.font = '20px "Nunito"';
+            this.ctx.fillText(\`Final Distance: \${Math.floor(this.score)}m\`, this.width/2, this.height/2 + 40);
+
+            if (window.userSystem) {
+                window.userSystem.addXP(Math.floor(this.score / 100));
+            }
+            return;
+        }
+
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+}
+window.PlatformerEngine = PlatformerEngine;
+, o.x + 4, o.y + 12);
+            } else if (o.breakable) {
+                this.ctx.fillStyle = 'rgba(52, 152, 219, 0.5)'; // glass
+                this.ctx.fillRect(o.x, o.y, o.width, o.height);
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.strokeRect(o.x, o.y, o.width, o.height);
+            } else {
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillRect(o.x, o.y, o.width, o.height);
+            }
         });
 
         // Player

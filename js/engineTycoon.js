@@ -21,7 +21,8 @@ class TycoonEngine {
             currency: 0,
             clickPower: this.config.clickPower,
             clickUpgrades: 0,
-            buildings: this.config.buildings.map(b => ({ id: b.id, count: 0 }))
+            buildings: this.config.buildings.map(b => ({ id: b.id, count: 0 })),
+            prestige: 0
         };
 
         // Offline Progress
@@ -42,7 +43,13 @@ class TycoonEngine {
 
         // Game Loop
         setInterval(() => {
-            this.state.currency += this.calculateCPS();
+            let multiplier = 1 + (this.state.prestige * 0.5); // +50% per prestige level
+            this.state.currency += this.calculateCPS() * multiplier;
+
+            // Random Golden Click event (1% chance per second)
+            if (Math.random() < 0.01 && !document.getElementById('golden-click')) {
+                this.spawnGoldenClick();
+            }
             this.updateUI();
 
             // Save randomly
@@ -72,6 +79,79 @@ class TycoonEngine {
         if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return Math.floor(num).toString();
+    }
+
+    spawnGoldenClick() {
+        const btn = document.createElement('div');
+        btn.id = 'golden-click';
+        btn.innerHTML = '✨';
+        btn.style.position = 'fixed';
+        btn.style.left = Math.random() * 80 + '%';
+        btn.style.top = '-50px';
+        btn.style.fontSize = '3rem';
+        btn.style.cursor = 'pointer';
+        btn.style.zIndex = 2000;
+        btn.style.transition = 'top 5s linear, transform 0.2s';
+
+        btn.onclick = () => {
+            const reward = Math.max(100, this.calculateCPS() * 120); // 2 minutes worth or 100 flat
+            this.state.currency += reward;
+            this.createClickText(btn.getBoundingClientRect().left, btn.getBoundingClientRect().top, `+${this.formatNumber(reward)} GOLDEN!`);
+            this.createParticles(btn.getBoundingClientRect().left + 25, btn.getBoundingClientRect().top + 25, '#f1c40f', 30);
+            btn.remove();
+            this.updateUI();
+        };
+
+        document.body.appendChild(btn);
+
+        // Fall down
+        setTimeout(() => btn.style.top = '110%', 100);
+        setTimeout(() => { if(btn.parentNode) btn.remove(); }, 5100);
+    }
+
+    createParticles(x, y, color, count = 10) {
+        for(let i=0; i<count; i++) {
+            const pt = document.createElement('div');
+            pt.style.position = 'fixed';
+            pt.style.left = x + 'px';
+            pt.style.top = y + 'px';
+            pt.style.width = '8px';
+            pt.style.height = '8px';
+            pt.style.backgroundColor = Math.random() > 0.5 ? color : '#fff';
+            pt.style.borderRadius = '50%';
+            pt.style.pointerEvents = 'none';
+            pt.style.zIndex = 1500;
+
+            const vx = (Math.random() - 0.5) * 300;
+            const vy = (Math.random() - 0.5) * 300 - 150;
+
+            pt.animate([
+                { transform: `translate(0px, 0px) scale(1)`, opacity: 1 },
+                { transform: `translate(${vx}px, ${vy}px) scale(0)`, opacity: 0 }
+            ], { duration: 800 + Math.random()*400, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' });
+
+            document.body.appendChild(pt);
+            setTimeout(() => pt.remove(), 1200);
+        }
+    }
+
+    doPrestige() {
+        // Require at least building tier 3
+        const b3 = this.state.buildings.find(b => b.id === 'b3');
+        if (b3 && b3.count >= 10) {
+            if (confirm("Möchtest du einen Prestige durchführen? Alles wird zurückgesetzt, aber du erhältst +50% Einkommen dauerhaft!")) {
+                this.state.prestige = (this.state.prestige || 0) + 1;
+                this.state.currency = 0;
+                this.state.clickPower = this.config.clickPower;
+                this.state.clickUpgrades = 0;
+                this.state.buildings.forEach(b => b.count = 0);
+                this.createParticles(window.innerWidth/2, window.innerHeight/2, '#9b59b6', 100);
+                this.updateUI();
+                localStorage.setItem(this.saveKey, JSON.stringify(this.state));
+            }
+        } else {
+            alert("Du brauchst mindestens 10 von Gebäude Tier 3 für Prestige!");
+        }
     }
 
     click() {
@@ -117,6 +197,11 @@ class TycoonEngine {
         if (this.state.currency >= cost) {
             this.state.currency -= cost;
             stateBuilding.count++;
+            const el = document.getElementById('b-' + id);
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                this.createParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#2ecc71', 15);
+            }
             this.updateUI();
         }
     }
@@ -184,7 +269,13 @@ class TycoonEngine {
 
     updateUI() {
         document.getElementById('currency-display').innerText = this.formatNumber(this.state.currency);
-        document.getElementById('cps-display').innerText = this.formatNumber(this.calculateCPS()) + ' / sek';
+        let multiplier = 1 + ((this.state.prestige || 0) * 0.5);
+        document.getElementById('cps-display').innerText = this.formatNumber(this.calculateCPS() * multiplier) + ' / sek';
+        const pDisp = document.getElementById('prestige-display');
+        if (pDisp) pDisp.innerHTML = `Prestige: ${this.state.prestige || 0} (+<span id="mult-display">${(this.state.prestige || 0) * 50}</span>%)`;
+
+        // Background animated gradient
+        document.body.style.background = `linear-gradient(${(Date.now() / 50) % 360}deg, #2c3e50, ${this.config.colorTheme})`;
 
         const clickCost = Math.floor(50 * Math.pow(1.5, this.state.clickUpgrades));
         const clickEl = document.getElementById('click-upgrade-btn');

@@ -1,59 +1,25 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asteroids</title>
-    <style>
-        body { margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #000; color: white; font-family: monospace; }
-        canvas { background-color: #111; border: 2px solid #fff; box-shadow: 0 0 10px #fff; max-width: 100%; cursor: crosshair;}
-        .header { display: flex; justify-content: space-between; width: 600px; margin-bottom: 20px; }
-        .btn { background: #555; color: white; border: 1px solid #fff; padding: 10px 20px; cursor: pointer; font-size: 16px; font-family: monospace;}
-        .btn:hover { background: #777; }
-        a { color: #fff; text-decoration: none; font-size: 16px; }
-        a:hover { color: #aaa; }
-        #gameOver { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 30px; border: 2px solid #fff; text-align: center; z-index: 10;}
-    </style>
-</head>
-<body>
+const fs = require('fs');
+const path = require('path');
 
-    <div class="ingame-header">
-        <a href="../index.html" class="back-btn">Zurück zum Portal</a>
-        <h1 class="ingame-title">Asteroids</h1>
-        <div class="ingame-controls">
-            <button class="game-like-btn" id="inGameLikeBtn" title="Like this game">♡</button>
-        </div>
-    </div>
+const gamesDir = path.join(__dirname, 'games');
+const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
 
-    <div class="header">
-        <a href="../index.html">← Zurück zur Übersicht</a>
-        <div id="scoreDisplay" style="font-size: 20px;">Score: 0</div>
-    </div>
+let v5ScriptCount = 0;
 
-    <div style="position: relative;">
-        <canvas id="gameCanvas" width="600" height="400"></canvas>
-        <div id="gameOver">
-            <h2>GAME OVER</h2>
-            <p id="finalScore" style="font-size: 24px;">Score: 0</p>
-            <button class="btn" onclick="initGame()">PLAY AGAIN</button>
-        </div>
-    </div>
+games.forEach(gameFile => {
+    const filePath = path.join(gamesDir, gameFile);
+    let content = fs.readFileSync(filePath, 'utf-8');
 
-    <script src="../js/user-system.js"></script>
-    <script>
+    // Only patch the 2D games (which do NOT include external engine scripts)
+    if (!content.includes('engine3d.js') && !content.includes('engineTycoon.js') && !content.includes('engineShmup.js') && !content.includes('enginePlatformer.js')) {
 
-            // Advanced Particle System Graphics
+        // Ensure it has V4 mechanics to replace
+        if (content.includes('SUPERCHARGED PARTICLE POPPER V3.0') || content.includes('V4.0')) {
 
-            // Playable Particle Popper Mechanics
+            // Regex to find the entire canvas/game script body
+            const regex = /const canvas = document\.getElementById\('gameCanvas'\);[\s\S]*?(?=\}\);?\s*<\/script>)/g;
 
-            // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V3.0
-            // ==========================================
-
-            // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V4.0 (WAVES & POWERUPS)
-            // ==========================================
-
+            const v5Script = `
             // ==========================================
             // SUPERCHARGED PARTICLE POPPER V5.0
             // Added: CRT Overlay, Black Holes, Chain Lightning
@@ -66,8 +32,8 @@
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
+            canvas.style.width = \`\${rect.width}px\`;
+            canvas.style.height = \`\${rect.height}px\`;
 
             // State
             let score = 0;
@@ -190,7 +156,7 @@
                 update() { this.radius += 8; this.life -= 0.04; }
                 draw() {
                     ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-                    ctx.strokeStyle = `${this.color.replace(')', `,${this.life})`).replace('rgb', 'rgba')}`;
+                    ctx.strokeStyle = \`\${this.color.replace(')', \`,\${this.life})\`).replace('rgb', 'rgba')}\`;
                     ctx.lineWidth = 4 * this.life; ctx.stroke(); ctx.closePath();
                 }
             }
@@ -199,8 +165,8 @@
                 constructor(x, y, text, color, scale=1) { this.x=x; this.y=y; this.text=text; this.color=color; this.life=1; this.vy=-2; this.scale=scale; }
                 update() { this.y += this.vy; this.life -= 0.02; }
                 draw() {
-                    ctx.fillStyle = `rgba(255,255,255,${this.life})`;
-                    ctx.font = `bold ${20 * this.scale}px "Fredoka One"`;
+                    ctx.fillStyle = \`rgba(255,255,255,\${this.life})\`;
+                    ctx.font = \`bold \${20 * this.scale}px "Fredoka One"\`;
                     ctx.textAlign = 'center'; ctx.shadowBlur = 5; ctx.shadowColor = this.color;
                     ctx.fillText(this.text, this.x, this.y); ctx.shadowBlur = 0;
                 }
@@ -222,7 +188,7 @@
 
             function nextWave() {
                 wave++;
-                floatingTexts.push(new FloatingText(canvas.width/(2*dpr), canvas.height/(2*dpr), `WAVE ${wave}!`, '#f1c40f', 2));
+                floatingTexts.push(new FloatingText(canvas.width/(2*dpr), canvas.height/(2*dpr), \`WAVE \${wave}!\`, '#f1c40f', 2));
                 particlesToClear = 50 + (wave * 20); particlesCleared = 0; gameSpeed += 0.2;
                 for (let i = 0; i < 70 + (wave * 5); i++) { setTimeout(() => particles.push(new Particle()), Math.random() * 2000); }
             }
@@ -272,7 +238,7 @@
                             createExplosion(p.x, p.y, p.color); floatingTexts.push(new FloatingText(p.x, p.y, "TIME FREEZE!", p.color, 1.5));
                             powerupFreeze = 300; particles.splice(i, 1); hit = true; combo++; particlesCleared++;
                         } else {
-                            createExplosion(p.x, p.y, p.color); floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
+                            createExplosion(p.x, p.y, p.color); floatingTexts.push(new FloatingText(p.x, p.y, \`+\${10 * (combo+1)}\`, p.color));
                             particles.splice(i, 1); hit = true; combo++; score += 10 * combo; particlesCleared++;
                             if(particles.length < 30) particles.push(new Particle());
                         }
@@ -289,13 +255,13 @@
                 }
             });
 
-            let stars = Array.from({length: 80}, () => ({ x: Math.random() * (canvas.width/dpr), y: Math.random() * (canvas.height/dpr), s: Math.random() * 3 + 0.5, c: `hsl(${Math.random()*360}, 80%, 80%)` }));
+            let stars = Array.from({length: 80}, () => ({ x: Math.random() * (canvas.width/dpr), y: Math.random() * (canvas.height/dpr), s: Math.random() * 3 + 0.5, c: \`hsl(\${Math.random()*360}, 80%, 80%)\` }));
 
             function drawCRT() {
                 // V5 CRT Scanline Overlay
                 ctx.fillStyle = 'rgba(0,0,0,0.15)';
                 for(let i=0; i<canvas.height/dpr; i+=4) { ctx.fillRect(0, i, canvas.width/dpr, 1); }
-                ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.02})`;
+                ctx.fillStyle = \`rgba(255,255,255,\${Math.random() * 0.02})\`;
                 ctx.fillRect(0, 0, canvas.width/dpr, canvas.height/dpr);
             }
 
@@ -319,7 +285,7 @@
                         const dist = dx*dx + dy*dy;
                         if(dist < 10000) {
                             ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.strokeStyle = `rgba(0, 255, 255, ${0.25 - dist/40000})`;
+                            ctx.strokeStyle = \`rgba(0, 255, 255, \${0.25 - dist/40000})\`;
                             ctx.lineWidth = powerupMagnet > 0 ? 2 : 1; ctx.stroke();
                         }
                     }
@@ -333,7 +299,7 @@
                     let dx = l.x2 - l.x1; let dy = l.y2 - l.y1;
                     ctx.lineTo(l.x1 + dx/2 + (Math.random()-0.5)*50, l.y1 + dy/2 + (Math.random()-0.5)*50);
                     ctx.lineTo(l.x2, l.y2);
-                    ctx.strokeStyle = `rgba(241, 196, 15, ${l.life})`; ctx.lineWidth = 3;
+                    ctx.strokeStyle = \`rgba(241, 196, 15, \${l.life})\`; ctx.lineWidth = 3;
                     ctx.stroke();
                     l.life -= 0.1;
                     if(l.life <= 0) lightning.splice(i, 1);
@@ -348,7 +314,7 @@
                     ex.x += ex.vx * speed; ex.y += ex.vy * speed; ex.life -= 0.03 * speed;
                     if(ex.life <= 0) { explosions.splice(i, 1); continue; }
                     ctx.beginPath(); ctx.arc(ex.x, ex.y, 3 * ex.life, 0, Math.PI*2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${ex.life})`; ctx.shadowBlur = 10; ctx.shadowColor = ex.color;
+                    ctx.fillStyle = \`rgba(255, 255, 255, \${ex.life})\`; ctx.shadowBlur = 10; ctx.shadowColor = ex.color;
                     ctx.fill(); ctx.closePath(); ctx.shadowBlur = 0;
                 }
 
@@ -359,31 +325,36 @@
                 }
 
                 ctx.fillStyle = 'white'; ctx.font = 'bold 24px "Fredoka One", cursive'; ctx.textAlign = 'left';
-                ctx.fillText(`Punkte: ${score}`, 20, 40);
+                ctx.fillText(\`Punkte: \${score}\`, 20, 40);
                 ctx.font = 'bold 16px "Nunito"'; ctx.fillStyle = '#95a5a6';
-                ctx.fillText(`High Score: ${highScore} | Max Combo: ${maxCombo}`, 20, 65);
+                ctx.fillText(\`High Score: \${highScore} | Max Combo: \${maxCombo}\`, 20, 65);
 
                 ctx.fillStyle = '#2c3e50'; ctx.fillRect(20, 80, 200, 10);
                 ctx.fillStyle = '#f1c40f'; ctx.fillRect(20, 80, 200 * (particlesCleared / particlesToClear), 10);
-                ctx.fillStyle = 'white'; ctx.fillText(`WAVE ${wave}`, 230, 90);
+                ctx.fillStyle = 'white'; ctx.fillText(\`WAVE \${wave}\`, 230, 90);
 
                 if (combo > 1 && comboTimer > 0) {
                     comboTimer--; const scale = 1 + (comboTimer/120) * 0.5;
                     ctx.save(); ctx.translate(20, 130); ctx.scale(scale, scale);
-                    ctx.fillStyle = `hsla(${combo * 10}, 100%, 60%, ${comboTimer/120})`;
+                    ctx.fillStyle = \`hsla(\${combo * 10}, 100%, 60%, \${comboTimer/120})\`;
                     ctx.font = 'bold 32px "Fredoka One", cursive'; ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
-                    ctx.fillText(`${combo}x COMBO!`, 0, 0); ctx.restore();
+                    ctx.fillText(\`\${combo}x COMBO!\`, 0, 0); ctx.restore();
                 } else if (comboTimer <= 0) { combo = 0; }
 
-                if(powerupMagnet > 0) { ctx.fillStyle = '#9b59b6'; ctx.fillText(`MAGNET: ${Math.ceil(powerupMagnet/60)}s`, 20, canvas.height/dpr - 40); }
-                if(powerupFreeze > 0) { ctx.fillStyle = '#00ffff'; ctx.fillText(`FREEZE: ${Math.ceil(powerupFreeze/60)}s`, 20, canvas.height/dpr - 20); }
+                if(powerupMagnet > 0) { ctx.fillStyle = '#9b59b6'; ctx.fillText(\`MAGNET: \${Math.ceil(powerupMagnet/60)}s\`, 20, canvas.height/dpr - 40); }
+                if(powerupFreeze > 0) { ctx.fillStyle = '#00ffff'; ctx.fillText(\`FREEZE: \${Math.ceil(powerupFreeze/60)}s\`, 20, canvas.height/dpr - 20); }
 
                 drawCRT();
                 requestAnimationFrame(animate);
             }
             animate();
-});
-    </script>
+`;
 
-</body>
-</html>
+            content = content.replace(regex, v5Script);
+            fs.writeFileSync(filePath, content);
+            v5ScriptCount++;
+        }
+    }
+});
+
+console.log(`Successfully upgraded ${v5ScriptCount} 2D games to V5.0 mechanics (Black Holes, Chain Lightning, CRT Graphics).`);

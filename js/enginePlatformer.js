@@ -38,6 +38,8 @@ class PlatformerEngine {
         this.swingHook = { active: false, x: 0, y: 0, length: 150, angle: 0, aVelocity: 0, aAccel: 0 };
         this.player.sizeMult = 1;
         this.sizeTimer = 0;
+        this.isInvincible = false;
+        this.invincibilityTimer = 0;
         this.platforms = [];
         this.obstacles = [];
         this.particles = [];
@@ -77,6 +79,7 @@ class PlatformerEngine {
                 hasPipe: hasPipe,
                 hasMushroom: hasMushroom,
                 hasHook: hasHook,
+                hasStar: hasStar,
                 pipeLink: null // set later if paired
             });
 
@@ -155,7 +158,19 @@ class PlatformerEngine {
                     }
 
                     // Jetpack pickup
-                    if (p.hasMushroom) {
+                    if (p.hasStar) {
+                        this.isInvincible = true;
+                        this.invincibilityTimer = 300; // 5 seconds
+                        p.hasStar = false;
+                        if(window.audio) window.audio.playPowerup();
+                    }
+                    if (p.hasStar) {
+                this.ctx.fillStyle = '#f1c40f'; // Gold star
+                this.ctx.beginPath();
+                this.ctx.arc(p.x + p.width/2, p.y - 30, 10, 0, Math.PI*2);
+                this.ctx.fill();
+            }
+            if (p.hasMushroom) {
                         this.player.sizeMult = Math.random() > 0.5 ? 2.5 : 0.5; // Giant or Tiny
                         this.sizeTimer = 300; // 5 seconds
                         p.hasMushroom = false;
@@ -216,6 +231,13 @@ class PlatformerEngine {
                     this.score += 100;
                     this.obstacles.splice(i, 1);
                     this.createParticles(o.x, o.y, '#3498db', 20); // glass shatter
+                    continue;
+                } else if (this.isInvincible && o.danger) {
+                    // Smash through
+                    this.score += 50;
+                    this.obstacles.splice(i, 1);
+                    this.createParticles(o.x, o.y, '#e74c3c', 10);
+                    if(window.audio) window.audio.playExplosion();
                     continue;
                 } else if (this.player.sizeMult > 2.0 && !o.danger) {
                     // Giant smashes small obstacles
@@ -321,7 +343,7 @@ class PlatformerEngine {
                 this.ctx.fillText('
 
         // Player
-        this.ctx.fillStyle = this.isDashing ? '#ffffff' : this.config.playerColor;
+        this.ctx.fillStyle = this.isDashing ? '#ffffff' : (this.isInvincible ? `hsl(${(this.frameCount*15)%360}, 100%, 50%)` : this.config.playerColor);
         if(this.isDashing) {
             this.ctx.shadowBlur = 20;
             this.ctx.shadowColor = '#fff';

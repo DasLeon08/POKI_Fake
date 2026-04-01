@@ -34,6 +34,7 @@ class ShmupEngine {
         this.missiles = [];
         this.pets = [];
         this.laserActive = 0;
+        this.lightningArcs = [];
         this.rewinds = 2; // Z key
         this.history = []; // state history
         this.isRewinding = false;
@@ -99,6 +100,52 @@ class ShmupEngine {
             this.player.x = e.touches[0].clientX - rect.left;
             this.player.y = e.touches[0].clientY - rect.top;
         }, { passive: false });
+    }
+
+    fireChainLightning() {
+        if (this.enemies.length === 0) return;
+
+        // Find closest enemy to start
+        let closest = null; let minDist = Infinity;
+        this.enemies.forEach(e => {
+            const dist = Math.sqrt((e.x-this.player.x)**2 + (e.y-this.player.y)**2);
+            if (dist < minDist) { minDist = dist; closest = e; }
+        });
+
+        if (closest) {
+            let currentTarget = closest;
+            let hits = 0;
+            const maxHits = 10;
+            const damage = 100;
+
+            // Arc logic
+            while(currentTarget && hits < maxHits) {
+                currentTarget.health -= damage;
+                this.createExplosion(currentTarget.x, currentTarget.y, '#f1c40f', 10);
+
+                let nextTarget = null; let nextDist = 200; // max arc distance
+                this.enemies.forEach(e => {
+                    if (e !== currentTarget && e.health > 0 && !e.hitByLightning) {
+                        const dist = Math.sqrt((e.x-currentTarget.x)**2 + (e.y-currentTarget.y)**2);
+                        if (dist < nextDist) { nextDist = dist; nextTarget = e; }
+                    }
+                });
+
+                if (nextTarget) {
+                    // Store line to draw
+                    this.lightningArcs.push({ x1: currentTarget.x, y1: currentTarget.y, x2: nextTarget.x, y2: nextTarget.y, life: 10 });
+                    currentTarget.hitByLightning = true;
+                    currentTarget = nextTarget;
+                    hits++;
+                } else {
+                    break;
+                }
+            }
+
+            // Reset tags
+            this.enemies.forEach(e => e.hitByLightning = false);
+            if(window.audio) window.audio.playExplosion();
+        }
     }
 
     rewindTime() {
@@ -193,7 +240,7 @@ class ShmupEngine {
 
     spawnPowerup(x, y) {
         if (Math.random() > 0.1) return; // 10% chance
-        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles', 'pet', 'laser', 'reflector'];
+        const types = ['heal', 'weapon', 'shield', 'drone', 'missiles', 'pet', 'laser', 'reflector', 'lightning'];
         this.powerups.push({
             x: x, y: y, radius: 12,
             vy: 2,
@@ -328,6 +375,25 @@ class ShmupEngine {
             if(m.y < -50 || m.x < -50 || m.x > this.width + 50) this.missiles.splice(i, 1);
         }
 
+        // Lightning Arcs
+        for(let i=this.lightningArcs.length-1; i>=0; i--) {
+            let l = this.lightningArcs[i];
+            this.ctx.beginPath();
+            this.ctx.moveTo(l.x1, l.y1);
+
+            // Jagged line
+            let dx = l.x2 - l.x1; let dy = l.y2 - l.y1;
+            this.ctx.lineTo(l.x1 + dx/2 + (Math.random()-0.5)*30, l.y1 + dy/2 + (Math.random()-0.5)*30);
+            this.ctx.lineTo(l.x2, l.y2);
+
+            this.ctx.strokeStyle = `rgba(241, 196, 15, ${l.life/10})`;
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+
+            l.life--;
+            if(l.life <= 0) this.lightningArcs.splice(i, 1);
+        }
+
         // Enemy Bullets
         // Black Hole logic
         if (this.blackHoleActive > 0) {
@@ -370,7 +436,19 @@ class ShmupEngine {
             // Check player hit
             const dx = b.x - this.player.x;
             const dy = b.y - this.player.y;
-            if (Math.sqrt(dx*dx + dy*dy) < this.player.radius + 5) {
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            // Graze check (very close but no hit)
+            if (dist > this.player.radius + 5 && dist < this.player.radius + 15) {
+                if (!b.grazed) {
+                    b.grazed = true;
+                    this.score += 5; // Graze points
+                    this.createExplosion(b.x, b.y, '#f1c40f', 1); // tiny spark
+                    if(window.audio && Math.random() > 0.5) window.audio.playCoin(); // ting!
+                }
+            }
+
+            if (dist < this.player.radius + 5) {
 
             // Drone collision
             let hitDrone = false;
@@ -483,7 +561,18 @@ class ShmupEngine {
                     }
                 }
             }
+
             if(e.health <= 0 && hit) { // from missile
+                this.score += e.type === 'boss' ? 1000 : 100;
+                this.enemiesKilled++;
+                this.spawnPowerup(e.x, e.y);
+                this.createExplosion(e.x, e.y, '#ffaa00', e.type === 'boss' ? 100 : 20);
+                this.enemies.splice(i, 1);
+                if(window.userSystem) window.userSystem.addXP(e.type === 'boss' ? 50 : 5);
+                if (this.enemiesKilled % 20 === 0) this.wave++;
+                continue;
+            }
+            if(e.health <= 0) { // from lightning/laser
                 this.score += e.type === 'boss' ? 1000 : 100;
                 this.enemiesKilled++;
                 this.spawnPowerup(e.x, e.y);
@@ -543,6 +632,14 @@ class ShmupEngine {
                     this.pets.push({ offsetX: (Math.random()-0.5)*100, offsetY: 50, fireTimer: 0 });
                 }
                 if(p.type === 'laser') {
+                    this.laserActive = 120; // 2 seconds
+                    this.shakeTimer = 120;
+                    if(window.audio) window.audio.playExplosion(); // loud laser sound
+                }
+                if(p.type === 'lightning') {
+                    // Chain Lightning triggers immediately
+                    this.fireChainLightning();
+                }
                     this.laserActive = 120; // 2 seconds
                     this.shakeTimer = 120;
                     if(window.audio) window.audio.playExplosion();

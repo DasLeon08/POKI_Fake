@@ -50,6 +50,7 @@ class GameEngine3D {
         this.turrets = [];
         this.decoys = [];
         this.swordActive = 0;
+        this.mines = [];
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -465,6 +466,7 @@ class GameEngine3D {
                 case 'KeyF': this.fireGrapple(); break;
                 case 'KeyV': this.swingSword(); break;
                 case 'KeyH': this.deployDecoy(); break;
+                case 'KeyM': this.deployMine(); break;
                 case 'KeyT': this.deployTurret(); break;
                 case 'KeyQ':
                     if (this.bulletTimeFuel > 20) this.isBulletTime = true;
@@ -539,6 +541,7 @@ class GameEngine3D {
                     <div style="color:#2ecc71;">Grapple [F]</div>
                     <div style="color:#e74c3c;">Sword [V]</div>
                     <div style="color:#3498db;">Decoy [H] (50 🪙)</div>
+                    <div style="color:#f39c12;">Mine [M] (75 🪙)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -698,6 +701,12 @@ class GameEngine3D {
                 if (hitBox.intersectsBox(bBox)) {
                     bot.health -= 150; // Massive damage
                     this.showHitMarker();
+                        if (isHeadshot) {
+                            document.getElementById('hit-marker').style.color = '#f1c40f'; // Gold hitmarker
+                            if(window.audio) window.audio.playCoin(); // headshot ding
+                        } else {
+                            document.getElementById('hit-marker').style.color = 'red';
+                        }
                     this.spawnParticles(bot.group.position, 0xff00ff, 20); // sword sparks
                     if (bot.health <= 0) {
                         this.scene.remove(bot.group);
@@ -714,6 +723,33 @@ class GameEngine3D {
                 }
             }
         });
+    }
+
+    deployMine() {
+        if (this.coins >= 75) {
+            this.coins -= 75;
+            this.updateUIDisplay();
+
+            const mGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.2, 8);
+            const mMat = new THREE.MeshStandardMaterial({ color: 0xf39c12, emissive: 0x330000 });
+            const mine = new THREE.Mesh(mGeo, mMat);
+
+            mine.position.copy(this.camera.position);
+            mine.position.y = 0.1; // flat on ground
+
+            // Blink light
+            const light = new THREE.PointLight(0xff0000, 1, 3);
+            light.position.y = 0.5;
+            mine.add(light);
+
+            this.scene.add(mine);
+            this.mines.push({ mesh: mine, active: false, timer: 60 }); // 1 sec arm time
+
+            if(window.audio) window.audio.playPowerup();
+            this.showToastUI("MINE ARMED");
+        } else {
+            this.showToastUI("Not enough coins (75)");
+        }
     }
 
     deployDecoy() {
@@ -938,6 +974,54 @@ class GameEngine3D {
             if (this.camera.position.distanceTo(this.grapple.point) < 2) {
                 this.grapple.active = false;
                 this.scene.remove(this.grapple.line);
+            }
+        }
+
+        // Mine Logic
+        for(let i=this.mines.length-1; i>=0; i--) {
+            let m = this.mines[i];
+            if (m.timer > 0) m.timer--;
+            else m.active = true;
+
+            if (m.active) {
+                // Blink
+                m.mesh.children[0].intensity = Math.sin(Date.now() / 100) > 0 ? 2 : 0;
+
+                // Check dist to bots
+                let exploded = false;
+                for(let j=this.bots.length-1; j>=0; j--) {
+                    const b = this.bots[j];
+                    if (b.health > 0 && m.mesh.position.distanceTo(b.group.position) < 3) {
+                        // BOOM
+                        this.spawnParticles(m.mesh.position, 0xe74c3c, 50);
+                        if(window.audio) window.audio.playExplosion();
+
+                        // AoE Damage
+                        this.bots.forEach(botAoe => {
+                            if(botAoe.health > 0 && m.mesh.position.distanceTo(botAoe.group.position) < 10) {
+                                botAoe.health -= 200;
+                                if(botAoe.health <= 0) {
+                                    this.scene.remove(botAoe.group);
+                                    this.addKillFeed(`Mine obliterated <b>${botAoe.name}</b>`);
+                                    this.score++; this.coins += 25;
+                                    if(window.userSystem) window.userSystem.addXP(30);
+                                    setTimeout(() => {
+                                        botAoe.health = 100;
+                                        botAoe.group.position.set((Math.random() - 0.5) * this.config.worldSize * 0.8, 0, (Math.random() - 0.5) * this.config.worldSize * 0.8);
+                                        this.scene.add(botAoe.group);
+                                    }, 4000);
+                                }
+                            }
+                        });
+
+                        exploded = true;
+                        break;
+                    }
+                }
+                if(exploded) {
+                    this.scene.remove(m.mesh);
+                    this.mines.splice(i, 1);
+                }
             }
         }
 
@@ -1166,7 +1250,14 @@ class GameEngine3D {
                     const bot = this.bots[j];
                     const bBox = new THREE.Box3().setFromObject(bot.group);
                     if (pBox.intersectsBox(bBox)) {
-                        bot.health -= this.config.weaponDamage;
+                        // Headshot Check
+                        let isHeadshot = false;
+                        if (p.mesh.position.y > bot.group.position.y + 1.8) {
+                            isHeadshot = true;
+                            bot.health -= this.config.weaponDamage * 2.5; // CRIT
+                        } else {
+                            bot.health -= this.config.weaponDamage;
+                        }
                         this.showHitMarker();
                         hit = true;
 

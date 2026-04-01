@@ -21,6 +21,9 @@ class TycoonEngine {
         this.stockTrend = 0;
         this.bankBalance = 0;
         this.interestRate = 0.05; // 5% per 10s
+        this.clickCombo = 0;
+        this.comboDecayTimer = 0;
+        this.overdriveTimer = 0;
         this.state = JSON.parse(localStorage.getItem(this.saveKey)) || {
             currency: 0,
             clickPower: this.config.clickPower,
@@ -253,6 +256,22 @@ class TycoonEngine {
         }
     }
 
+    buyOverdrive() {
+        const cost = this.calculateCPS() * 300; // 5 minutes worth of CPS
+        if (this.state.currency >= cost && this.overdriveTimer <= 0) {
+            this.state.currency -= cost;
+            this.overdriveTimer = 30; // 30 seconds
+            this.createClickText(window.innerWidth/2, window.innerHeight/2, `OVERDRIVE ACTIVATED!`);
+            this.createParticles(window.innerWidth/2, window.innerHeight/2, '#e74c3c', 100);
+            if(window.audio) window.audio.playExplosion();
+            this.updateUI();
+        } else if (this.overdriveTimer > 0) {
+            this.createClickText(event.clientX, event.clientY, `Already Active!`);
+        } else {
+            this.createClickText(event.clientX, event.clientY, `Need ${this.formatNumber(cost)}`);
+        }
+    }
+
     doPrestige() {
         // Require at least building tier 3
         const b3 = this.state.buildings.find(b => b.id === 'b3');
@@ -442,6 +461,7 @@ class TycoonEngine {
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px;">
                     <h2 style="font-family: 'Fredoka One', cursive; font-size: 2rem; color: white; text-shadow: 2px 2px 0 \${this.config.colorTheme}; margin-bottom: 5px;">\${this.config.currencyName}</h2>
                     <div id="currency-display" style="font-size: 3rem; font-weight: bold; color: \${this.config.colorTheme};">0</div>
+                    <div id="combo-display" style="font-size: 1.5rem; color: #e74c3c; font-weight: bold; margin-bottom: 10px; opacity: 0; transition: opacity 0.2s;">1.0x COMBO!</div>
                     <div id="cps-display" style="font-size: 1.2rem; color: #ecf0f1; margin-bottom: 40px;">0 / sek</div>
 
                     <button id="tycoon-main-btn" onclick="window.tycoon.click(event)" style="width: 200px; height: 200px; border-radius: 50%; background: \${this.config.colorTheme}; border: 10px solid rgba(255,255,255,0.3); font-size: 5rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: transform 0.1s;">\${this.config.icon || '💰'}</button>
@@ -472,6 +492,10 @@ class TycoonEngine {
 
                     <div id="buildings-list"></div>
 
+                    <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Black Market 🕶️</h3>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align:center;">
+                        <button id="overdrive-btn" onclick="window.tycoon.buyOverdrive()" style="width:100%; padding:10px; background:linear-gradient(135deg, #e74c3c, #c0392b); border:none; color:white; border-radius:5px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 10px rgba(231,76,60,0.4);">OVERDRIVE (x10 CPS for 30s)</button>
+                    </div>
                     <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Casino 🎰</h3>
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align:center;">
                         <div id="slot-result" style="font-size: 2rem; margin-bottom:10px; letter-spacing:10px;">❓❓❓</div>
@@ -524,8 +548,35 @@ class TycoonEngine {
 
     updateUI() {
         document.getElementById('currency-display').innerText = this.formatNumber(this.state.currency);
-        let multiplier = 1 + ((this.state.prestige || 0) * 0.5);
+        this.clickCombo += 0.1;
+        if (this.clickCombo > 5.0) this.clickCombo = 5.0; // Max 5x combo
+        this.comboDecayTimer = 10; // 1 second before decay
+
+        let multiplier = 1 + ((this.state.prestige || 0) * 0.5) * (1 + this.clickCombo);
         document.getElementById('cps-display').innerText = this.formatNumber(this.calculateCPS() * multiplier) + ' / sek';
+
+        // Update Combo UI
+        const cDisp = document.getElementById('combo-display');
+        if (cDisp) {
+            cDisp.innerText = `${(1 + this.clickCombo).toFixed(1)}x COMBO!`;
+            cDisp.style.opacity = this.clickCombo > 0.1 ? 1 : 0;
+            cDisp.style.transform = `scale(${1 + this.clickCombo*0.1})`;
+        }
+
+        // Update Overdrive UI
+        const odBtn = document.getElementById('overdrive-btn');
+        if (odBtn) {
+            const odCost = this.calculateCPS() * 300;
+            if (this.overdriveTimer > 0) {
+                odBtn.innerText = `ACTIVE (${this.overdriveTimer}s left)`;
+                odBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+                document.body.style.boxShadow = `inset 0 0 ${Math.sin(Date.now() / 100) * 50 + 50}px rgba(231,76,60,0.5)`;
+            } else {
+                odBtn.innerText = `OVERDRIVE (${this.formatNumber(odCost)} 🪙)`;
+                odBtn.style.background = this.state.currency >= odCost ? 'linear-gradient(135deg, #2ecc71, #27ae60)' : 'rgba(0,0,0,0.3)';
+                document.body.style.boxShadow = 'none';
+            }
+        }
         const pDisp = document.getElementById('prestige-display');
         if (pDisp) pDisp.innerHTML = `Prestige: ${this.state.prestige || 0} (+<span id="mult-display">${(this.state.prestige || 0) * 50}</span>%)`;
 

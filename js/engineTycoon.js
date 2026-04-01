@@ -164,6 +164,7 @@ class TycoonEngine {
         setTimeout(() => mainBtn.style.transform = 'scale(1)', 50);
 
         this.updateUI();
+        if(window.audio) window.audio.playClick();
     }
 
     createClickText(x, y, text) {
@@ -203,6 +204,7 @@ class TycoonEngine {
                 this.createParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#2ecc71', 15);
             }
             this.updateUI();
+            if(window.audio) window.audio.playCoin();
         }
     }
 
@@ -213,6 +215,7 @@ class TycoonEngine {
             this.state.clickUpgrades++;
             this.state.clickPower *= 2;
             this.updateUI();
+            if(window.audio) window.audio.playPowerup();
         }
     }
 

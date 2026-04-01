@@ -202,6 +202,7 @@ class ShmupEngine {
 
         // Auto Fire
         if (this.frameCount % this.config.fireRate === 0) {
+            if(window.audio && this.bullets.length < 50) window.audio.playLaser();
             const spread = this.player.weaponLevel;
             for(let i=0; i<spread; i++) {
                 let offset = (i - (spread-1)/2) * 10;
@@ -293,6 +294,7 @@ class ShmupEngine {
                     this.bullets.splice(j, 1);
                     this.createExplosion(b.x, b.y, this.config.themeColor, 3);
                     if(e.health <= 0) {
+                        if(window.audio) window.audio.playExplosion();
                         this.score += e.type === 'boss' ? 1000 : 100;
                         this.enemiesKilled++;
                         this.spawnPowerup(e.x, e.y);
@@ -338,6 +340,7 @@ class ShmupEngine {
                 this.createExplosion(p.x, p.y, p.color, 15);
                 this.powerups.splice(i, 1);
                 this.score += 50;
+                if(window.audio) window.audio.playPowerup();
                 continue;
             }
             if(p.y > this.height + 50) this.powerups.splice(i, 1);

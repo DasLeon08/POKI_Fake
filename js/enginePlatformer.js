@@ -69,13 +69,17 @@ class PlatformerEngine {
             if (this.player.jumps < this.config.maxJumps) {
                 this.player.vy = this.player.inverted ? -this.config.jumpForce : this.config.jumpForce;
                 this.player.jumps++;
+                if(window.audio) window.audio.playJump();
                 this.createParticles(this.player.x, this.player.inverted ? this.player.y : this.player.y + this.player.height, '#fff', 5);
             }
         };
 
         window.addEventListener('keydown', e => {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') jump();
-            if (e.code === 'KeyG') this.player.inverted = !this.player.inverted;
+            if (e.code === 'KeyG') {
+                this.player.inverted = !this.player.inverted;
+                if(window.audio) window.audio.playPowerup();
+            }
             if (e.code === 'ShiftLeft' && this.dashCooldown <= 0) {
                 this.isDashing = true;
                 this.dashCooldown = 60; // 1 second cooldown
@@ -193,12 +197,14 @@ class PlatformerEngine {
 
                 if (o.isCoin) {
                     this.coins++;
+                    if(window.audio) window.audio.playCoin();
                     this.score += 50;
                     this.obstacles.splice(i, 1);
                     this.createParticles(o.x, o.y, '#f1c40f', 5);
                     continue;
                 } else if (o.breakable && this.isDashing) {
                     this.score += 100;
+                    if(window.audio) window.audio.playExplosion();
                     this.obstacles.splice(i, 1);
                     this.createParticles(o.x, o.y, '#3498db', 20); // glass shatter
                     continue;

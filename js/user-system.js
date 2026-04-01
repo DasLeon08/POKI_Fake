@@ -68,6 +68,7 @@ class UserSystem {
     }
 
     addXP(amount) {
+        this.updateQuestProgress('q2', amount);
         this.user.xp += amount;
         let leveledUp = false;
 

@@ -422,7 +422,10 @@ class GameEngine3D {
                     break;
                 case 'Space':
                     this.keys.space = true;
-                    if (this.camera.position.y <= 2) this.velocity.y = this.config.jumpForce;
+                    if (this.camera.position.y <= 2) {
+            this.velocity.y = this.config.jumpForce;
+            if(window.audio) window.audio.playJump();
+        }
                     break;
                 case 'KeyG':
                     this.throwGrenade();
@@ -613,6 +616,7 @@ class GameEngine3D {
         grenade.position.add(dir.clone().multiplyScalar(1.5));
 
         this.scene.add(grenade);
+        if(window.audio) window.audio.playJump();
         this.projectiles.push({
             mesh: grenade,
             velocity: dir.multiplyScalar(0.8).add(new THREE.Vector3(0, 0.5, 0)), // arc
@@ -631,6 +635,7 @@ class GameEngine3D {
 
         // Muzzle Flash
         this.muzzleFlash.intensity = 2;
+        if(window.audio) window.audio.playLaser();
         setTimeout(() => this.muzzleFlash.intensity = 0, 50);
 
         // Projectile with PointLight attached for dynamic lighting
@@ -953,6 +958,7 @@ class GameEngine3D {
                 if (p.isGrenade) {
                     // Grenade explosion (AoE)
                     this.spawnParticles(p.mesh.position, 0xe74c3c, 50);
+                    if(window.audio) window.audio.playExplosion();
                     this.scene.remove(p.mesh);
                     this.projectiles.splice(i, 1);
 

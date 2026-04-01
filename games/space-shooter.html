@@ -198,6 +198,8 @@
                     explosions.push({ x: x, y: y, vx: (Math.random() - 0.5) * (isBig ? 18 : 8), vy: (Math.random() - 0.5) * (isBig ? 18 : 8), life: 1.0, color: color });
                 }
                 shockwaves.push(new Shockwave(x, y, color === '#fff' ? 'rgb(255,255,255)' : 'rgb(0,255,255)'));
+                if (window.audio && isBig) window.audio.playExplosion();
+                else if (window.audio) window.audio.playLaser();
             }
 
             function createLightning(p1, p2) {
@@ -259,7 +261,8 @@
                             powerupFreeze = 300; particles.splice(i, 1); hit = true; combo++; particlesCleared++;
                         } else {
                             createExplosion(p.x, p.y, p.color); floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
-                            particles.splice(i, 1); hit = true; combo++; score += 10 * combo; particlesCleared++;
+                            particles.splice(i, 1); hit = true; combo++; score += 10 * combo;
+                            if (window.audio) window.audio.playCoin(); particlesCleared++;
                             if(particles.length < 30) particles.push(new Particle());
                         }
 

@@ -66,7 +66,8 @@ class PlatformerEngine {
                 isMoving: isMoving,
                 type: type,
                 origY: pY,
-                offset: 0
+                offset: 0,
+                hasBouncePad: hasBouncePad
             });
 
             // Add obstacle
@@ -132,6 +133,16 @@ class PlatformerEngine {
                     this.player.jumps = 0;
                     grounded = true;
                     this.player.wallSliding = false;
+
+                    // Bounce pad interaction
+                    if (p.hasBouncePad &&
+                        this.player.x + this.player.width > p.x + p.width/2 - 20 &&
+                        this.player.x < p.x + p.width/2 + 20) {
+                        this.player.vy = this.player.inverted ? 20 : -20; // massive jump
+                        if(window.audio) window.audio.playPowerup();
+                        this.createParticles(this.player.x, this.player.y, '#f1c40f', 20);
+                        grounded = false; // immediately airborne
+                    }
                 } else {
                     // Hit side of platform
                     if (this.player.vy > 0 && !this.player.inverted) {
@@ -234,6 +245,12 @@ class PlatformerEngine {
             this.ctx.fillRect(p.x, p.y, p.width, p.height);
             this.ctx.fillStyle = '#fff';
             this.ctx.fillRect(p.x, p.y, p.width, 5); // top highlight
+
+            // Draw bounce pad
+            if (p.hasBouncePad) {
+                this.ctx.fillStyle = '#f1c40f';
+                this.ctx.fillRect(p.x + p.width/2 - 20, p.y - 5, 40, 5);
+            }
             this.ctx.fillStyle = this.config.groundColor;
         });
 

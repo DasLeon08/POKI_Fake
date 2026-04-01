@@ -17,11 +17,14 @@ class TycoonEngine {
 
         // Load Save State
         this.saveKey = 'poki_tycoon_' + this.config.currencyName.replace(/\\s/g, '_');
+        this.stockPrice = 100;
+        this.stockTrend = 0;
         this.state = JSON.parse(localStorage.getItem(this.saveKey)) || {
             currency: 0,
             clickPower: this.config.clickPower,
             clickUpgrades: 0,
             buildings: this.config.buildings.map(b => ({ id: b.id, count: 0 })),
+            shares: 0,
             autoClickers: 0,
             prestige: 0
         };
@@ -46,6 +49,19 @@ class TycoonEngine {
         setInterval(() => {
             let multiplier = 1 + (this.state.prestige * 0.5); // +50% per prestige level
             this.state.currency += this.calculateCPS() * multiplier;
+
+            // Update Stock Market
+            this.stockTrend += (Math.random() - 0.5) * 2;
+            this.stockTrend *= 0.95; // dampen
+            this.stockPrice += this.stockTrend + (Math.random() - 0.5) * 5;
+            if (this.stockPrice < 10) this.stockPrice = 10;
+            if (this.stockPrice > 1000) this.stockPrice = 1000;
+
+            const spEl = document.getElementById('stock-price');
+            if (spEl) {
+                spEl.innerText = Math.floor(this.stockPrice);
+                spEl.style.color = this.stockTrend > 0 ? '#2ecc71' : '#e74c3c';
+            }
 
             // Auto Clickers
             if (this.state.autoClickers > 0) {
@@ -257,6 +273,25 @@ class TycoonEngine {
         }
     }
 
+    buyStock() {
+        const cost = Math.floor(this.stockPrice);
+        if (this.state.currency >= cost) {
+            this.state.currency -= cost;
+            this.state.shares = (this.state.shares || 0) + 1;
+            this.updateUI();
+        }
+    }
+
+    sellStock() {
+        if ((this.state.shares || 0) > 0) {
+            const val = Math.floor(this.stockPrice);
+            this.state.shares--;
+            this.state.currency += val;
+            this.createClickText(event.clientX, event.clientY, `+${this.formatNumber(val)} (Stock)`);
+            this.updateUI();
+        }
+    }
+
     buyAutoClicker() {
         const cost = Math.floor(200 * Math.pow(1.5, this.state.autoClickers || 0));
         if (this.state.currency >= cost) {
@@ -314,6 +349,18 @@ class TycoonEngine {
                     <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Gebäude</h3>
 
                     <div id="buildings-list"></div>
+
+                    <h3 style="color: white; font-family: 'Fredoka One', cursive; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 30px;">Stock Market 📈</h3>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <div style="color:white;">Stock Price: <span id="stock-price" style="font-weight:bold; color:#f1c40f;">100</span></div>
+                            <div style="color:white;">Shares: <span id="stock-owned" style="font-weight:bold; color:#3498db;">0</span></div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="window.tycoon.buyStock()" style="flex:1; padding:8px; background:#2ecc71; border:none; color:white; border-radius:5px; cursor:pointer;">Kaufen</button>
+                            <button onclick="window.tycoon.sellStock()" style="flex:1; padding:8px; background:#e74c3c; border:none; color:white; border-radius:5px; cursor:pointer;">Verkaufen</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         \`;
@@ -353,6 +400,9 @@ class TycoonEngine {
         const clickEl = document.getElementById('click-upgrade-btn');
         document.getElementById('click-upgrade-cost').innerText = this.formatNumber(clickCost);
         clickEl.style.background = this.state.currency >= clickCost ? 'rgba(52, 152, 219, 0.4)' : 'rgba(0,0,0,0.3)';
+
+        const soEl = document.getElementById('stock-owned');
+        if (soEl) soEl.innerText = this.state.shares || 0;
 
         const autoCost = Math.floor(200 * Math.pow(1.5, this.state.autoClickers || 0));
         const autoEl = document.getElementById('auto-clicker-btn');

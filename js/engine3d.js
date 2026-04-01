@@ -45,6 +45,8 @@ class GameEngine3D {
         this.maxJumps = 2; // Double Jump
         this.killStreak = 0;
         this.killStreakTimer = 0;
+        this.bulletTimeFuel = 100;
+        this.isBulletTime = false;
 
         // Dynamic Weather System
         this.weatherParticles = [];
@@ -456,6 +458,9 @@ class GameEngine3D {
                 case 'ShiftLeft':
                     this.dash();
                     break;
+                case 'KeyQ':
+                    if (this.bulletTimeFuel > 20) this.isBulletTime = true;
+                    break;
                 case 'Space':
                     if (!this.keys.space && this.jumps < this.maxJumps) {
                         this.velocity.y = this.config.jumpForce;
@@ -485,6 +490,7 @@ class GameEngine3D {
                 case 'KeyS': this.keys.s = false; break;
                 case 'KeyD': this.keys.d = false; break;
                 case 'Space': this.keys.space = false; break;
+                case 'KeyQ': this.isBulletTime = false; break;
             }
         });
 
@@ -515,6 +521,10 @@ class GameEngine3D {
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div id="jetpack-display" style="color:#3498db;">Fuel: ${Math.floor(this.jetpackFuel)}%</div>
                     <div style="width:100px; height:10px; background:#333; border-radius:5px; overflow:hidden;"><div id="jetpack-bar" style="width:100%; height:100%; background:#3498db;"></div></div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="bt-display" style="color:#f39c12;">Focus: ${Math.floor(this.bulletTimeFuel)}% [Q]</div>
+                    <div style="width:100px; height:10px; background:#333; border-radius:5px; overflow:hidden;"><div id="bt-bar" style="width:100%; height:100%; background:#f39c12;"></div></div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -750,6 +760,18 @@ class GameEngine3D {
     animate() {
         requestAnimationFrame(() => this.animate());
 
+        // Bullet time fuel management
+        if (this.isBulletTime && this.bulletTimeFuel > 0) {
+            this.bulletTimeFuel -= 0.5;
+            document.body.style.filter = "sepia(0.5) contrast(1.2)";
+        } else {
+            this.isBulletTime = false;
+            if (this.bulletTimeFuel < 100) this.bulletTimeFuel += 0.2;
+            document.body.style.filter = "none";
+        }
+
+        const timeScale = this.isBulletTime ? 0.2 : 1.0;
+
         // Dash Cooldown & FOV restore
         if (this.dashCooldown > 0) this.dashCooldown--;
         if (this.killStreakTimer > 0) {
@@ -908,8 +930,8 @@ class GameEngine3D {
         if (this.weatherSystem) {
             const positions = this.weatherSystem.geometry.attributes.position.array;
             for(let i=0; i<positions.length; i+=3) {
-                positions[i+1] -= this.weatherConfig.speed; // Y (fall)
-                positions[i] += this.weatherConfig.drift;   // X (drift)
+                positions[i+1] -= (this.weatherConfig.speed * timeScale); // Y (fall)
+                positions[i] += (this.weatherConfig.drift * timeScale);   // X (drift)
 
                 if (positions[i+1] < 0) {
                     positions[i+1] = 100;
@@ -925,7 +947,7 @@ class GameEngine3D {
             if (p.isGrenade) {
                 p.velocity.y -= this.config.gravity * 0.8; // grenade gravity
             }
-            p.mesh.position.add(p.velocity);
+            p.mesh.position.add(p.velocity.clone().multiplyScalar(timeScale));
             p.life--;
 
             let hit = false;
@@ -1072,8 +1094,8 @@ class GameEngine3D {
         // Update Bots (AI & LookAt)
         this.bots.forEach(bot => {
             if (bot.health > 0) {
-                bot.group.position.x += bot.vx;
-                bot.group.position.z += bot.vz;
+                bot.group.position.x += bot.vx * timeScale;
+                bot.group.position.z += bot.vz * timeScale;
 
                 // Make Bot Head look at player
                 const targetPos = this.camera.position.clone();
@@ -1092,7 +1114,7 @@ class GameEngine3D {
                 if (bot.group.position.z > bound || bot.group.position.z < -bound) bot.vz *= -1;
 
                 // Bot Shooting
-                bot.shootTimer--;
+                bot.shootTimer -= timeScale;
                 if (bot.shootTimer <= 0) {
                     const dist = bot.group.position.distanceTo(this.camera.position);
                     if (dist < 100) {
@@ -1107,11 +1129,11 @@ class GameEngine3D {
         // Update Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             let pt = this.particles[i];
-            pt.mesh.position.x += pt.vx;
-            pt.mesh.position.y += pt.vy;
-            pt.mesh.position.z += pt.vz;
-            pt.vy -= 0.02; // gravity for particles
-            pt.life -= 0.05;
+            pt.mesh.position.x += pt.vx * timeScale;
+            pt.mesh.position.y += pt.vy * timeScale;
+            pt.mesh.position.z += pt.vz * timeScale;
+            pt.vy -= 0.02 * timeScale; // gravity for particles
+            pt.life -= 0.05 * timeScale;
 
             // Scale down
             pt.mesh.scale.set(pt.life, pt.life, pt.life);

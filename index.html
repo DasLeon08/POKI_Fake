@@ -706,6 +706,13 @@
         <p>&copy; 2024 Jules Spieleportal. Alle Rechte vorbehalten.</p>
     </footer>
 
-    <script src="js/user-system.js"></script>
+    <script src="js/user-system.js">
+        function playRandomGame() {
+            if (typeof games !== 'undefined' && games.length > 0) {
+                const rand = games[Math.floor(Math.random() * games.length)];
+                window.location.href = rand.file;
+            }
+        }
+    </script>
 </body>
 </html>

@@ -80,8 +80,8 @@
             // ==========================================
 
             // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V6.0
-            // Added: Mirror Portals, Advanced CRT Overlay, Screen Shake
+            // SUPERCHARGED PARTICLE POPPER V7.0
+            // Added: Giant Boss Particles, Multi-Hit Health, Mini Swarm
             // ==========================================
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -136,6 +136,7 @@
                     this.vx = (Math.random() - 0.5) * 4 * gameSpeed;
                     this.vy = (Math.random() - 0.5) * 4 * gameSpeed;
                     this.radius = Math.random() * 5 + 3;
+                    this.hp = 1; // v7
                     this.color = colors[Math.floor(Math.random() * colors.length)];
 
                     const rand = Math.random();
@@ -145,7 +146,16 @@
                     else if (rand > 0.94) { this.type = 'magnet'; this.color = '#9b59b6'; this.radius = 10; }
                     else if (rand > 0.91) { this.type = 'freeze'; this.color = '#00ffff'; this.radius = 10; }
                     else if (rand > 0.88) { this.type = 'lightning'; this.color = '#f1c40f'; this.radius = 10; } // V5
-                    else if (rand > 0.86) { this.type = 'blackhole'; this.color = '#000000'; this.radius = 15; } // V5
+                    else if (rand > 0.86) { this.type = 'blackhole'; this.color = '#000000'; this.radius = 15; }
+
+                    // V7 Boss Injection (every 5 waves)
+                    if (wave % 5 === 0 && Math.random() > 0.98) {
+                        this.type = 'boss';
+                        this.color = '#e74c3c';
+                        this.radius = 40;
+                        this.hp = 10;
+                        this.vx *= 0.5; this.vy *= 0.5;
+                    } // V5
                 }
                 update() {
                     let speedMult = gameSpeed;
@@ -225,6 +235,10 @@
 
                     if (this.type === 'bomb') { ctx.strokeStyle = '#ff4757'; ctx.lineWidth = 2; ctx.stroke(); }
                     else if (this.type === 'blackhole') { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
+                    else if (this.type === 'boss') {
+                        ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 5, 0, (Math.PI*2) * (this.hp/10)); ctx.stroke();
+                    }
                     ctx.shadowBlur = 0;
                 }
             }
@@ -324,7 +338,7 @@
                             powerupFreeze = 300; particles.splice(i, 1); hit = true; combo++; particlesCleared++;
                         } else {
                             createExplosion(p.x, p.y, p.color); floatingTexts.push(new FloatingText(p.x, p.y, `+${10 * (combo+1)}`, p.color));
-                            particles.splice(i, 1); hit = true; combo++; score += 10 * combo;
+                            particles.splice(i, 1); hit = true; combo++; if (p.type !== 'boss') score += 10 * combo;
                             if (window.audio) window.audio.playCoin(); particlesCleared++;
                             if(particles.length < 30) particles.push(new Particle());
                         }

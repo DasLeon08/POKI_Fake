@@ -29,6 +29,7 @@ class ShmupEngine {
         this.nukes = 3;
         this.shakeTimer = 0;
         this.starLayers = [[], [], []];
+        this.blackHoleActive = 0;
         this.drones = [];
         this.missiles = [];
         this.wave = 1;
@@ -96,6 +97,16 @@ class ShmupEngine {
     }
 
     fireNuke() {
+        if (this.nukes <= 0) return;
+        this.nukes--;
+        this.shakeTimer = 60; // longer shake
+
+        // Spawn Black Hole
+        this.blackHoleActive = 120; // 2 seconds
+        if(window.audio) window.audio.playExplosion();
+    }
+
+    spawnEnemy() {
         if (this.nukes <= 0) return;
         this.nukes--;
         this.shakeTimer = 30; // shake screen for 0.5s
@@ -265,6 +276,40 @@ class ShmupEngine {
         }
 
         // Enemy Bullets
+        // Black Hole logic
+        if (this.blackHoleActive > 0) {
+            this.blackHoleActive--;
+            const cx = this.width/2;
+            const cy = this.height/2;
+
+            // Suck enemies
+            this.enemies.forEach((e, i) => {
+                const dx = cx - e.x; const dy = cy - e.y;
+                const d2 = dx*dx + dy*dy;
+                e.vx += (dx/Math.sqrt(d2)) * 1.5;
+                e.vy += (dy/Math.sqrt(d2)) * 1.5;
+
+                if (d2 < 2000) {
+                    e.health = 0; // Crush
+                }
+            });
+
+            // Suck enemy bullets
+            this.enemyBullets.forEach(b => {
+                const dx = cx - b.x; const dy = cy - b.y;
+                const d2 = dx*dx + dy*dy;
+                b.vx += (dx/Math.sqrt(d2)) * 3;
+                b.vy += (dy/Math.sqrt(d2)) * 3;
+            });
+
+            if (this.blackHoleActive === 1) {
+                // Detonate
+                this.createExplosion(cx, cy, '#ffffff', 200);
+                this.enemyBullets = [];
+                if(window.audio) window.audio.playExplosion();
+            }
+        }
+
         for(let i = this.enemyBullets.length - 1; i >= 0; i--) {
             let b = this.enemyBullets[i];
             b.x += b.vx; b.y += b.vy;
@@ -521,6 +566,17 @@ class ShmupEngine {
                 this.ctx.fillRect(e.x - e.radius, e.y - e.radius - 15, e.radius*2 * (e.health/e.maxHealth), 8);
             }
         });
+
+        // Black Hole
+        if (this.blackHoleActive > 0) {
+            this.ctx.beginPath();
+            this.ctx.arc(this.width/2, this.height/2, 40 + Math.sin(this.frameCount*0.2)*10, 0, Math.PI*2);
+            this.ctx.fillStyle = '#000';
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#9b59b6';
+            this.ctx.lineWidth = 5;
+            this.ctx.stroke();
+        }
 
         // Bullets
         this.ctx.fillStyle = '#f1c40f';

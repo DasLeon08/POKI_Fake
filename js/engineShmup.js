@@ -42,6 +42,9 @@ class ShmupEngine {
         this.mirrorShieldActive = false;
         this.mirrorTimer = 0;
         this.orbitalStrikes = [];
+        this.petEvolutions = 0;
+        this.petExp = 0;
+        this.nukeFlash = 0;
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key

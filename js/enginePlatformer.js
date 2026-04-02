@@ -206,7 +206,24 @@ class PlatformerEngine {
                     }
                 } else {
                     // Hit side of platform
-                    if (!this.ghostModeActive && this.player.vy > 0 && !this.player.inverted) {
+                    // Jetpack Logic
+        if (this.keys['Space'] && this.jetpackFuel > 0 && this.player.vy > 0) { // Can activate jetpack while falling
+            this.player.vy -= 0.5; // Upward thrust
+            this.jetpackFuel -= 1;
+            document.getElementById('jet-bar').style.width = `${this.jetpackFuel}%`;
+
+            // Draw thrust flame
+            this.ctx.fillStyle = '#e74c3c';
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x + this.player.width/2, this.player.y + this.player.height + 5, 5 + Math.random()*5, 0, Math.PI*2);
+            this.ctx.fill();
+        } else if (this.jetpackFuel < 100 && !this.keys['Space']) {
+            this.jetpackFuel += 0.2;
+            const jbar = document.getElementById('jet-bar');
+            if(jbar) jbar.style.width = `${this.jetpackFuel}%`;
+        }
+
+        if (!this.ghostModeActive && this.player.vy > 0 && !this.player.inverted) {
                         this.player.wallSliding = true;
                         this.player.vy = 2; // Slide down slowly
                         this.player.jumps = 1; // Allow wall jump
@@ -439,6 +456,17 @@ window.PlatformerEngine = PlatformerEngine;
         this.ctx.fillStyle = this.config.playerColor;
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.playerColor;
+        // Draw Portals
+        this.portals.forEach(p => {
+            this.ctx.fillStyle = p.color;
+            this.ctx.beginPath();
+            this.ctx.ellipse(p.x, p.y, 10, 25, 0, 0, Math.PI*2);
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        });
+
         if (this.ghostModeActive) this.ctx.globalAlpha = 0.3;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
         this.ctx.globalAlpha = 1.0;

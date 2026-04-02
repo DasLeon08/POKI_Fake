@@ -61,6 +61,10 @@ class GameEngine3D {
         this.xrayActive = false;
         this.wallRunTimer = 0;
         this.isWallRunning = false;
+        this.timeSlowActive = false;
+        this.timeSlowTimer = 0;
+        this.heldObject = null;
+        this.heldObjectDist = 5;
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -482,6 +486,8 @@ class GameEngine3D {
                 case 'KeyX': this.deployMech(); break;
                 case 'KeyT': this.dashTeleport(); break;
                 case 'KeyR': this.toggleXray(); break;
+                case 'KeyQ': this.toggleTimeSlow(); break;
+                case 'KeyE': this.useGravityGun(); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -564,6 +570,8 @@ class GameEngine3D {
                     <div style="color:#f1c40f;">Mech [X] (1000 🪙)</div>
                     <div style="color:#00ffff;">Teleport Dash [T] (Free)</div>
                     <div style="color:#2ecc71;">X-Ray Goggles [R] (Toggle)</div>
+                    <div style="color:#f1c40f;">Time Slow [Q] (Cost: 500)</div>
+                    <div style="color:#9b59b6;">Gravity Gun [E] (Grab/Throw Bots)</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">Jump near wall to Wallrun!</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
@@ -778,6 +786,56 @@ class GameEngine3D {
             if(window.audio) window.audio.playPowerup();
         } else {
             this.showToastUI("Not enough coins (500)");
+        }
+    }
+
+    toggleTimeSlow() {
+        if (this.coins >= 500 && !this.timeSlowActive) {
+            this.coins -= 500;
+            this.timeSlowActive = true;
+            this.timeSlowTimer = 300; // 5 seconds
+            document.body.style.filter = "sepia(0.5) hue-rotate(-50deg)";
+            this.showToastUI("BULLET TIME ACTIVATED");
+            if(window.audio) window.audio.playPowerup();
+            this.updateUIDisplay();
+        }
+    }
+
+    useGravityGun() {
+        if (this.heldObject) {
+            // Throw it
+            let dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+
+            // If it's a bot, give it huge velocity and damage it upon impact later (simplified: just kill it or throw it away)
+            if (this.heldObject.isBot) {
+                this.heldObject.botRef.health -= 100;
+                this.heldObject.botRef.group.position.add(dir.multiplyScalar(20)); // Launch it
+            }
+
+            this.heldObject = null;
+            this.showToastUI("THROWN!");
+            if(window.audio) window.audio.playExplosion();
+        } else {
+            // Try to grab a bot
+            let dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+            let raycaster = new THREE.Raycaster(this.camera.position, dir);
+            let intersects = raycaster.intersectObjects(this.scene.children, true);
+
+            for(let i=0; i<intersects.length; i++) {
+                let obj = intersects[i].object;
+                if(intersects[i].distance < 30) {
+                    // Check if it's part of a bot
+                    let foundBot = this.bots.find(b => b.mesh === obj || b.group === obj.parent);
+                    if (foundBot && foundBot.health > 0) {
+                        this.heldObject = { isBot: true, botRef: foundBot, mesh: foundBot.group };
+                        this.showToastUI("CAPTURED BOT");
+                        if(window.audio) window.audio.playPowerup();
+                        break;
+                    }
+                }
+            }
         }
     }
 

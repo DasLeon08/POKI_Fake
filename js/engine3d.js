@@ -56,7 +56,8 @@ class GameEngine3D {
         this.isMech = false;
         this.mechHealth = 0;
         this.mechTimer = 0;
-        this.grenadeType = 'frag'; // frag or gravity
+        this.grenadeType = 'frag'; // frag, gravity, or mind
+        this.canTeleport = true;
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -476,6 +477,7 @@ class GameEngine3D {
                 case 'KeyB': this.callOrbitalStrike(); break;
                 case 'KeyZ': this.deployEnergyShield(); break;
                 case 'KeyX': this.deployMech(); break;
+                case 'KeyT': this.dashTeleport(); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -556,7 +558,8 @@ class GameEngine3D {
                     <div style="color:#9b59b6;">Shield [Z] (150 🪙)</div>
                     <div style="color:#e74c3c;">Orbital [B] (500 🪙)</div>
                     <div style="color:#f1c40f;">Mech [X] (1000 🪙)</div>
-                    <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Toggle Grenade (Frag/Grav)</div>
+                    <div style="color:#00ffff;">Teleport Dash [T] (Free)</div>
+                    <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -772,8 +775,39 @@ class GameEngine3D {
         }
     }
 
+    dashTeleport() {
+        if (!this.canTeleport || this.isMech) return;
+        this.canTeleport = false;
+
+        // Calculate forward position
+        let dir = new THREE.Vector3();
+        this.camera.getWorldDirection(dir);
+        let targetPos = this.camera.position.clone().add(dir.multiplyScalar(20));
+        targetPos.y = 2; // Keep on ground
+
+        // Boundaries
+        if(targetPos.x > this.config.mapSize/2) targetPos.x = this.config.mapSize/2 - 2;
+        if(targetPos.x < -this.config.mapSize/2) targetPos.x = -this.config.mapSize/2 + 2;
+        if(targetPos.z > this.config.mapSize/2) targetPos.z = this.config.mapSize/2 - 2;
+        if(targetPos.z < -this.config.mapSize/2) targetPos.z = -this.config.mapSize/2 + 2;
+
+        this.spawnParticles(this.camera.position, 0x00ffff, 5);
+        this.camera.position.copy(targetPos);
+        this.spawnParticles(this.camera.position, 0x00ffff, 5);
+
+        this.showToastUI("TELEPORT DASH!");
+        if(window.audio) window.audio.playPowerup();
+
+        // Cooldown
+        setTimeout(() => {
+            this.canTeleport = true;
+        }, 3000);
+    }
+
     toggleGrenade() {
-        this.grenadeType = this.grenadeType === 'frag' ? 'gravity' : 'frag';
+        if(this.grenadeType === 'frag') this.grenadeType = 'gravity';
+        else if(this.grenadeType === 'gravity') this.grenadeType = 'mind';
+        else this.grenadeType = 'frag';
         this.showToastUI(`GRENADE: ${this.grenadeType.toUpperCase()}`);
         if(window.audio) window.audio.playClick();
     }
@@ -1418,7 +1452,18 @@ class GameEngine3D {
                     p.velocity.multiplyScalar(0.5); // stop moving
                     this.spawnParticles(p.mesh.position, 0x9b59b6, 2);
 
-                    // Suck bots in
+                    // Mind Control effect
+                if (p.gType === 'mind' && p.life === 1) {
+                    this.spawnParticles(p.mesh.position, 0xff00ff, 5);
+                    this.bots.forEach(b => {
+                        if (b.health > 0 && p.mesh.position.distanceTo(b.group.position) < 25) {
+                            b.isMindControlled = true;
+                            b.mesh.material.color.setHex(0xff00ff);
+                        }
+                    });
+                }
+
+                // Suck bots in
                     this.bots.forEach(b => {
                         if (b.health > 0) {
                             const d = p.mesh.position.distanceTo(b.group.position);
@@ -1436,7 +1481,28 @@ class GameEngine3D {
             let hit = false;
             const pBox = new THREE.Box3().setFromObject(p.mesh);
 
-            if (p.isPlayer) {
+            if (p.isMindShot) {
+                let hitBot = false;
+                for (let j = 0; j < this.bots.length; j++) {
+                    let bot = this.bots[j];
+                    if (bot.health > 0 && !bot.isMindControlled) {
+                        if (p.mesh.position.distanceTo(bot.group.position) < 2.0) {
+                            bot.health -= this.config.weaponDamage;
+                            this.spawnParticles(p.mesh.position, 0xff0000, 1);
+                            p.life = 0;
+                            hitBot = true;
+                            if (bot.health <= 0) {
+                                this.score += 50;
+                                this.coins += 10;
+                                this.updateUIDisplay();
+                                if(window.audio) window.audio.playExplosion();
+                            }
+                            break;
+                        }
+                    }
+                }
+                if(hitBot) continue;
+            } else if (p.isPlayer) {
                 // Check bot hit
                 for (let j = this.bots.length - 1; j >= 0; j--) {
                     const bot = this.bots[j];

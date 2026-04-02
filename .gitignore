@@ -15,3 +15,6 @@ package-lock.json
 patch_*.js
 test_*.js
 *.log
+games/*
+new_games_*.json
+*.js

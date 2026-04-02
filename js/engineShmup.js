@@ -36,6 +36,9 @@ class ShmupEngine {
         this.timeFrozen = false;
         this.freezeTimer = 0;
         this.clones = [];
+        this.drones = [];
+        this.blackHoleActive = false;
+        this.blackHole = {x: 0, y: 0, timer: 0};
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key

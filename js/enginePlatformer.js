@@ -331,6 +331,11 @@ class PlatformerEngine {
         // Platforms
         this.ctx.fillStyle = this.config.groundColor;
         this.platforms.forEach(p => {
+            if (p.customDraw) {
+                this.ctx.fillStyle = '#f1c40f'; // drawn platforms are yellow
+            } else {
+                this.ctx.fillStyle = this.config.groundColor;
+            }
             this.ctx.fillRect(p.x, p.y, p.width, p.height);
             this.ctx.fillStyle = '#fff';
             this.ctx.fillRect(p.x, p.y, p.width, 5); // top highlight
@@ -469,6 +474,12 @@ window.PlatformerEngine = PlatformerEngine;
 
         if (this.ghostModeActive) this.ctx.globalAlpha = 0.3;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+        // Draw Clones
+        this.ctx.fillStyle = 'rgba(52, 152, 219, 0.5)';
+        this.clones.forEach(c => {
+            this.ctx.fillRect(c.x, c.y, this.player.width, this.player.height);
+        });
         this.ctx.globalAlpha = 1.0;
         this.ctx.globalAlpha = 1.0;
         if (this.hoverboardActive) {

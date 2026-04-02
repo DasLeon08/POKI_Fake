@@ -45,6 +45,9 @@ class ShmupEngine {
         this.petEvolutions = 0;
         this.petExp = 0;
         this.nukeFlash = 0;
+        this.gigaBeamActive = false;
+        this.gigaBeamTimer = 0;
+        this.enemyHistory = [];
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key

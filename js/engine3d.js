@@ -488,6 +488,8 @@ class GameEngine3D {
                 case 'KeyR': this.toggleXray(); break;
                 case 'KeyQ': this.toggleTimeSlow(); break;
                 case 'KeyE': this.useGravityGun(); break;
+                case 'KeyC': this.buildStructure('wall'); break;
+                case 'KeyV': this.buildStructure('ramp'); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -572,6 +574,7 @@ class GameEngine3D {
                     <div style="color:#2ecc71;">X-Ray Goggles [R] (Toggle)</div>
                     <div style="color:#f1c40f;">Time Slow [Q] (Cost: 500)</div>
                     <div style="color:#9b59b6;">Gravity Gun [E] (Grab/Throw Bots)</div>
+                    <div style="color:#3498db;">Build Wall [C] / Ramp [V] (Cost: 100)</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">Jump near wall to Wallrun!</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
@@ -796,6 +799,41 @@ class GameEngine3D {
             this.timeSlowTimer = 300; // 5 seconds
             document.body.style.filter = "sepia(0.5) hue-rotate(-50deg)";
             this.showToastUI("BULLET TIME ACTIVATED");
+            if(window.audio) window.audio.playPowerup();
+            this.updateUIDisplay();
+        }
+    }
+
+    buildStructure(type) {
+        if (this.coins >= 100 && !this.isMech) {
+            this.coins -= 100;
+
+            let dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+            let pos = this.camera.position.clone().add(dir.multiplyScalar(4));
+
+            let geo, mat, mesh;
+            if (type === 'wall') {
+                geo = new THREE.BoxGeometry(4, 4, 0.5);
+                mat = new THREE.MeshLambertMaterial({color: 0x3498db, transparent: true, opacity: 0.8});
+                mesh = new THREE.Mesh(geo, mat);
+                pos.y = 2; // Floor level
+                mesh.position.copy(pos);
+                mesh.lookAt(this.camera.position); // Face player
+            } else if (type === 'ramp') {
+                geo = new THREE.BoxGeometry(4, 0.5, 4);
+                mat = new THREE.MeshLambertMaterial({color: 0xe67e22, transparent: true, opacity: 0.8});
+                mesh = new THREE.Mesh(geo, mat);
+                pos.y = 1;
+                mesh.position.copy(pos);
+                mesh.lookAt(this.camera.position);
+                mesh.rotation.x = Math.PI / 4; // Slanted
+            }
+
+            this.scene.add(mesh);
+            this.obstacles.push(mesh);
+
+            this.showToastUI("STRUCTURE BUILT!");
             if(window.audio) window.audio.playPowerup();
             this.updateUIDisplay();
         }

@@ -58,6 +58,9 @@ class GameEngine3D {
         this.mechTimer = 0;
         this.grenadeType = 'frag'; // frag, gravity, or mind
         this.canTeleport = true;
+        this.xrayActive = false;
+        this.wallRunTimer = 0;
+        this.isWallRunning = false;
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -478,6 +481,7 @@ class GameEngine3D {
                 case 'KeyZ': this.deployEnergyShield(); break;
                 case 'KeyX': this.deployMech(); break;
                 case 'KeyT': this.dashTeleport(); break;
+                case 'KeyR': this.toggleXray(); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -559,6 +563,8 @@ class GameEngine3D {
                     <div style="color:#e74c3c;">Orbital [B] (500 🪙)</div>
                     <div style="color:#f1c40f;">Mech [X] (1000 🪙)</div>
                     <div style="color:#00ffff;">Teleport Dash [T] (Free)</div>
+                    <div style="color:#2ecc71;">X-Ray Goggles [R] (Toggle)</div>
+                    <div style="font-size:0.8rem; color:#bdc3c7;">Jump near wall to Wallrun!</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
@@ -773,6 +779,26 @@ class GameEngine3D {
         } else {
             this.showToastUI("Not enough coins (500)");
         }
+    }
+
+    toggleXray() {
+        this.xrayActive = !this.xrayActive;
+        this.showToastUI(this.xrayActive ? "X-RAY GOGGLES ON" : "X-RAY GOGGLES OFF");
+
+        if (this.xrayActive) {
+            document.body.style.filter = "invert(1) hue-rotate(180deg)";
+            this.bots.forEach(b => {
+                if(b.health > 0) b.mesh.material.wireframe = true;
+            });
+            this.obstacles.forEach(o => o.material.opacity = 0.3);
+        } else {
+            document.body.style.filter = "none";
+            this.bots.forEach(b => {
+                if(b.health > 0) b.mesh.material.wireframe = false;
+            });
+            this.obstacles.forEach(o => o.material.opacity = 1.0);
+        }
+        if(window.audio) window.audio.playPowerup();
     }
 
     dashTeleport() {

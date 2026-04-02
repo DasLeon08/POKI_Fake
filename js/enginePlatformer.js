@@ -206,7 +206,7 @@ class PlatformerEngine {
                     }
                 } else {
                     // Hit side of platform
-                    if (this.player.vy > 0 && !this.player.inverted) {
+                    if (!this.ghostModeActive && this.player.vy > 0 && !this.player.inverted) {
                         this.player.wallSliding = true;
                         this.player.vy = 2; // Slide down slowly
                         this.player.jumps = 1; // Allow wall jump
@@ -439,7 +439,9 @@ window.PlatformerEngine = PlatformerEngine;
         this.ctx.fillStyle = this.config.playerColor;
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.playerColor;
+        if (this.ghostModeActive) this.ctx.globalAlpha = 0.3;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.ctx.globalAlpha = 1.0;
         this.ctx.globalAlpha = 1.0;
         if (this.hoverboardActive) {
             this.ctx.fillStyle = '#f1c40f';

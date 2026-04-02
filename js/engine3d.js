@@ -51,6 +51,8 @@ class GameEngine3D {
         this.decoys = [];
         this.swordActive = 0;
         this.mines = [];
+        this.orbitalStrikes = [];
+        this.energyShields = [];
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -467,6 +469,8 @@ class GameEngine3D {
                 case 'KeyV': this.swingSword(); break;
                 case 'KeyH': this.deployDecoy(); break;
                 case 'KeyM': this.deployMine(); break;
+                case 'KeyB': this.callOrbitalStrike(); break;
+                case 'KeyZ': this.deployEnergyShield(); break;
                 case 'KeyT': this.deployTurret(); break;
                 case 'KeyQ':
                     if (this.bulletTimeFuel > 20) this.isBulletTime = true;
@@ -542,6 +546,8 @@ class GameEngine3D {
                     <div style="color:#e74c3c;">Sword [V]</div>
                     <div style="color:#3498db;">Decoy [H] (50 🪙)</div>
                     <div style="color:#f39c12;">Mine [M] (75 🪙)</div>
+                    <div style="color:#9b59b6;">Shield [Z] (150 🪙)</div>
+                    <div style="color:#e74c3c;">Orbital [B] (500 🪙)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -723,6 +729,72 @@ class GameEngine3D {
                 }
             }
         });
+    }
+
+    callOrbitalStrike() {
+        if (this.coins >= 500) {
+            this.coins -= 500;
+            this.updateUIDisplay();
+
+            // Raycast to find target point on ground
+            const dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+            const raycaster = new THREE.Raycaster(this.camera.position, dir, 0, 100);
+
+            let hitPoint = new THREE.Vector3();
+            hitPoint.copy(this.camera.position).add(dir.multiplyScalar(20)); // default 20 units ahead
+            hitPoint.y = 0; // force ground
+
+            // Target marker
+            const mGeo = new THREE.RingGeometry(3, 3.5, 32);
+            const mMat = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+            const marker = new THREE.Mesh(mGeo, mMat);
+            marker.rotation.x = Math.PI / 2;
+            marker.position.copy(hitPoint);
+            marker.position.y = 0.1;
+            this.scene.add(marker);
+
+            this.orbitalStrikes.push({ marker: marker, x: hitPoint.x, z: hitPoint.z, timer: 180 }); // 3 sec delay
+
+            this.showToastUI("ORBITAL STRIKE INBOUND");
+            if(window.audio) window.audio.playPowerup();
+        } else {
+            this.showToastUI("Not enough coins (500)");
+        }
+    }
+
+    deployEnergyShield() {
+        if (this.coins >= 150) {
+            this.coins -= 150;
+            this.updateUIDisplay();
+
+            const dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+            dir.y = 0; dir.normalize(); // flat
+
+            const sGeo = new THREE.PlaneGeometry(6, 4);
+            const sMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+            const shield = new THREE.Mesh(sGeo, sMat);
+
+            shield.position.copy(this.camera.position).add(dir.multiplyScalar(3));
+            shield.position.y = 2;
+            shield.lookAt(this.camera.position); // face player
+
+            // Hexagon grid texture (mocked with lines)
+            const wireGeo = new THREE.WireframeGeometry(new THREE.PlaneGeometry(6, 4, 6, 4));
+            const wireMat = new THREE.LineBasicMaterial({ color: 0x00ffff });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            shield.add(wire);
+
+            this.scene.add(shield);
+            const bbox = new THREE.Box3().setFromObject(shield);
+
+            this.energyShields.push({ mesh: shield, box: bbox, life: 600 }); // 10 seconds
+
+            if(window.audio) window.audio.playPowerup();
+        } else {
+            this.showToastUI("Not enough coins (150)");
+        }
     }
 
     deployMine() {
@@ -974,6 +1046,58 @@ class GameEngine3D {
             if (this.camera.position.distanceTo(this.grapple.point) < 2) {
                 this.grapple.active = false;
                 this.scene.remove(this.grapple.line);
+            }
+        }
+
+        // Orbital Strike Logic
+        for(let i=this.orbitalStrikes.length-1; i>=0; i--) {
+            let o = this.orbitalStrikes[i];
+            o.timer--;
+
+            // Blink marker
+            o.marker.material.opacity = (o.timer % 10 < 5) ? 1 : 0.2;
+
+            if (o.timer <= 0) {
+                // KABOOM
+                const strikePos = new THREE.Vector3(o.x, 0, o.z);
+                this.spawnParticles(strikePos, 0xff0000, 100);
+                if(window.audio) window.audio.playExplosion();
+
+                // Screen shake
+                this.camera.position.y += (Math.random()-0.5);
+                this.camera.position.x += (Math.random()-0.5);
+
+                // Huge AoE damage
+                this.bots.forEach(bot => {
+                    if (bot.health > 0 && strikePos.distanceTo(bot.group.position) < 15) {
+                        bot.health -= 1000;
+                        if (bot.health <= 0) {
+                            this.scene.remove(bot.group);
+                            this.addKillFeed(`Orbital Strike vaporized <b>${bot.name}</b>`);
+                            this.score++; this.coins += 25;
+                            if(window.userSystem) window.userSystem.addXP(50);
+                            setTimeout(() => {
+                                bot.health = 100;
+                                bot.group.position.set((Math.random() - 0.5) * this.config.worldSize * 0.8, 0, (Math.random() - 0.5) * this.config.worldSize * 0.8);
+                                this.scene.add(bot.group);
+                            }, 4000);
+                        }
+                    }
+                });
+
+                this.scene.remove(o.marker);
+                this.orbitalStrikes.splice(i, 1);
+            }
+        }
+
+        // Energy Shield Logic
+        for(let i=this.energyShields.length-1; i>=0; i--) {
+            let s = this.energyShields[i];
+            s.life--;
+            s.mesh.material.opacity = (s.life / 600) * 0.5; // fade out
+            if (s.life <= 0) {
+                this.scene.remove(s.mesh);
+                this.energyShields.splice(i, 1);
             }
         }
 
@@ -1322,6 +1446,17 @@ class GameEngine3D {
                     }
                 }
             } else {
+                // Check Energy Shield hit (block enemy bullets)
+                let blocked = false;
+                for(let s of this.energyShields) {
+                    if (pBox.intersectsBox(s.box)) {
+                        blocked = true;
+                        this.spawnParticles(p.mesh.position, 0x00ffff, 5); // shield impact sparks
+                        break;
+                    }
+                }
+                if(blocked) { this.scene.remove(p.mesh); this.projectiles.splice(i, 1); continue; }
+
                 // Check player hit
                 const playerBox = new THREE.Box3().setFromCenterAndSize(this.camera.position, new THREE.Vector3(1, 2, 1));
                 if (pBox.intersectsBox(playerBox)) {

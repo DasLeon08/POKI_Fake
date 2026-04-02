@@ -24,6 +24,11 @@ class TycoonEngine {
         this.clickCombo = 0;
         this.comboDecayTimer = 0;
         this.overdriveTimer = 0;
+        this.gems = this.state.gems || 0;
+        this.techLevel = this.state.techLevel || 0;
+        this.activeQuest = null;
+        this.questTimer = 0;
+        this.questProgress = 0;
         this.state = JSON.parse(localStorage.getItem(this.saveKey)) || {
             currency: 0,
             clickPower: this.config.clickPower,
@@ -76,6 +81,24 @@ class TycoonEngine {
             if (spEl) {
                 spEl.innerText = Math.floor(this.stockPrice);
                 spEl.style.color = this.stockTrend > 0 ? '#2ecc71' : '#e74c3c';
+            }
+
+            // Active Quest Logic
+            if (this.activeQuest) {
+                this.questTimer--;
+                if (this.questTimer <= 0) {
+                    this.failQuest();
+                } else {
+                    const qHud = document.getElementById('quest-hud');
+                    if(qHud) {
+                        qHud.style.display = 'block';
+                        document.getElementById('quest-desc').innerText = this.activeQuest.desc;
+                        document.getElementById('quest-bar').style.width = `${(this.questProgress / this.activeQuest.target) * 100}%`;
+                        document.getElementById('quest-time').innerText = `Zeit: ${Math.ceil(this.questTimer/10)}s`;
+                    }
+                }
+            } else if (Math.random() < 0.005) { // 0.5% chance per second
+                this.spawnQuest();
             }
 
             // Auto Clickers
@@ -272,12 +295,63 @@ class TycoonEngine {
         }
     }
 
+    spawnQuest() {
+        this.activeQuest = {
+            target: 50 + Math.floor(Math.random() * 50), // 50 to 100 clicks
+            time: 200, // 20 seconds
+            desc: "Klicke schnell!",
+            reward: this.calculateCPS() * 600 // 10 minutes worth
+        };
+        this.questTimer = this.activeQuest.time;
+        this.questProgress = 0;
+        if(window.audio) window.audio.playJump();
+    }
+
+    failQuest() {
+        this.activeQuest = null;
+        const qHud = document.getElementById('quest-hud');
+        if(qHud) qHud.style.display = 'none';
+        this.createClickText(window.innerWidth/2, window.innerHeight/2, "MISSION FAILED!");
+        if(window.audio) window.audio.playExplosion();
+    }
+
+    completeQuest() {
+        this.state.currency += this.activeQuest.reward;
+        this.createClickText(window.innerWidth/2, window.innerHeight/2, `MISSION COMPLETE! +${this.formatNumber(this.activeQuest.reward)}`);
+        this.createParticles(window.innerWidth/2, window.innerHeight/2, '#e67e22', 100);
+        if(window.audio) window.audio.playPowerup();
+
+        this.activeQuest = null;
+        const qHud = document.getElementById('quest-hud');
+        if(qHud) qHud.style.display = 'none';
+        this.updateUI();
+    }
+
+    buyTech() {
+        const cost = Math.floor(1 + this.techLevel * 1.5);
+        if (this.gems >= cost) {
+            this.gems -= cost;
+            this.techLevel++;
+            this.state.gems = this.gems;
+            this.state.techLevel = this.techLevel;
+
+            // Tech buff: base CPS +20% globally
+            this.config.buildings.forEach(b => b.cps *= 1.2);
+
+            this.createClickText(window.innerWidth/2, window.innerHeight/2, "TECH UPGRADED!");
+            if(window.audio) window.audio.playPowerup();
+            this.updateUI();
+        }
+    }
+
     doPrestige() {
         // Require at least building tier 3
         const b3 = this.state.buildings.find(b => b.id === 'b3');
         if (b3 && b3.count >= 10) {
             if (confirm("Möchtest du einen Prestige durchführen? Alles wird zurückgesetzt, aber du erhältst +50% Einkommen dauerhaft!")) {
                 this.state.prestige = (this.state.prestige || 0) + 1;
+                this.gems += Math.floor(1 + (this.state.prestige * 2)); // Give gems
+                this.state.gems = this.gems;
                 this.state.currency = 0;
                 this.state.clickPower = this.config.clickPower;
                 this.state.clickUpgrades = 0;
@@ -554,6 +628,15 @@ class TycoonEngine {
 
         let multiplier = 1 + ((this.state.prestige || 0) * 0.5) * (1 + this.clickCombo);
         document.getElementById('cps-display').innerText = this.formatNumber(this.calculateCPS() * multiplier) + ' / sek';
+
+        const gd = document.getElementById('gem-display');
+        if (gd) gd.innerText = this.gems;
+        const tb = document.getElementById('tech-btn');
+        if (tb) {
+            const cost = Math.floor(1 + this.techLevel * 1.5);
+            tb.innerText = `UPGRADE TECH (Lv.${this.techLevel}) - ${cost} 💎`;
+            tb.style.background = this.gems >= cost ? 'linear-gradient(135deg, #1abc9c, #16a085)' : 'rgba(0,0,0,0.3)';
+        }
 
         // Update Combo UI
         const cDisp = document.getElementById('combo-display');

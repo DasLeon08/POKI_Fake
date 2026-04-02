@@ -80,7 +80,7 @@
             // ==========================================
 
             // ==========================================
-            // SUPERCHARGED PARTICLE POPPER V10.0 (ULTIMATE)
+            // SUPERCHARGED PARTICLE POPPER V11.0 (LEGENDARY)
             // Added: Meteor Showers, Shield Generators
             // ==========================================
             const canvas = document.getElementById('gameCanvas');
@@ -117,7 +117,8 @@
             let lightning = [];
             let portals = [];
             let meteors = [];
-            let meteorShower = 0;
+             let meteorShower = 0;
+             let paintSplatter = 0;
 
             // Mouse
             let mouse = { x: -1000, y: -1000, vx: 0, vy: 0, isDown: false, charge: 0 };
@@ -153,6 +154,8 @@
              else if (rand > 0.82) { this.type = 'nuclear'; this.color = '#2ecc71'; this.radius = 14; }
              else if (rand > 0.80) { this.type = 'ghost'; this.color = '#bdc3c7'; this.radius = 10; this.alpha = 0; this.phase = Math.random()*Math.PI; }
              else if (rand > 0.78) { this.type = 'virus'; this.color = '#8e44ad'; this.radius = 8; this.infectionTimer = 0; }
+             else if (rand > 0.76) { this.type = 'ninja'; this.color = '#fff'; this.radius = 6; this.alpha = 0; }
+             else if (rand > 0.74) { this.type = 'paint'; this.color = '#e84393'; this.radius = 12; }
 
                     // V7 Boss Injection (every 5 waves)
                     if (wave % 5 === 0 && Math.random() > 0.98) {
@@ -166,8 +169,15 @@
                 update() {
                     let speedMult = gameSpeed;
                     if (powerupFreeze > 0) speedMult *= 0.1;
+             if (paintSplatter > 0) speedMult *= 0.5; // Sticky paint
 
-                    if (this.type === 'ghost') {
+                    if (this.type === 'ninja') {
+                    const dx = mouse.x - this.x; const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 150 || paintSplatter > 0) this.alpha = 1;
+                    else this.alpha = 0;
+             }
+             if (this.type === 'ghost') {
                         this.phase += 0.05 * speedMult;
                         this.alpha = (Math.sin(this.phase) + 1) / 2; // 0 to 1
                     }
@@ -255,7 +265,17 @@
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 8, 0, (Math.PI*2) * (this.hp/3)); ctx.stroke();
                         ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
                         ctx.beginPath(); ctx.arc(this.x, this.y, 150, 0, Math.PI*2); ctx.fill(); // range indicator
-                    } else if (this.type === 'nuclear') {
+                    } else if (this.type === 'ninja' && this.alpha > 0) {
+                 ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.stroke();
+             } else if (this.type === 'paint') {
+                 // Spiky paint ball
+                 ctx.beginPath();
+                 for(let i=0; i<Math.PI*2; i+=Math.PI/6) {
+                     ctx.lineTo(this.x + Math.cos(i)*(this.radius + Math.random()*5), this.y + Math.sin(i)*(this.radius + Math.random()*5));
+                 }
+                 ctx.closePath(); ctx.fill();
+             } else if (this.type === 'nuclear') {
                         ctx.strokeStyle = '#27ae60'; ctx.lineWidth = 3;
                         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI*2); ctx.stroke();
                     } else if (this.type === 'boss') {
@@ -349,7 +369,9 @@
                     const p = particles[i];
                     const dx = mx - p.x; const dy = my - p.y;
                     // Check Ghost tangibility
-                    const isTangible = p.type !== 'ghost' || (p.type === 'ghost' && p.alpha > 0.7);
+                    const isTangible = (p.type !== 'ghost' && p.type !== 'ninja') ||
+                               (p.type === 'ghost' && p.alpha > 0.7) ||
+                               (p.type === 'ninja' && p.alpha > 0);
 
                     if (Math.sqrt(dx*dx + dy*dy) <= p.radius * 3.5 && !p.isShielded && isTangible) {
                         if (p.type === 'bomb' || p.type === 'blackhole') {
@@ -633,7 +655,14 @@
                     ctx.fillText(`${combo}x COMBO!`, 0, 0); ctx.restore();
                 } else if (comboTimer <= 0) { combo = 0; }
 
-                if(powerupMagnet > 0) { ctx.fillStyle = '#9b59b6'; ctx.fillText(`MAGNET: ${Math.ceil(powerupMagnet/60)}s`, 20, canvas.height/dpr - 40); }
+                if(paintSplatter > 0) {
+                 paintSplatter--;
+                 // Draw literal splatters
+                 ctx.fillStyle = 'rgba(232, 67, 147, 0.4)';
+                 ctx.beginPath(); ctx.arc(canvas.width/(2*dpr) - 100, canvas.height/(2*dpr) - 50, 80, 0, Math.PI*2); ctx.fill();
+                 ctx.beginPath(); ctx.arc(canvas.width/(2*dpr) + 150, canvas.height/(2*dpr) + 100, 120, 0, Math.PI*2); ctx.fill();
+             }
+             if(powerupMagnet > 0) { ctx.fillStyle = '#9b59b6'; ctx.fillText(`MAGNET: ${Math.ceil(powerupMagnet/60)}s`, 20, canvas.height/dpr - 40); }
                 if(powerupFreeze > 0) { ctx.fillStyle = '#00ffff'; ctx.fillText(`FREEZE: ${Math.ceil(powerupFreeze/60)}s`, 20, canvas.height/dpr - 20); }
 
 

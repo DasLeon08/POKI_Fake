@@ -148,6 +148,18 @@ class ShmupEngine {
         }
     }
 
+    togglePetFormation() {
+        this.petFormation = this.petFormation === 'spread' ? 'focus' : 'spread';
+        if(window.audio) window.audio.playClick();
+    }
+
+    fireGrazeBurst() {
+        this.grazeMeter = 0;
+        this.grazeBursting = 100; // Radius growth timer
+        if(window.audio) window.audio.playExplosion();
+        this.shakeTimer = 60;
+    }
+
     rewindTime() {
         if (this.rewinds <= 0 || this.isRewinding) return;
         this.rewinds--;
@@ -277,8 +289,22 @@ class ShmupEngine {
             pt.fireTimer--;
             if (pt.fireTimer <= 0) {
                 pt.fireTimer = 30 + Math.random()*20;
+                let bx = this.player.x + pt.offsetX;
+                let by = this.player.y + pt.offsetY - 10;
+
+                // Move pets to formation
+                if (this.petFormation === 'focus') {
+                    // Close in
+                    pt.offsetX += ( (idx%2===0 ? -15 : 15) - pt.offsetX ) * 0.1;
+                    pt.offsetY += ( 20 - pt.offsetY ) * 0.1;
+                } else {
+                    // Spread out
+                    pt.offsetX += ( (idx%2===0 ? -40 : 40) - pt.offsetX ) * 0.1;
+                    pt.offsetY += ( 50 - pt.offsetY ) * 0.1;
+                }
+
                 this.bullets.push({
-                    x: this.player.x + pt.offsetX, y: this.player.y + pt.offsetY - 10,
+                    x: bx, y: by,
                     vx: 0, vy: -12, damage: 15
                 });
                 if(window.audio) window.audio.playLaser();
@@ -394,6 +420,44 @@ class ShmupEngine {
             if(l.life <= 0) this.lightningArcs.splice(i, 1);
         }
 
+        // Graze Burst Ring
+        if (this.grazeBursting > 0) {
+            const radius = (100 - this.grazeBursting) * 8; // expands to ~800
+            this.grazeBursting--;
+
+            // Destroy bullets in ring
+            for(let i=this.enemyBullets.length-1; i>=0; i--) {
+                let b = this.enemyBullets[i];
+                if (Math.sqrt((b.x-this.player.x)**2 + (b.y-this.player.y)**2) < radius) {
+                    this.createExplosion(b.x, b.y, '#00ffff', 5);
+                    this.enemyBullets.splice(i,1);
+                    this.score += 10;
+                }
+            }
+
+            // Damage enemies in ring
+            this.enemies.forEach((e, i) => {
+                if (Math.sqrt((e.x-this.player.x)**2 + (e.y-this.player.y)**2) < radius) {
+                    e.health -= 5; // massive continuous AoE
+                    this.createExplosion(e.x, e.y, '#00ffff', 2);
+                    if(e.health <= 0) {
+                        this.score += e.type === 'boss' ? 1000 : 100;
+                        this.enemiesKilled++;
+                        this.spawnPowerup(e.x, e.y);
+                        this.createExplosion(e.x, e.y, '#ffaa00', e.type === 'boss' ? 100 : 20);
+                        this.enemies.splice(i, 1);
+                    }
+                }
+            });
+
+            // Draw
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x, this.player.y, radius, 0, Math.PI*2);
+            this.ctx.strokeStyle = `rgba(0, 255, 255, ${this.grazeBursting/100})`;
+            this.ctx.lineWidth = 10;
+            this.ctx.stroke();
+        }
+
         // Enemy Bullets
         // Black Hole logic
         if (this.blackHoleActive > 0) {
@@ -443,7 +507,9 @@ class ShmupEngine {
                 if (!b.grazed) {
                     b.grazed = true;
                     this.score += 5; // Graze points
-                    this.createExplosion(b.x, b.y, '#f1c40f', 1); // tiny spark
+                    this.createExplosion(b.x, b.y, '#f1c40f', 1);
+                    this.grazeMeter += 1;
+                    if (this.grazeMeter >= 50) this.fireGrazeBurst(); // tiny spark
                     if(window.audio && Math.random() > 0.5) window.audio.playCoin(); // ting!
                 }
             }
@@ -633,6 +699,9 @@ class ShmupEngine {
                 }
                 if(p.type === 'laser') {
                     this.laserActive = 120; // 2 seconds
+        this.grazeMeter = 0;
+        this.petFormation = 'spread'; // spread or focus
+        this.grazeBursting = 0;
                     this.shakeTimer = 120;
                     if(window.audio) window.audio.playExplosion(); // loud laser sound
                 }
@@ -803,6 +872,15 @@ class ShmupEngine {
         // Nuke UI
         this.ctx.fillStyle = '#fff';
         this.ctx.fillText(`Nukes: ${this.nukes} (Space) | Rewinds: ${this.rewinds} (Z)`, 20, this.height - 50);
+
+        // Graze Meter UI
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(this.width - 220, this.height - 30, 200, 15);
+        this.ctx.fillStyle = '#f1c40f';
+        this.ctx.fillRect(this.width - 220, this.height - 30, Math.min(200, 200 * (this.grazeMeter/50)), 15);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '12px "Fredoka One"';
+        this.ctx.fillText("GRAZE BURST (X to toggle Pets)", this.width - 210, this.height - 40);
         this.ctx.restore();
     }
 

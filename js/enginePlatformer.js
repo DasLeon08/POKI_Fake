@@ -38,6 +38,8 @@ class PlatformerEngine {
         this.swingHook = { active: false, x: 0, y: 0, length: 150, angle: 0, aVelocity: 0, aAccel: 0 };
         this.player.sizeMult = 1;
         this.sizeTimer = 0;
+        this.slowMoTimer = 0;
+        this.paragliding = false;
         this.isInvincible = false;
         this.invincibilityTimer = 0;
         this.platforms = [];
@@ -80,6 +82,7 @@ class PlatformerEngine {
                 hasMushroom: hasMushroom,
                 hasHook: hasHook,
                 hasStar: hasStar,
+                hasHourglass: hasHourglass,
                 pipeLink: null // set later if paired
             });
 
@@ -128,7 +131,7 @@ class PlatformerEngine {
                     p.x += Math.cos(p.offset) * 2;
                 }
             }
-            p.x -= this.config.gameSpeed;
+            p.x -= this.config.gameSpeed * (this.slowMoTimer > 0 ? 0.3 : 1.0);
 
             if (this.player.x < p.x + p.width &&
                 this.player.x + this.player.width > p.x &&
@@ -158,7 +161,17 @@ class PlatformerEngine {
                     }
 
                     // Jetpack pickup
-                    if (p.hasStar) {
+                    if (p.hasHourglass) {
+                        this.slowMoTimer = 300; // 5 seconds
+                        p.hasHourglass = false;
+                        if(window.audio) window.audio.playPowerup();
+                    }
+                    if (p.hasHourglass) {
+                this.ctx.fillStyle = '#9b59b6'; // Purple Hourglass
+                this.ctx.fillRect(p.x + p.width/2 - 5, p.y - 30, 10, 20);
+                this.ctx.beginPath(); this.ctx.arc(p.x + p.width/2, p.y - 20, 5, 0, Math.PI*2); this.ctx.fill();
+            }
+            if (p.hasStar) {
                         this.isInvincible = true;
                         this.invincibilityTimer = 300; // 5 seconds
                         p.hasStar = false;
@@ -214,7 +227,7 @@ class PlatformerEngine {
         // Obstacles
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             let o = this.obstacles[i];
-            o.x -= this.config.gameSpeed;
+            o.x -= this.config.gameSpeed * (this.slowMoTimer > 0 ? 0.3 : 1.0);
 
             if (this.player.x < o.x + o.width &&
                 this.player.x + (this.player.width * this.player.sizeMult) > o.x &&
@@ -277,7 +290,7 @@ class PlatformerEngine {
         this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
         this.ctx.lineWidth = 1;
         // Parallax Mountains
-        this.parallaxX -= this.config.gameSpeed * 0.3;
+        this.parallaxX -= (this.config.gameSpeed * (this.slowMoTimer > 0 ? 0.3 : 1.0)) * 0.3;
         if(this.parallaxX < -this.width) this.parallaxX = 0;
 
         this.ctx.fillStyle = '#111822'; // mountain
@@ -351,6 +364,21 @@ class PlatformerEngine {
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.playerColor;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width * this.player.sizeMult, this.player.height * this.player.sizeMult);
+
+        if (this.paragliding && !this.player.inverted && this.player.vy > 0) {
+            // Draw parachute/glider
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.arc(this.player.x + (this.player.width*this.player.sizeMult)/2, this.player.y - 10, 25 * this.player.sizeMult, Math.PI, 0);
+            this.ctx.fill();
+            // Strings
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.player.x, this.player.y);
+            this.ctx.lineTo(this.player.x - 10, this.player.y - 10);
+            this.ctx.stroke();
+        }
         this.ctx.shadowBlur = 0;
 
         // Particles

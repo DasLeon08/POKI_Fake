@@ -33,6 +33,9 @@ class ShmupEngine {
         this.drones = [];
         this.missiles = [];
         this.pets = [];
+        this.timeFrozen = false;
+        this.freezeTimer = 0;
+        this.clones = [];
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key
@@ -553,6 +556,14 @@ class ShmupEngine {
         // Enemies
         for(let i = this.enemies.length - 1; i >= 0; i--) {
             let e = this.enemies[i];
+            if (this.timeFrozen) {
+                // Draw frozen enemy but skip logic
+                this.ctx.fillStyle = e.color;
+                this.ctx.beginPath();
+                this.ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                this.ctx.fill();
+                continue;
+            }
             e.x += e.vx; e.y += e.vy;
 
             // Bounds bounce

@@ -53,6 +53,10 @@ class GameEngine3D {
         this.mines = [];
         this.orbitalStrikes = [];
         this.energyShields = [];
+        this.isMech = false;
+        this.mechHealth = 0;
+        this.mechTimer = 0;
+        this.grenadeType = 'frag'; // frag or gravity
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -97,7 +101,7 @@ class GameEngine3D {
 
         // Setup Camera
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.y = 2;
+        this.camera.position.y = floorY;
 
         // Setup Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -471,6 +475,11 @@ class GameEngine3D {
                 case 'KeyM': this.deployMine(); break;
                 case 'KeyB': this.callOrbitalStrike(); break;
                 case 'KeyZ': this.deployEnergyShield(); break;
+                case 'KeyX': this.deployMech(); break;
+                case 'KeyG':
+                    if (e.shiftKey) this.toggleGrenade();
+                    else this.throwGrenade();
+                    break;
                 case 'KeyT': this.deployTurret(); break;
                 case 'KeyQ':
                     if (this.bulletTimeFuel > 20) this.isBulletTime = true;
@@ -488,9 +497,7 @@ class GameEngine3D {
                     }
                     this.keys.space = true;
                     break;
-                case 'KeyG':
-                    this.throwGrenade();
-                    break;
+                // G replaced above
                 case 'KeyE':
                     this.openShop();
                     break;
@@ -548,6 +555,8 @@ class GameEngine3D {
                     <div style="color:#f39c12;">Mine [M] (75 🪙)</div>
                     <div style="color:#9b59b6;">Shield [Z] (150 🪙)</div>
                     <div style="color:#e74c3c;">Orbital [B] (500 🪙)</div>
+                    <div style="color:#f1c40f;">Mech [X] (1000 🪙)</div>
+                    <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Toggle Grenade (Frag/Grav)</div>
                 </div>
                 <div id="grenade-display" style="color:#e67e22;">Grenades: ${this.grenades} 💣</div>HP: \${this.health} / \${this.config.maxHealth}</div>
                 <div id="coin-display" style="color:#f1c40f;">Coins: \${this.coins} 🪙</div>
@@ -763,6 +772,34 @@ class GameEngine3D {
         }
     }
 
+    toggleGrenade() {
+        this.grenadeType = this.grenadeType === 'frag' ? 'gravity' : 'frag';
+        this.showToastUI(`GRENADE: ${this.grenadeType.toUpperCase()}`);
+        if(window.audio) window.audio.playClick();
+    }
+
+    deployMech() {
+        if (this.coins >= 1000 && !this.isMech) {
+            this.coins -= 1000;
+            this.isMech = true;
+            this.mechHealth = 500;
+            this.mechTimer = 1800; // 30 seconds
+
+            // Alter view height and speed
+            this.camera.position.y = 4;
+
+            // Mech UI Overlay
+            document.body.style.boxShadow = "inset 0 0 150px rgba(241, 196, 15, 0.5)";
+            this.showToastUI("MECHA SUIT ONLINE");
+            if(window.audio) window.audio.playPowerup();
+            this.updateUIDisplay();
+        } else if (this.isMech) {
+            this.showToastUI("Already in Mech");
+        } else {
+            this.showToastUI("Not enough coins (1000)");
+        }
+    }
+
     deployEnergyShield() {
         if (this.coins >= 150) {
             this.coins -= 150;
@@ -930,9 +967,10 @@ class GameEngine3D {
         if(window.audio) window.audio.playJump();
         this.projectiles.push({
             mesh: grenade,
-            velocity: dir.multiplyScalar(0.8).add(new THREE.Vector3(0, 0.5, 0)), // arc
-            life: 150,
+            velocity: dir.multiplyScalar(0.8).add(new THREE.Vector3(0, 0.5, 0)),
+            life: this.grenadeType === 'gravity' ? 200 : 150,
             isGrenade: true,
+            gType: this.grenadeType,
             isPlayer: true
         });
     }
@@ -950,7 +988,7 @@ class GameEngine3D {
         setTimeout(() => this.muzzleFlash.intensity = 0, 50);
 
         // Projectile with PointLight attached for dynamic lighting
-        const projGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const projGeo = new THREE.SphereGeometry(this.isMech ? 0.4 : 0.15, 8, 8);
         const projMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
         const proj = new THREE.Mesh(projGeo, projMat);
 
@@ -965,7 +1003,8 @@ class GameEngine3D {
             mesh: proj,
             velocity: dir.multiplyScalar(3.0),
             life: 100,
-            isPlayer: true
+            isPlayer: true,
+            isMechShot: this.isMech
         });
     }
 
@@ -1304,7 +1343,19 @@ class GameEngine3D {
             this.velocity.y -= this.config.gravity;
             this.camera.position.y += this.velocity.y;
 
-            if (this.camera.position.y < 2) {
+            // Mech Timer
+            if (this.isMech) {
+                this.mechTimer--;
+                if (this.mechTimer <= 0) {
+                    this.isMech = false;
+                    this.camera.position.y = 2;
+                    document.body.style.boxShadow = 'none';
+                    this.showToastUI("MECH POWER DEPLETED");
+                }
+            }
+
+            const floorY = this.isMech ? 4 : 2;
+            if (this.camera.position.y < floorY) {
                 this.velocity.y = 0;
                 this.camera.position.y = 2;
                 this.jumps = 0;
@@ -1360,7 +1411,24 @@ class GameEngine3D {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
             if (p.isGrenade) {
-                p.velocity.y -= this.config.gravity * 0.8; // grenade gravity
+                p.velocity.y -= this.config.gravity * 0.8;
+
+                // Gravity pull effect before explosion
+                if (p.gType === 'gravity' && p.life < 100 && p.life > 0) {
+                    p.velocity.multiplyScalar(0.5); // stop moving
+                    this.spawnParticles(p.mesh.position, 0x9b59b6, 2);
+
+                    // Suck bots in
+                    this.bots.forEach(b => {
+                        if (b.health > 0) {
+                            const d = p.mesh.position.distanceTo(b.group.position);
+                            if (d < 30) {
+                                const pullDir = new THREE.Vector3().subVectors(p.mesh.position, b.group.position).normalize();
+                                b.group.position.add(pullDir.multiplyScalar(15 / Math.max(d, 1)));
+                            }
+                        }
+                    });
+                }
             }
             p.mesh.position.add(p.velocity.clone().multiplyScalar(timeScale));
             p.life--;
@@ -1380,7 +1448,7 @@ class GameEngine3D {
                             isHeadshot = true;
                             bot.health -= this.config.weaponDamage * 2.5; // CRIT
                         } else {
-                            bot.health -= this.config.weaponDamage;
+                            bot.health -= (this.config.weaponDamage * (p.isMechShot ? 3 : 1));
                         }
                         this.showHitMarker();
                         hit = true;
@@ -1460,7 +1528,18 @@ class GameEngine3D {
                 // Check player hit
                 const playerBox = new THREE.Box3().setFromCenterAndSize(this.camera.position, new THREE.Vector3(1, 2, 1));
                 if (pBox.intersectsBox(playerBox)) {
-                    this.health -= 20;
+                    if (this.isMech) {
+                        this.mechHealth -= 20;
+                        if (this.mechHealth <= 0) {
+                            this.isMech = false;
+                            this.camera.position.y = 2;
+                            document.body.style.boxShadow = 'none';
+                            this.showToastUI("MECH DESTROYED");
+                            if(window.audio) window.audio.playExplosion();
+                        }
+                    } else {
+                        this.health -= 20;
+                    }
                     hit = true;
                     // Blood effect flash
                     document.body.style.boxShadow = 'inset 0 0 150px rgba(255,0,0,0.8)';

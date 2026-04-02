@@ -440,6 +440,11 @@ window.PlatformerEngine = PlatformerEngine;
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.playerColor;
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.ctx.globalAlpha = 1.0;
+        if (this.hoverboardActive) {
+            this.ctx.fillStyle = '#f1c40f';
+            this.ctx.fillRect(this.player.x - 5, this.player.y + this.player.height, this.player.width + 10, 5);
+        }
         this.ctx.shadowBlur = 0;
 
         // Particles

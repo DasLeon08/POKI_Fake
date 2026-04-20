@@ -65,6 +65,9 @@ class GameEngine3D {
         this.timeSlowTimer = 0;
         this.heldObject = null;
         this.heldObjectDist = 5;
+        this.ufoMode = false;
+        this.ufoEnergy = 1000;
+        this.orbitalLasers = [];
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -490,6 +493,8 @@ class GameEngine3D {
                 case 'KeyE': this.useGravityGun(); break;
                 case 'KeyC': this.buildStructure('wall'); break;
                 case 'KeyV': this.buildStructure('ramp'); break;
+                case 'KeyF': this.toggleUFO(); break;
+                case 'KeyO': this.fireOrbitalLaser(); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -575,6 +580,8 @@ class GameEngine3D {
                     <div style="color:#f1c40f;">Time Slow [Q] (Cost: 500)</div>
                     <div style="color:#9b59b6;">Gravity Gun [E] (Grab/Throw Bots)</div>
                     <div style="color:#3498db;">Build Wall [C] / Ramp [V] (Cost: 100)</div>
+                    <div style="color:#f39c12;">UFO Flight [F] (Hold space to ascend)</div>
+                    <div style="color:#ff0000;">Sky Laser [O] (Cost: 1000)</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">Jump near wall to Wallrun!</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
@@ -800,6 +807,43 @@ class GameEngine3D {
             document.body.style.filter = "sepia(0.5) hue-rotate(-50deg)";
             this.showToastUI("BULLET TIME ACTIVATED");
             if(window.audio) window.audio.playPowerup();
+            this.updateUIDisplay();
+        }
+    }
+
+    toggleUFO() {
+        this.ufoMode = !this.ufoMode;
+        if (this.ufoMode) {
+            this.showToastUI("🛸 UFO FLIGHT ENGAGED");
+            document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.3)";
+        } else {
+            this.showToastUI("UFO FLIGHT DISENGAGED");
+            document.body.style.boxShadow = "none";
+        }
+        if(window.audio) window.audio.playPowerup();
+    }
+
+    fireOrbitalLaser() {
+        if (this.coins >= 1000) {
+            this.coins -= 1000;
+
+            let dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
+            let pos = this.camera.position.clone().add(dir.multiplyScalar(30));
+            pos.y = 2; // Floor hit
+
+            // Draw giant cylinder beam
+            const geo = new THREE.CylinderGeometry(15, 15, 200, 32);
+            const mat = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.8});
+            const beam = new THREE.Mesh(geo, mat);
+            beam.position.copy(pos);
+            beam.position.y += 100;
+            this.scene.add(beam);
+
+            this.orbitalLasers.push({mesh: beam, pos: pos, timer: 120});
+
+            this.showToastUI("ORBITAL LASER INCOMING!");
+            if(window.audio) window.audio.playExplosion();
             this.updateUIDisplay();
         }
     }

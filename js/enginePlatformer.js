@@ -223,7 +223,7 @@ class PlatformerEngine {
             if(jbar) jbar.style.width = `${this.jetpackFuel}%`;
         }
 
-        if (!this.ghostModeActive && this.player.vy > 0 && !this.player.inverted) {
+        if (!this.ghostModeActive && ((!this.gravityInverted && this.player.vy > 0) || (this.gravityInverted && this.player.vy < 0)) && !this.player.inverted) {
                         this.player.wallSliding = true;
                         this.player.vy = 2; // Slide down slowly
                         this.player.jumps = 1; // Allow wall jump
@@ -473,7 +473,19 @@ window.PlatformerEngine = PlatformerEngine;
         });
 
         if (this.ghostModeActive) this.ctx.globalAlpha = 0.3;
+        if (this.trexMountActive) {
+            this.ctx.fillStyle = '#c0392b';
+        } else {
+            this.ctx.fillStyle = this.player.color;
+        }
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+        if (this.trexMountActive) {
+            // Draw Trex eyes/teeth
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(this.player.x + 40, this.player.y + 10, 10, 10);
+            this.ctx.fillRect(this.player.x + 40, this.player.y + 40, 20, 5);
+        }
 
         // Draw Clones
         this.ctx.fillStyle = 'rgba(52, 152, 219, 0.5)';

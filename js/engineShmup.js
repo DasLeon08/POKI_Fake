@@ -48,6 +48,8 @@ class ShmupEngine {
         this.gigaBeamActive = false;
         this.gigaBeamTimer = 0;
         this.enemyHistory = [];
+        this.friendlyBoss = null;
+        this.hyperDash = 0;
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key
@@ -772,7 +774,7 @@ class ShmupEngine {
         this.ctx.lineTo(this.player.x - this.player.radius, this.player.y + this.player.radius);
         this.ctx.lineTo(this.player.x + this.player.radius, this.player.y + this.player.radius);
         this.ctx.closePath();
-        this.ctx.fillStyle = this.config.themeColor;
+        this.ctx.fillStyle = this.hyperDash > 0 ? '#ff00ff' : this.config.themeColor;
         this.ctx.shadowBlur = 15;
         this.ctx.shadowColor = this.config.themeColor;
         this.ctx.fill();

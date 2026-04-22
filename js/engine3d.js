@@ -68,6 +68,9 @@ class GameEngine3D {
         this.ufoMode = false;
         this.ufoEnergy = 1000;
         this.orbitalLasers = [];
+        this.isGodzilla = false;
+        this.godzillaTimer = 0;
+        this.nukeFlash = 0;
         this.grapple = { active: false, point: null, line: null };
 
         // Dynamic Weather System
@@ -495,6 +498,8 @@ class GameEngine3D {
                 case 'KeyV': this.buildStructure('ramp'); break;
                 case 'KeyF': this.toggleUFO(); break;
                 case 'KeyO': this.fireOrbitalLaser(); break;
+                case 'KeyJ': this.activateGodzilla(); break;
+                case 'KeyN': this.callTacticalNuke(); break;
                 case 'KeyG':
                     if (e.shiftKey) this.toggleGrenade();
                     else this.throwGrenade();
@@ -582,6 +587,8 @@ class GameEngine3D {
                     <div style="color:#3498db;">Build Wall [C] / Ramp [V] (Cost: 100)</div>
                     <div style="color:#f39c12;">UFO Flight [F] (Hold space to ascend)</div>
                     <div style="color:#ff0000;">Sky Laser [O] (Cost: 1000)</div>
+                    <div style="color:#27ae60;">Godzilla Mode [J] (Cost: 5000)</div>
+                    <div style="color:#c0392b;">Tactical Nuke [N] (Cost: 10000)</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">Jump near wall to Wallrun!</div>
                     <div style="font-size:0.8rem; color:#bdc3c7;">[Shift+G] Grenade (Frag/Grav/Mind)</div>
                 </div>
@@ -821,6 +828,42 @@ class GameEngine3D {
             document.body.style.boxShadow = "none";
         }
         if(window.audio) window.audio.playPowerup();
+    }
+
+    activateGodzilla() {
+        if (this.coins >= 5000 && !this.isGodzilla && !this.isMech) {
+            this.coins -= 5000;
+            this.isGodzilla = true;
+            this.godzillaTimer = 600; // 10 seconds
+
+            // Grow camera
+            this.camera.position.y = 20;
+            document.body.style.boxShadow = "inset 0 0 150px rgba(39, 174, 96, 0.7)";
+            this.showToastUI("GODZILLA MODE: STOMP THEM ALL!");
+            if(window.audio) window.audio.playExplosion();
+            this.updateUIDisplay();
+        }
+    }
+
+    callTacticalNuke() {
+        if (this.coins >= 10000) {
+            this.coins -= 10000;
+            this.nukeFlash = 60;
+
+            let kills = 0;
+            this.bots.forEach(b => {
+                if (b.health > 0) {
+                    b.health = 0;
+                    kills++;
+                }
+            });
+            this.score += kills * 50;
+            this.coins += kills * 10;
+
+            this.showToastUI("TACTICAL NUKE DEPLOYED!");
+            if(window.audio) window.audio.playExplosion();
+            this.updateUIDisplay();
+        }
     }
 
     fireOrbitalLaser() {
@@ -1554,7 +1597,7 @@ class GameEngine3D {
                 }
             }
 
-            const floorY = this.isMech ? 4 : 2;
+            // floorY handled above now
             if (this.camera.position.y < floorY) {
                 this.velocity.y = 0;
                 this.camera.position.y = 2;
@@ -1941,6 +1984,16 @@ class GameEngine3D {
 
         this.updateUIDisplay();
         this.renderer.render(this.scene, this.camera);
+            if(this.nukeFlash > 0) {
+                this.nukeFlash--;
+                // Super hacky flash using DOM since ThreeJS post-processing isn't setup
+                document.body.style.backgroundColor = "white";
+                document.body.style.opacity = this.nukeFlash / 60;
+                if(this.nukeFlash === 0) {
+                    document.body.style.backgroundColor = "black";
+                    document.body.style.opacity = 1;
+                }
+            }
     }
 }
 window.GameEngine3D = GameEngine3D;

@@ -50,6 +50,8 @@ class ShmupEngine {
         this.enemyHistory = [];
         this.friendlyBoss = null;
         this.hyperDash = 0;
+        this.domainExpansionActive = false;
+        this.domainTimer = 0;
         this.laserActive = 0;
         this.lightningArcs = [];
         this.rewinds = 2; // Z key
